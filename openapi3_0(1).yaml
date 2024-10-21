@@ -1,0 +1,669 @@
+openapi: 3.0.0
+info:
+ title: Game API
+ version: 1.0.0
+ description: API to manage accounts, collections, currencies, and market functionalities for a game
+
+servers:
+ - url: https://api.example.com/v1
+
+tags:
+ - name: Admin
+   description: Operations related to admin functionality
+ - name: Account
+   description: Operations related to user accounts
+ - name: Collection
+   description: Operations related to gacha collections
+ - name: Currency
+   description: Operations related to in-game currency
+ - name: Market
+   description: Operations related to the auction market
+
+paths:
+ /user:
+   post:
+     summary: Register game account
+     operationId: create_account
+     tags:
+       - Account
+     requestBody:
+       description: Account details for creation 
+       content:
+         application/json:
+           schema:
+             type: object
+             properties:
+               username:
+                 type: string
+               password:
+                 type: string
+               password_verify:
+                 type: string
+     responses:
+       '200':
+         description: Account created 
+         content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+       '400':
+          description: Account data is not correct
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+   delete:
+     summary: Delete a game account
+     operationId: delete_account
+     tags:
+       - Account
+     responses:
+       '200':
+         description: Account deleted successfully
+       '401':
+         description: Unauthorized access
+   put:
+     summary: Modify your game account
+     tags:
+       - Account
+     requestBody:
+       description: Account details for creation 
+       content:
+         application/json:
+           schema:
+             type: object
+             properties:
+               new_username:
+                 type: string
+               old_password:
+                 type: string
+               new_password:
+                 type: string
+               new_password_verify:
+                 type: string
+     responses:
+       '200':
+         description: Account modified successfully
+       '401':
+         description: Unauthorized access
+
+ /user/login:
+   post:
+     summary: Login to the game system
+     operationId: login
+     tags:
+       - Account
+     requestBody:
+       description: Login credentials
+       content:
+         application/json:
+           schema:
+             type: object
+             properties:
+               username:
+                 type: string
+               password:
+                 type: string
+     responses:
+       '200':
+         description: Login successful
+         content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+       '400':
+          description: Account data is not correct
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+
+ /user/logout:
+   get:
+     summary: Logout from the system
+     operationId: logout
+     tags:
+       - Account
+     responses:
+       '200':
+         description: Logged out successfully
+       '401':
+         description: Unauthorized access
+
+ /user/collection:
+   get:
+     summary: Get your gacha collection
+     operationId: gacha_owned
+     tags:
+       - Account
+     responses:
+       '200':
+         description: Gacha retrieved successfully
+         content:
+            application/json:
+               schema:
+                type: array
+                items:
+                 $ref: '#/components/schemas/Gacha'
+ /user/currency:
+   get:
+     summary: Display the Currency that you have
+     operationId: display_currency
+     tags:
+       - Account
+     responses:
+       '200':
+         description: Currency available
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 amount:
+                   type: number
+
+ /user/transactions:
+  get:
+    summary: Display all the transaction made
+    operationId: display_transaction
+    tags:
+      - Account
+    responses:
+      '200':
+        description: transactions retrieved successfully
+        content:
+            application/json:
+               schema:
+                type: array
+                items:
+                 $ref: '#/components/schemas/Transaction'
+      '401':
+         description: Unauthorized access
+
+ /user/transactions/{transaction_uuid}:
+  get:
+    summary: Display a specific made transaction 
+    operationId: display_specific_transaction
+    tags:
+      - Account
+    parameters:
+       - name: transaction_uuid
+         in: path
+         required: true
+         schema:
+           type: string
+    responses:
+      '200':
+        description: transaction retrieved succesfully
+        content:
+            application/json:
+               schema:
+                 $ref: '#/components/schemas/Transaction'
+      '400':
+          description: transaction uuid is not correct
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+      '401':
+         description: Unauthorized access
+
+ /collection:
+   get:
+     summary: View gacha system collection
+     operationId: get_gacha_system
+     tags:
+       - Collection
+     security:
+       - ApiKeyAuth: []
+     responses:
+       '200':
+         description: Gacha retrieved successfully
+         content:
+            application/json:
+               schema:
+                type: array
+                items:
+                 $ref: '#/components/schemas/Gacha'
+
+ /collection/{gacha_uuid}:
+   get:
+     summary: View specific gacha information
+     operationId: get_gacha_info
+     tags:
+       - Collection
+     security:
+       - ApiKeyAuth: []
+     parameters:
+       - name: gacha_uuid
+         in: path
+         required: true
+         schema:
+           type: string
+     responses:
+       '200':
+         description: Gacha information retrieved successfully
+         content:
+           application/json:
+              schema:
+                $ref: '#/components/schemas/Gacha'
+       '400':
+          description: Gacha uuid is not correct
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+ /roll:
+  get:
+   summary: Roll a new gacha with in-game currency
+   operationId: roll_gacha
+   tags:
+     - Collection
+   security:
+     - ApiKeyAuth: []
+   responses:
+     '200':
+       description: Gacha rolled
+       content:
+            application/json:
+               schema:
+                 $ref: '#/components/schemas/Gacha'
+     '400':
+         description: Not enough currency
+     '401':
+         description: Unauthorized access
+
+ /currency/buy:
+   post:
+     summary: Secure Purchasing in-game Currency
+     operationId: secure_purchasing
+     tags:
+       - Currency
+     requestBody:
+      content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 amount:
+                   type: number
+     responses:
+       '200':
+         description: Currency Purchased
+       '400':
+         description: Invalid amount of currency (<0 or >100)
+       '401':
+         description: Unauthorized access
+ 
+ /market:
+   post: 
+    summary: Insert a new auction
+    operationId: insert_auction
+    tags:
+      - Market
+    requestBody:
+      content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 gacha_uuid:
+                   type: string
+                 starting_price:
+                   type: number
+    responses:
+       '200':
+         description: Gacha auctioned succesfully 
+         content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+       '400':
+          description: Invalid data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+       '401':
+          description: Unauthorized access
+   get:
+     summary: View the all the active auction market
+     operationId: view_auction_market
+     tags:
+       - Market
+     responses:
+       '200':
+         description: Auction market retrieved successfully
+         content:
+            application/json:
+               schema:
+                type: array
+                items:
+                 $ref: '#/components/schemas/Auction'
+       '401':
+          description: Unauthorized access
+
+ /market/{auction_uuid}:
+   get:
+     summary: View an active specific auction market
+     operationId: view_specific_auction_market
+     tags:
+       - Market
+     parameters:
+       - name: auction_uuid
+         in: path
+         required: true
+         schema:
+           type: string
+     responses:
+       '200':
+         description: Auction market retrieved successfully
+         content:
+            application/json:
+               schema:
+                 $ref: '#/components/schemas/Auction'
+       '400':
+         description: Invalid data
+       '401':
+         description: Unauthorized access
+
+ /market/{auction_uuid}/bid:
+   post:
+     summary: Place a bid in an auction
+     operationId: bid_auction
+     tags:
+       - Market
+     parameters:
+       - name: auction_uuid
+         in: path
+         required: true
+         schema:
+           type: string
+     requestBody:
+       description: Auction details for the bid
+       content:
+         application/json:
+           schema:
+             type: object
+             properties:
+               bidAmount:
+                 type: integer
+     responses:
+       '200':
+         description: Bid placed successfully
+       '400':
+         description: Invalid bid (< 0 or < current_bid)
+
+ 
+ /admin/login:
+   post:
+     tags:
+       - Admin
+     summary: Login as admin
+     operationId: admin_login
+     requestBody:
+       required: true
+       content:
+         application/json:
+           schema:
+             type: object
+             properties:
+               username:
+                 type: string
+               password:
+                 type: string
+             required:
+               - username
+               - password
+     responses:
+       200:
+         description: Successful login
+       401:
+         description: Invalid credentials
+
+ /admin/logout:
+   post:
+     tags:
+       - Admin
+     summary: Logout as admin
+     operationId: admin_logout
+     responses:
+       200:
+         description: Successful logout
+
+ /admin/users:
+   get:
+     tags:
+       - Admin
+     summary: Get all users' accounts
+     operationId: users_account
+     responses:
+       200:
+         description: List of users
+         content:
+           application/json:
+             schema:
+               type: array
+               items:
+                 $ref: '#/components/schemas/UserProfile'
+
+ /admin/users/{user_uuid}:
+   get:
+     tags:
+       - Admin
+     summary: Get details of a specific user
+     operationId: get_specific_user_account
+     parameters:
+       - name: user_uuid
+         in: path
+         required: true
+         schema:
+           type: string
+     responses:
+       200:
+         description: User profile details
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/UserProfile'
+       404:
+         description: User not found
+   put:
+     tags:
+       - Admin
+     summary: Modify a specific user account/profile
+     operationId: modify_specific_user_account
+     parameters:
+       - name: user_uuid
+         in: path
+         required: true
+         schema:
+           type: string
+     requestBody:
+       required: true
+       content:
+         application/json:
+           schema:
+             $ref: '#/components/schemas/UserProfile'
+     responses:
+       200:
+         description: User profile updated
+       404:
+         description: User not found
+
+ /admin/users/{user_uuid}/transactions:
+   get:
+     tags:
+       - Admin
+     summary: Get transaction history of a specific user (bought and sold)
+     operationId: user_transaction_history
+     parameters:
+       - name: user_uuid
+         in: path
+         required: true
+         schema:
+           type: string
+     responses:
+       200:
+         description: Transaction history of the user 
+         content:
+           application/json:
+             schema: 
+                 type: array
+                 items:
+                   $ref: '#/components/schemas/Transaction'
+
+ /admin/collection:
+   post:
+     tags:
+       - Admin
+     summary: Add a new gacha to the collection
+     operationId: add_gacha
+     requestBody:
+       required: true
+       content:
+         application/json:
+           schema:
+             $ref: '#/components/schemas/Gacha'
+     responses:
+       200:
+         description: Gacha added successfully
+
+ /admin/collection/{gacha_uuid}:
+   put:
+     tags:
+       - Admin
+     summary: Modify a specific gacha
+     operationId: modify_gacha_spec
+     parameters:
+       - name: gacha_uuid
+         in: path
+         required: true
+         schema:
+           type: string
+     requestBody:
+       required: true
+       content:
+         application/json:
+           schema:
+             $ref: '#/components/schemas/Gacha'
+     responses:
+       200:
+         description: Gacha updated
+       404:
+         description: Gacha not found
+ /admin/market:
+  get:
+     tags:
+       - Admin
+     summary: Get all active and closed auctions
+     responses:
+       200:
+         description: List of auctions
+         content:
+           application/json:
+             schema:
+               type: array
+               items:
+                 $ref: '#/components/schemas/Auction'
+
+ /admin/market/{auction_uuid}:
+  put:
+     tags:
+       - Admin
+     summary: Modify a new auction
+     requestBody:
+       required: true
+       content:
+         application/json:
+           schema:
+             $ref: '#/components/schemas/Auction'
+     responses:
+       200:
+         description: Auction added successfully
+  get:
+     tags:
+       - Admin
+     summary: Get an open or closed specific auction
+     parameters:
+       - name: auction_uuid
+         in: path
+         required: true
+         schema:
+           type: string
+     responses:
+       200:
+         description: auction
+         content:
+           application/json:
+             schema:
+                 $ref: '#/components/schemas/Auction'
+
+components:
+ schemas:
+   UserProfile:
+     type: object
+     properties:
+       username:
+         type: string
+       user_uuid:
+         type: string
+       currency:
+         type: string
+   Transaction:
+     type: object
+     properties:
+       transaction_uuid:
+         type: string
+       bill:
+         type: number
+       date:
+         type: string
+   Gacha:
+     type: object
+     properties:
+       gacha_uuid:
+         type: string
+       name:
+         type: string
+       rarity:
+         type: string
+       description:
+         type: string
+       image:
+         type: string
+   Auction:
+     type: object
+     properties:
+       auction_uuid:
+        type: string
+       Gacha:
+        $ref: '#/components/schemas/Gacha'
+       user_uuid:
+        type: string
+       datetime:
+        type: string
