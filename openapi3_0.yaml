@@ -632,16 +632,20 @@ components:
          type: string
        user_uuid:
          type: string
-       currency:
-         type: string
+       wallet:
+         type: number
    Transaction:
      type: object
      properties:
        transaction_uuid:
          type: string
-       bill:
+       price:
          type: number
-       date:
+       created_at:
+         type: string
+       from:
+         type: string
+       to:
          type: string
    Gacha:
      type: object
@@ -661,9 +665,11 @@ components:
      properties:
        auction_uuid:
         type: string
+       base_price:
+        type: number
        Gacha:
         $ref: '#/components/schemas/Gacha'
        user_uuid:
         type: string
-       datetime:
+       expired_at:
         type: string
