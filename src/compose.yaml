@@ -1,0 +1,29 @@
+services:
+
+  player_db:
+    image: postgres:latest
+    container_name: player_db
+    ports:
+      - "127.0.0.1:5432:5432"
+    env_file:
+     - path: player/.db.env
+
+ 
+  player_service:
+    build: ./player
+    container_name: player_service
+    env_file:
+      - path: player/.service.env
+    ports:
+      - "127.0.0.1:8080:5000"
+    depends_on:
+      - player_db
+    links:
+      - player_db
+    volumes:
+      - ./player/src:/app
+    
+
+
+
+
