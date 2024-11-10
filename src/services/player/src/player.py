@@ -96,8 +96,14 @@ def show_by_username(player_username):
 
 @app.route('/', methods=['POST'])
 def create():
-    username = request.json['username']
-    password = request.json['password']
+    if request.headers.get('Content-Type') != 'application/json':
+        return jsonify({'message': 'Content-type not supported'}), 400
+
+    username = request.json.get('username')
+    password = request.json.get('password')
+
+    if not username or not password:
+        return jsonify({'message': 'Missing data'}), 400
 
     player_uuid = str(uuid.uuid4())
     player_password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
