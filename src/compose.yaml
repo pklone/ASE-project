@@ -43,8 +43,13 @@ services:
       - player_db
     links:
       - player_db
-    volumes:
-      - ./services/player/src:/app
+    develop:
+     watch:
+      - action: sync
+        path: ./services/player/src
+        target: /app
+      - action: rebuild
+        path: ./services/player/requirements.txt
 
   authentication_service:
     build: ./services/authentication
@@ -57,8 +62,13 @@ services:
       - authentication_db
     links:
       - authentication_db
-    volumes:
-      - ./services/authentication/src:/app
+    develop:
+     watch:
+      - action: sync
+        path: ./services/authentication/src
+        target: /app
+      - action: rebuild
+        path: ./services/authentication/requirements.txt
 
   gacha_service:
     build: ./services/gacha
@@ -71,8 +81,13 @@ services:
       - gacha_db
     links:
       - gacha_db
-    volumes:
-      - ./services/gacha/src:/app
+    develop:
+     watch:
+      - action: sync
+        path: ./services/gacha/src
+        target: /app
+      - action: rebuild
+        path: ./services/gacha/requirements.txt
 
   account_service:
     build: ./services/account
@@ -85,8 +100,13 @@ services:
       - account_db
     links:
       - account_db
-    volumes:
-      - ./services/account/src:/app
+    develop:
+     watch:
+      - action: sync
+        path: ./services/account/src
+        target: /app
+      - action: rebuild
+        path: ./services/account/requirements.txt
     
 
 
