@@ -23,6 +23,11 @@ def page_not_found(error):
 
 @app.route('/login', methods=['POST'])
 def login():
+    encoded_jwt = request.cookies.get('session')
+
+    if encoded_jwt:
+        return jsonify({'response': 'Already logged in'})
+
     if request.headers.get('Content-Type') != 'application/json':
         return jsonify({'response': 'Content-type not supported'}), 400
 
@@ -41,7 +46,7 @@ def login():
 
     player = response['response']
 
-    if not bcrypt.checkpw(password.encode(), player['password_hash'].encode()):
+    if player == {} or not bcrypt.checkpw(password.encode(), player['password_hash'].encode()):
         return jsonify({'response': 'Invalid credentials'}), 401
 
     expire = datetime.now(tz=timezone.utc) + timedelta(seconds=60)
