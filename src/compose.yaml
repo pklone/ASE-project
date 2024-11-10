@@ -1,5 +1,4 @@
 services:
-
   player_db:
     build: ./dbs/player
     container_name: player_db
@@ -16,6 +15,14 @@ services:
     env_file:
       - path: ./dbs/authentication/.env
 
+  gacha_db:
+    build: ./dbs/gacha/
+    container_name: gacha_db
+    ports:
+      - "127.0.0.1:5434:5432"
+    env_file:
+     - path: ./dbs/gacha/.env
+
  
   player_service:
     build: ./services/player
@@ -31,8 +38,6 @@ services:
     volumes:
       - ./services/player/src:/app
 
-
-
   authentication_service:
     build: ./services/authentication
     container_name: authentication_service
@@ -46,6 +51,20 @@ services:
       - authentication_db
     volumes:
       - ./services/authentication/src:/app
+
+  gacha_service:
+    build: ./services/gacha
+    container_name: gacha_service
+    env_file:
+      - path: ./services/gacha/.env
+    ports:
+      - "127.0.0.1:8082:5000"
+    depends_on:
+      - gacha_db
+    links:
+      - gacha_db
+    volumes:
+      - ./services/gacha/src:/app
     
 
 
