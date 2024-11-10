@@ -67,7 +67,7 @@ def show_by_uuid(player_uuid):
     return jsonify({'response': result})
 
 @app.route('/username/<string:player_username>', methods=['GET'])
-def show_by_username(username_uuid):
+def show_by_username(player_username):
     result = {}
 
     try:
