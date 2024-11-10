@@ -29,12 +29,12 @@ def show_all():
         )
 
         cursor = conn.cursor()
-        cursor.execute('SELECT id, uuid, username, wallet from player')
+        cursor.execute('SELECT id, uuid, username, password_hash, wallet from player')
         records = cursor.fetchall()
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return str(e)
+        return jsonify({'response': str(e)})
 
     return jsonify({'response': records})
 
@@ -62,12 +62,12 @@ def show_by_uuid(player_uuid):
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return str(e)
+        return jsonify({'response': str(e)})
 
     return jsonify({'response': result})
 
 @app.route('/username/<string:player_username>', methods=['GET'])
-def show_by_username(player_username):
+def show_by_username(username_uuid):
     result = {}
 
     try:
@@ -90,7 +90,7 @@ def show_by_username(player_username):
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return str(e)
+        return jsonify({'response': str(e)})
 
     return jsonify({'response': result})
 
@@ -127,7 +127,7 @@ def create():
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return str(e)
+        return jsonify({'response': str(e)})
 
     return jsonify({'response': record})
 
@@ -168,7 +168,7 @@ def update():
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return str(e)
+        return jsonify({'response': str(e)})
 
     return jsonify({'response': 'ok!'})
 
