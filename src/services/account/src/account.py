@@ -2,8 +2,11 @@ from flask import Flask, request, jsonify, abort
 import psycopg2
 import os
 import requests
+import jwt
 
 app = Flask(__name__)
+
+SECRET = 'secret' # change secret for deployment
 
 #set db connection
 DB_NAME = os.getenv("DB_NAME")
@@ -32,7 +35,31 @@ def create():
 
 @app.route('/user', methods=['DELETE'])
 def remove():
-    return jsonify({'response': 'ok!'})
+    encoded_jwt = request.cookies.get('session')
+
+    if not encoded_jwt:
+        return jsonify({'response': 'You\'re not logged'})
+
+    try:
+        options = {
+            'require': ['exp'], 
+            'verify_signature': True, 
+            'verify_exp': True
+        }
+
+        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
+    except jwt.ExpiredSignatureError:
+        return jsonify({'response': 'Expired token'})
+    except jwt.InvalidTokenError:
+        return jsonify({'response': 'Invalid token'})
+
+    if 'id' not in decoded_jwt:
+        return jsonify({'response': 'Try later'})
+
+    player_id = decoded_jwt['id']
+    r = requests.delete(f'http://player_service:5000/id/{player_id}')
+
+    return r.text
 
 @app.route('/user', methods=['PUT'])
 def update():
@@ -40,7 +67,31 @@ def update():
 
 @app.route('/user/collection', methods=['GET'])
 def collection():
-    return jsonify({'response': 'ok!'})
+    encoded_jwt = request.cookies.get('session')
+
+    if not encoded_jwt:
+        return jsonify({'response': 'You\'re not logged'})
+
+    try:
+        options = {
+            'require': ['exp'], 
+            'verify_signature': True, 
+            'verify_exp': True
+        }
+
+        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
+    except jwt.ExpiredSignatureError:
+        return jsonify({'response': 'Expired token'})
+    except jwt.InvalidTokenError:
+        return jsonify({'response': 'Invalid token'})
+
+    if 'id' not in decoded_jwt:
+        return jsonify({'response': 'Try later'})
+
+    player_id = decoded_jwt['id']
+    r = requests.get(f'http://gacha_service:5000/collection/user/{player_id}')
+
+    return r.text
 
 @app.route('/user/currency', methods=['GET'])
 def currency():
