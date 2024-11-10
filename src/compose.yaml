@@ -1,7 +1,7 @@
 services:
 
   player_db:
-    image: postgres:latest
+    build: ./dbs/player
     container_name: player_db
     ports:
       - "127.0.0.1:5432:5432"
