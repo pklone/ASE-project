@@ -1,55 +1,72 @@
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify, make_response, json
+from datetime import datetime, timezone, timedelta
 import psycopg2, os
 import jwt
+import bcrypt
+import requests
+import bcrypt
 
 app = Flask(__name__)
 
-USERNAME = 'admin' # change admin for deployment
-PASSWORD = 'admin' # change admin for deployment
 SECRET = 'secret' # change secret for deployment
 
 #set db connection
-
 DB_NAME = os.getenv("DB_NAME")
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 
-
-def database():
-    conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT
-        )
-    return conn.cursor()
+@app.errorhandler(404)
+def page_not_found(error):
+    return jsonify({'response': "page not found"}), 404
 
 @app.route('/login', methods=['POST'])
 def login():
+    if request.headers.get('Content-Type') != 'application/json':
+        return jsonify({'response': 'Content-type not supported'}), 400
+
+    username = request.json.get('username')
+    password = request.json.get('password')
+
+    if not username or not password:
+        return jsonify({'response': 'Missing credentials'}), 400
+
+    r = requests.get(f'http://player_service:5000/username/{username}')
     
-    auth = request.json
+    try:
+        response = json.loads(r.text)
+    except json.JSONDecodeError as e:
+        return jsonify({'response': 'Json error'}), 500
 
-    if not auth:
-        return jsonify({'message': 'Missing credentials'}), 400
+    player = response['response']
 
-    if auth['username'] != USERNAME or auth['password'] != PASSWORD:
-        return jsonify({'message': 'Invalid credentials'}), 401
-    
-    encoded_jwt = jwt.encode({"id": 1}, SECRET, algorithm="HS256")
+    if not bcrypt.checkpw(password.encode(), player['password_hash'].encode()):
+        return jsonify({'response': 'Invalid credentials'}), 401
 
-    response = make_response(jsonify({'message': 'Login successful'}))
+    expire = datetime.now(tz=timezone.utc) + timedelta(seconds=60)
+    payload = {
+        'id': player['id'], 
+        'exp': expire
+    }
 
-    response.set_cookie('session', encoded_jwt, httponly=True)
+    encoded_jwt = jwt.encode(payload, SECRET, algorithm='HS256')
+    response = make_response(jsonify({'response': 'Login successful'}))
+    response.set_cookie('session', encoded_jwt, httponly=True, expires=expire)
 
     return response
 
+@app.route('/logout', methods=['DELETE'])
+def logout():
+    encoded_jwt = request.cookies.get('session')
 
+    if not encoded_jwt:
+        return jsonify({'response': 'Already logged out'})
 
+    response = make_response(jsonify({'response': 'Logout successful'}))
+    response.set_cookie('session', '', httponly=True, expires=0)
 
+    return response
 
-    
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
