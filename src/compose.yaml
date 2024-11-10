@@ -6,6 +6,8 @@ services:
       - "127.0.0.1:5432:5432"
     env_file:
      - path: ./dbs/player/.env
+    volumes:
+     - player_db:/var/lib/postgresql/data
 
   authentication_db:
     build: ./dbs/authentication
@@ -14,6 +16,8 @@ services:
       - "127.0.0.1:5433:5432"
     env_file:
       - path: ./dbs/authentication/.env
+    volumes:
+     - authentication_db:/var/lib/postgresql/data
 
   gacha_db:
     build: ./dbs/gacha/
@@ -22,6 +26,8 @@ services:
       - "127.0.0.1:5434:5432"
     env_file:
      - path: ./dbs/gacha/.env
+    volumes:
+     - gacha_db:/var/lib/postgresql/data
 
   account_db:
     build: ./dbs/account/
@@ -30,6 +36,8 @@ services:
       - "127.0.0.1:5435:5432"
     env_file:
      - path: ./dbs/account/.env
+    volumes:
+     - account_db:/var/lib/postgresql/data
 
  
   player_service:
@@ -108,6 +116,11 @@ services:
       - action: rebuild
         path: ./services/account/requirements.txt
     
+volumes:
+ player_db:
+ authentication_db:
+ gacha_db:
+ account_db:
 
 
 
