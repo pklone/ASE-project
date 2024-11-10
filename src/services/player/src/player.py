@@ -39,6 +39,34 @@ def show_all():
 
     return jsonify({'response': records})
 
+@app.route('/id/<int:player_id>', methods=['GET'])
+def show_by_id(player_id):
+    result = {}
+
+    try:
+        conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT
+        )
+
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('SELECT id, uuid, username, wallet FROM player WHERE id = %s', 
+            [player_id])
+        record = cursor.fetchone()
+
+        if record:
+            result = record
+
+        cursor.close()
+        conn.close()
+    except psycopg2.Error as e:
+        return jsonify({'response': str(e)})
+
+    return jsonify({'response': result})
+
 @app.route('/uuid/<string:player_uuid>', methods=['GET'])
 def show_by_uuid(player_uuid):
     result = {}
@@ -138,8 +166,30 @@ def create():
 
     return jsonify({'response': record})
 
-@app.route('/<string:player_uuid>', methods=['DELETE'])
-def remove(player_uuid):
+@app.route('/id/<int:player_id>', methods=['DELETE'])
+def remove_by_id(player_id):
+    try:
+        conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT
+        )
+
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM player WHERE id = %s', 
+            [player_id])
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except psycopg2.Error as e:
+        return str(e)
+
+    return jsonify({'response': 'ok!'})
+
+@app.route('/uuid/<string:player_uuid>', methods=['DELETE'])
+def remove_by_uuid(player_uuid):
     try:
         conn = psycopg2.connect(
             dbname=DB_NAME,
