@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, abort
 import psycopg2
+import psycopg2.extras
 import os
 import uuid
 import bcrypt
@@ -79,7 +80,7 @@ def show_by_username(player_username):
             port=DB_PORT
         )
 
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute('SELECT * FROM player WHERE username = %s', 
             [player_username])
         record = cursor.fetchone()
