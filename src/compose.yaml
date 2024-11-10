@@ -6,7 +6,7 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     env_file:
-     - path: player/.db.env
+     - path: ./dbs/player/.env
 
   authentication_db:
     image: postgres:latest
@@ -14,14 +14,14 @@ services:
     ports:
       - "127.0.0.1:5433:5432"
     env_file:
-      - path: authentication/.db.env
+      - path: ./dbs/authentication/.env
 
  
   player_service:
-    build: ./player
+    build: ./services/player
     container_name: player_service
     env_file:
-      - path: player/.service.env
+      - path: ./services/player/.env
     ports:
       - "127.0.0.1:8080:5000"
     depends_on:
@@ -29,15 +29,15 @@ services:
     links:
       - player_db
     volumes:
-      - ./player/src:/app
+      - ./services/player/src:/app
 
 
 
   authentication_service:
-    build: ./authentication
+    build: ./services/authentication
     container_name: authentication_service
     env_file:
-      - path: authentication/.service.env
+      - path: ./services/authentication/.env
     ports:
       - "127.0.0.1:8081:5000"
     depends_on:
@@ -45,7 +45,7 @@ services:
     links:
       - authentication_db
     volumes:
-      - ./authentication/src:/app
+      - ./services/authentication/src:/app
     
 
 
