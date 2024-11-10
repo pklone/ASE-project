@@ -115,6 +115,19 @@ services:
         target: /app
       - action: rebuild
         path: ./services/account/requirements.txt
+
+  currency_service:
+    build: ./services/currency
+    container_name: currency_service
+    ports:
+      - "127.0.0.1:8084:5000"
+    develop:
+     watch:
+      - action: sync
+        path: ./services/currency/src
+        target: /app
+      - action: rebuild
+        path: ./services/currency/requirements.txt
     
 volumes:
  player_db:
