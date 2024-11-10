@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import psycopg2
+import psycopg2.extras
 import os
 
 app = Flask(__name__, static_url_path='/assets')
@@ -62,6 +63,33 @@ def show(gacha_uuid):
         return str(e)
 
     return jsonify(result)
+
+@app.route('/collection/user/<int:player_id>', methods=['GET'])
+def show_by_player(player_id):
+    try:
+        conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT
+        )
+
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("""
+            SELECT g.id, uuid, g.name, description, image_path, r.name as rarity 
+            FROM gacha g 
+                INNER JOIN rarity r on g.id_rarity = r.id 
+                INNER JOIN player_gacha pg on g.id = pg.id_gacha 
+            WHERE pg.id_player = %s""", 
+        [player_id])
+        records = cursor.fetchall()
+        cursor.close()
+        conn.close()
+    except psycopg2.Error as e:
+        return str(e)
+
+    return jsonify(records)
 
 @app.route('/roll', methods=['GET'])
 def roll():
