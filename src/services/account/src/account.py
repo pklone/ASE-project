@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, abort, json
+from flask import Flask, request, jsonify, abort, json, render_template
 import psycopg2
 import os
 import requests
@@ -19,6 +19,10 @@ DB_PORT = os.getenv("DB_PORT")
 def page_not_found(error):
     return jsonify({'response': "page not found"}), 404
 
+@app.route('/')
+def index():
+    return render_template('signup.html')
+
 @app.route('/user', methods=['POST'])
 def create():
     username = request.json['username']
@@ -31,7 +35,10 @@ def create():
 
     r = requests.post(url='http://player_service:5000', json=player)
     
-    return r.text
+    if "error" not in r.text:
+        return r.text
+    else:
+        return r.text
 
 @app.route('/user', methods=['DELETE'])
 def remove():
