@@ -28,7 +28,10 @@ def show_all():
         )
 
         cursor = conn.cursor()
-        cursor.execute("SELECT g.id, uuid, g.name, description, image_path, r.name as rarity FROM gacha g INNER JOIN rarity r on g.rarity_id = r.id")
+        cursor.execute("""
+            SELECT g.id, uuid, g.name, description, image_path, r.name as rarity 
+            FROM gacha g 
+                INNER JOIN rarity r on g.id_rarity = r.id""")
         records = cursor.fetchall()
         cursor.close()
         conn.close()
