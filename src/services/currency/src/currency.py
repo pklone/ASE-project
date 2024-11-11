@@ -1,7 +1,10 @@
 from flask import Flask, request, jsonify, abort
 import requests
+import jwt
 
 app = Flask(__name__)
+
+SECRET = 'secret' # change secret for deployment
 
 @app.errorhandler(404)
 def page_not_found(error):
@@ -9,11 +12,29 @@ def page_not_found(error):
 
 @app.route('/currency/buy', methods=['POST'])
 def buy():
-    cookie = request.json['cookie']
+    encoded_jwt = request.cookies.get('session')
 
-    # extract player uuid from cookie (to redefine)
-    player_uuid = cookie
-    purchase = request.json['purchase']
+    if not encoded_jwt:
+        return jsonify({'response': 'You\'re not logged'})
+
+    try:
+        options = {
+            'require': ['exp'], 
+            'verify_signature': True, 
+            'verify_exp': True
+        }
+
+        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
+    except jwt.ExpiredSignatureError:
+        return jsonify({'response': 'Expired token'})
+    except jwt.InvalidTokenError:
+        return jsonify({'response': 'Invalid token'})
+
+    if 'uuid' not in decoded_jwt:
+        return jsonify({'response': 'Try later'})
+
+    player_uuid = decoded_jwt['uuid']
+    purchase = request.json.get('purchase')
 
     player_purchasing = {
         'player_uuid' : player_uuid,
