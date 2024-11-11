@@ -80,7 +80,7 @@ def show_by_uuid(player_uuid):
             port=DB_PORT
         )
 
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute('SELECT id, uuid, username, wallet FROM player WHERE uuid = %s', 
             [player_uuid])
         record = cursor.fetchone()
