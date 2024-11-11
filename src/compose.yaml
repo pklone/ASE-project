@@ -39,6 +39,16 @@ services:
     volumes:
      - account_db:/var/lib/postgresql/data
 
+  market_db:
+    build: ./dbs/market/
+    container_name: market_db
+    ports:
+      - "127.0.0.1:5436:5432"
+    env_file:
+      - path: ./dbs/market/.env
+    volumes:
+      - market_db:/var/lib/postgresql/data
+
  
   player_service:
     build: ./services/player
@@ -128,12 +138,33 @@ services:
         target: /app
       - action: rebuild
         path: ./services/currency/requirements.txt
+
+  market_service:
+    build: ./services/market
+    container_name: market_service
+    env_file:
+      - path: ./services/market/.env
+    ports:
+      - "127.0.0.1:8086:5000"
+    depends_on:
+      - market_db
+    links:
+      - market_db
+    develop:
+      watch:
+        - action: sync
+          path: ./services/market/src
+          target: /app
+        - action: rebuild
+          path: ./services/market/requirements.txt
+    
     
 volumes:
  player_db:
  authentication_db:
  gacha_db:
  account_db:
+ market_db:
 
 
 
