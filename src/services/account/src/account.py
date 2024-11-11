@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, abort
+from flask import Flask, request, jsonify, abort, json
 import psycopg2
 import os
 import requests
@@ -53,11 +53,11 @@ def remove():
     except jwt.InvalidTokenError:
         return jsonify({'response': 'Invalid token'})
 
-    if 'id' not in decoded_jwt:
+    if 'uuid' not in decoded_jwt:
         return jsonify({'response': 'Try later'})
 
-    player_id = decoded_jwt['id']
-    r = requests.delete(f'http://player_service:5000/id/{player_id}')
+    player_uuid = decoded_jwt['uuid']
+    r = requests.delete(f'http://player_service:5000/uuid/{player_uuid}')
 
     return r.text
 
@@ -85,11 +85,14 @@ def collection():
     except jwt.InvalidTokenError:
         return jsonify({'response': 'Invalid token'})
 
-    if 'id' not in decoded_jwt:
+    if 'uuid' not in decoded_jwt:
         return jsonify({'response': 'Try later'})
 
-    player_id = decoded_jwt['id']
-    r = requests.get(f'http://gacha_service:5000/collection/user/{player_id}')
+    player_uuid = decoded_jwt['uuid']
+    r = requests.get(f'http://player_service:5000/uuid/{player_uuid}')
+    player = json.loads(r.text)['response']
+
+    r = requests.get(f'http://gacha_service:5000/collection/user/{player['id']}')
 
     return r.text
 

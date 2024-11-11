@@ -49,9 +49,9 @@ def login():
     if player == {} or not bcrypt.checkpw(password.encode(), player['password_hash'].encode()):
         return jsonify({'response': 'Invalid credentials'}), 401
 
-    expire = datetime.now(tz=timezone.utc) + timedelta(seconds=60)
+    expire = datetime.now(tz=timezone.utc) + timedelta(seconds=3600)
     payload = {
-        'id': player['id'], 
+        'uuid': player['uuid'], 
         'exp': expire
     }
 
