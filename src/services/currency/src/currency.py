@@ -41,7 +41,7 @@ def buy():
         'purchase' : purchase
     }
 
-    r = requests.post(url='http://player_service:5000/currency', json=player_purchasing)
+    r = requests.post(url='http://player_service:5000/currency/buy', json=player_purchasing)
 
     return r.text
 

@@ -162,7 +162,7 @@ def create():
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'error': str(e)})
 
     return jsonify({'response': record})
 
@@ -229,7 +229,7 @@ def update():
 
     return jsonify({'response': 'ok!'})
 
-@app.route('/currency', methods=['POST'])
+@app.route('/currency/buy', methods=['POST'])
 def currency():
     player_uuid = request.json['player_uuid']
     purchase = request.json['purchase']
