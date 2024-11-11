@@ -9,6 +9,21 @@ CREATE TABLE player (
     UNIQUE(username)
 );
 
+CREATE FUNCTION check_negative_wallet() RETURNS TRIGGER AS $$
+    BEGIN
+        IF NEW.wallet < 0 THEN
+            RAISE EXCEPTION 'Error: negative wallet';
+        END IF;
+
+        RETURN NEW;
+    END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER negative_wallet 
+    BEFORE UPDATE ON player
+    FOR EACH ROW
+    EXECUTE FUNCTION check_negative_wallet();
+
 INSERT INTO player (id, uuid, username, password_hash, wallet) VALUES 
     (1, '71520f05-80c5-4cb1-b05a-a9642f9ae44d', 'test', '$2b$12$Z93LSBi0EVtyqVWnZB7tPu8ksgXbrFPd8YjI1haMzGl7KBLrbaR6G', 100); -- psw: test
 
