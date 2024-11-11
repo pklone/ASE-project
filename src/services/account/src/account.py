@@ -98,7 +98,32 @@ def collection():
 
 @app.route('/user/currency', methods=['GET'])
 def currency():
-    return jsonify({'response': 'ok!'})
+    encoded_jwt = request.cookies.get('session')
+
+    if not encoded_jwt:
+        return jsonify({'response': 'You\'re not logged'})
+
+    try:
+        options = {
+            'require': ['exp'], 
+            'verify_signature': True, 
+            'verify_exp': True
+        }
+
+        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
+    except jwt.ExpiredSignatureError:
+        return jsonify({'response': 'Expired token'})
+    except jwt.InvalidTokenError:
+        return jsonify({'response': 'Invalid token'})
+
+    if 'uuid' not in decoded_jwt:
+        return jsonify({'response': 'Try later'})
+
+    player_uuid = decoded_jwt['uuid']
+    r = requests.get(f'http://player_service:5000/uuid/{player_uuid}')
+    wallet = json.loads(r.text)['response']['wallet']
+
+    return jsonify({"response": wallet})
 
 @app.route('/user/transactions', methods=['GET'])
 def transactions_all():
