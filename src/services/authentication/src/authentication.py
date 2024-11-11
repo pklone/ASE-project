@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, make_response, json
+from flask import Flask, request, jsonify, make_response, json, render_template
 from datetime import datetime, timezone, timedelta
 import psycopg2, os
 import jwt
@@ -20,6 +20,10 @@ DB_PORT = os.getenv("DB_PORT")
 @app.errorhandler(404)
 def page_not_found(error):
     return jsonify({'response': "page not found"}), 404
+
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 @app.route('/login', methods=['POST'])
 def login():
