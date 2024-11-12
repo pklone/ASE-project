@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buy Currency</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar is-light" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="/">
+                <strong>MyApp</strong>
+            </a>
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMenu">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+        </div>
+
+        <div id="navbarMenu" class="navbar-menu">
+            <div class="navbar-start">
+                <div class="navbar-item">
+                    <a href="http://localhost:8081" class="button is-info">Login</a>
+                </div>
+                <div class="navbar-item">
+                    <a href="http://localhost:8083/currency" class="button is-warning">Currency</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Buy Currency Section -->
+    <section class="section">
+        <div class="container">
+            <h1 class="title">Buy Currency</h1>
+            <form id="buyCurrencyForm">
+                <div class="field">
+                    <label class="label">Amount to Purchase</label>
+                    <div class="control">
+                        <input class="input" type="number" id="purchaseAmount" placeholder="Enter amount" required min="1">
+                    </div>
+                </div>
+
+                <div class="control">
+                    <button class="button is-primary" type="submit">Buy</button>
+                </div>
+            </form>
+            <div id="responseMessage" class="notification is-hidden"></div>
+        </div>
+    </section>
+
+    <script>
+        // Handle the form submission for buying currency
+        document.getElementById('buyCurrencyForm').onsubmit = async function (e) {
+            e.preventDefault();
+            const purchaseAmount = document.getElementById('purchaseAmount').value;
+
+            try {
+                const response = await fetch('/currency/buy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',  // Sends cookies with request
+                    body: JSON.stringify({ purchase: purchaseAmount })
+                });
+
+                const result = await response.json();
+                const responseMessage = document.getElementById('responseMessage');
+
+                if (response.ok) {
+                    responseMessage.textContent = `${result.response}`;
+                    responseMessage.className = 'notification is-success';
+                } else {
+                    responseMessage.textContent = result.response || 'Purchase failed';
+                    responseMessage.className = 'notification is-danger';
+                }
+                responseMessage.classList.remove('is-hidden');
+            } catch (error) {
+                console.error('Error processing purchase:', error);
+                document.getElementById('responseMessage').textContent = 'An error occurred while processing the purchase.';
+                document.getElementById('responseMessage').className = 'notification is-danger';
+                document.getElementById('responseMessage').classList.remove('is-hidden');
+            }
+        };
+    </script>
+</body>
+</html>

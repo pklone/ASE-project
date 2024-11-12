@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, abort
+from flask import Flask, request, jsonify, abort, render_template
 import requests
 import jwt
 
@@ -9,6 +9,10 @@ SECRET = 'secret' # change secret for deployment
 @app.errorhandler(404)
 def page_not_found(error):
     return jsonify({'response': "page not found"}), 404
+
+@app.route('/')
+def index():
+    return render_template('buy.html')
 
 @app.route('/currency/buy', methods=['POST'])
 def buy():
