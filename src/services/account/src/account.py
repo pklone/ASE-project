@@ -19,11 +19,11 @@ DB_PORT = os.getenv("DB_PORT")
 def page_not_found(error):
     return jsonify({'response': "page not found"}), 404
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 def curencyhtml():
     return render_template('signup.html')
 
-@app.route('/currency')
+@app.route('/currency', methods=['GET'])
 def index():
     return render_template('currency.html')
 

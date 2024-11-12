@@ -10,7 +10,7 @@ SECRET = 'secret' # change secret for deployment
 def page_not_found(error):
     return jsonify({'response': "page not found"}), 404
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 def index():
     return render_template('buy.html')
 
