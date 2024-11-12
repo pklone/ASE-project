@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallet Balance</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar is-light" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="/">
+                <strong>MyApp</strong>
+            </a>
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMenu">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+        </div>
+
+        <div id="navbarMenu" class="navbar-menu">
+            <div class="navbar-end">
+                <div class="navbar-item">
+                    <a href="http://localhost:8081" class="button is-info">Login</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Currency Display Section -->
+    <section class="section">
+        <div class="container">
+            <h1 class="title">Wallet Balance</h1>
+            <div id="currencyDisplay" class="notification is-info">
+                Loading balance...
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Fetch and display wallet balance
+        async function fetchCurrency() {
+            try {
+                const response = await fetch('/user/currency', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin' // Ensure cookies are sent
+                });
+
+                const result = await response.json();
+                const currencyDisplay = document.getElementById('currencyDisplay');
+
+                if (response.ok && "response" in result) {
+                    currencyDisplay.textContent = `${result.response}`;
+                    currencyDisplay.className = 'notification is-success';
+                } else {
+                    currencyDisplay.textContent = result.response || 'Could not load balance';
+                    currencyDisplay.className = 'notification is-danger';
+                }
+            } catch (error) {
+                console.error('Error fetching balance:', error);
+                document.getElementById('currencyDisplay').textContent = 'An error occurred while loading the balance.';
+                document.getElementById('currencyDisplay').className = 'notification is-danger';
+            }
+        }
+
+        // Initialize fetch on page load
+        document.addEventListener('DOMContentLoaded', fetchCurrency);
+    </script>
+</body>
+</html>

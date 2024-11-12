@@ -20,8 +20,12 @@ def page_not_found(error):
     return jsonify({'response': "page not found"}), 404
 
 @app.route('/')
-def index():
+def curencyhtml():
     return render_template('signup.html')
+
+@app.route('/currency')
+def index():
+    return render_template('currency.html')
 
 @app.route('/user', methods=['POST'])
 def create():
@@ -130,7 +134,7 @@ def currency():
     r = requests.get(f'http://player_service:5000/uuid/{player_uuid}')
     wallet = json.loads(r.text)['response']['wallet']
 
-    return jsonify({"response": wallet})
+    return jsonify({"response": wallet}), 200
 
 @app.route('/user/transactions', methods=['GET'])
 def transactions_all():
