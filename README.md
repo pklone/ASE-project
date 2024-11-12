@@ -41,7 +41,7 @@ docker compose up --build --watch
 ```
 
 ## TODO
-- update `justfile` with `docker compose watch` and `docker compose down -v`
+- ~~update `justfile` with `docker compose watch` and `docker compose down -v`~~
 - use `<uuid:entity_uuid>` instead of `<string:entity_uuid>`
 - use `with` statement to create db cursor instead of `try-catch`
 - use single quotes instead of double quotes whenever is possible

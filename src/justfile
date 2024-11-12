@@ -5,6 +5,7 @@ command_app := command_std
 command_db  := 'psql -U postgres'
 
 alias rs := restart
+alias w  := watch
 
 _default:
 	@just --list --unsorted
@@ -61,6 +62,9 @@ restart volumes='':
 		|| just down -v
 	
 	just up
+
+@watch:
+	docker compose watch --no-up
 
 # start containers (if they're stopped)
 start: on
