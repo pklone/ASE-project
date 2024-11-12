@@ -1,5 +1,11 @@
+set dotenv-load
+
 _default:
 	@just --list --unsorted
+
+[private]
+run:
+	@just --choose --unsorted
 
 # start docker daemon
 on:
