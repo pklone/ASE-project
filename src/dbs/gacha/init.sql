@@ -52,9 +52,9 @@ INSERT INTO gacha (id, uuid, name, description, image_path, id_rarity) VALUES
     (14, '3b8009f2-31c8-484b-aa74-32defbb02985', 'Kraken',        'placeholder', '/assets/images/gachas/Kraken (legendary).jpg',   5),
     (15, '23255124-b509-41fd-b607-5f5da9f60447', 'Griffin',       'placeholder', '/assets/images/gachas/Griffin (legendary).jpg',  5);
 
-INSERT INTO player_gacha (id_player, id_gacha) VALUES 
-    (1, 2),
-    (1, 15);
+INSERT INTO player_gacha (id_player, id_gacha, quantity) VALUES 
+    (1, 2, 2),
+    (1, 15, 1);
 
 SELECT setval('rarity_id_seq', (SELECT max(id) FROM rarity));
 SELECT setval('gacha_id_seq', (SELECT max(id) FROM gacha));
