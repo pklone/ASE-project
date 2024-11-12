@@ -47,6 +47,7 @@ just         # show recipes as a list
 just up      # docker compose up --build -d
 just rs      # docker compose down && docker compose up --build -d
 just rs v    # docker compose down -v && docker compose up --build -d
+just w       # docker compose watch --no-up
 just ps      # docker compose ps -a
 just ps a    # docker ps -a
 just run     # choose a just recipe to run
