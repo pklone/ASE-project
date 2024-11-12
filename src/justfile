@@ -26,21 +26,23 @@ off: down
 	fi
 
 # run containers
-up: on
+[positional-arguments]
+up *args='--build -d': on
 	#!/bin/bash
 	if [ $(docker compose ps -q | wc -l) -eq 0 ]; then
 		echo "Starting containers..."
-		docker compose up -d
+		docker compose up $@
 	else
 		echo "Containers are already running..."
 	fi
 
 # kill containers
-down:
+[positional-arguments]
+down *args='':
 	#!/bin/bash
 	if [ $(docker compose ps -aq | wc -l) -ne 0 ]; then
 		echo "Removing containers..."
-		docker compose down
+		docker compose down $@
 	else
 		echo "There are no containers..."
 	fi
@@ -66,10 +68,12 @@ stop:
 	fi
 
 # show running/stopped containers info
-ps:
+ps all='':
 	#!/bin/bash
 	if $(systemctl --quiet is-active docker); then
-		docker compose ps -a
+		[ -z "{{ all }}" ] \
+			&& docker compose ps -a \
+			|| docker ps -a
 	else
 		echo "Docker deamon is stopped."
 	fi
