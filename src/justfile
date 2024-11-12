@@ -1,5 +1,7 @@
 set dotenv-load
 
+alias rs := restart
+
 _default:
 	@just --list --unsorted
 
@@ -46,6 +48,11 @@ down *args='':
 	else
 		echo "There are no containers..."
 	fi
+
+# kill, re-build and run containers removing volumes
+restart volumes='':
+	#!/bin/bash
+	just down {{ volumes }} && just up
 
 # start containers (if they're stopped)
 start: on
