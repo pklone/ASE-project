@@ -56,7 +56,11 @@ down *args='':
 # kill, re-build and run containers removing volumes
 restart volumes='':
 	#!/bin/bash
-	just down {{ volumes }} && just up
+	[ -z "{{ volumes }}" ] \
+		&& just down \
+		|| just down -v
+	
+	just up
 
 # start containers (if they're stopped)
 start: on
