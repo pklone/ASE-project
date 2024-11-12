@@ -1,4 +1,5 @@
-_default: up
+_default:
+	@just --list --unsorted
 
 # start docker daemon
 on:
