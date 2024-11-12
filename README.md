@@ -90,3 +90,5 @@ will run a shell no matter the container you choose
 - ~~add `quantity` attribute in `player_gacha` table~~
 - docker secrets 
 - use foreign keys in `gacha_player` table
+- fix `expired_at` in `market_db` 
+- add decription in `gacha_db`
