@@ -220,5 +220,89 @@ def create_auction():
     return jsonify({'response': record})
 
 
+@app.route('/market/<string:auction_uuid>/bid', methods=['POST'])
+def make_bid(auction_uuid):
+    endoded_jwt = request.cookies.get('session')
+
+    if not endoded_jwt:
+        return jsonify({'response': 'You\'re not logged'})
+    
+    try:
+        options = {
+            'require': ['exp'],
+            'verify_signature': True,
+            'verify_exp': True
+        }
+
+        decoded_jwt = jwt.decode(endoded_jwt, SECRET, algorithms=['HS256'], options=options)
+    except jwt.ExpiredSignatureError:
+        return jsonify({'response': 'Expired token'})
+    except jwt.InvalidTokenError:
+        return jsonify({'response': 'Invalid token'})
+    
+    if 'uuid' not in decoded_jwt:
+        return jsonify({'response': 'Try later'})
+    
+    player_uuid = decoded_jwt['uuid']
+    offer = request.json.get('offer')
+
+    try: 
+        conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT
+        )
+    except psycopg2.Error as e:
+        return jsonify({'response': str(e)})
+    
+    try: 
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('''
+            SELECT a.base_price, a.expired_at, COALESCE(b.offer, 0) AS offer
+                FROM auction a 
+                LEFT JOIN bid b ON a.uuid = b.auction_uuid 
+                WHERE a.uuid = %s 
+                ORDER BY b.offer desc limit 1''',
+        [auction_uuid])
+        record = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+    except psycopg2.Error as e:
+        return jsonify({'response': str(e)})
+    
+    current_time = int(datetime.now(tz=timezone.utc).timestamp())
+
+    final_time = record['expired_at']
+    base_price = record['base_price']
+    current_price = record['offer']
+
+    if final_time <= current_time:
+        return jsonify({'response': 'Auction is closed'})
+    
+    if offer <= base_price:
+        return jsonify({'response': 'Offer must be higher than base price'})
+    
+    if offer <= current_price:
+        return jsonify({'response': 'Offer must be higher than current price'})
+    
+    try:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('SELECT uuid FROM auction WHERE uuid = %s',
+            [auction_uuid])
+        if cursor.rowcount == 0:
+            return jsonify({'response': 'Auction not found'})
+        cursor.execute('INSERT INTO bid (id, auction_uuid, user_uuid, offer) VALUES (DEFAULT, %s, %s, %s)', 
+            [auction_uuid, player_uuid, offer])
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except psycopg2.Error as e:
+        return jsonify({'response': str(e)})
+    
+    return jsonify({'response': {'auction_uuid': auction_uuid, 'player_uuid': player_uuid, 'offer': offer}})
+
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
