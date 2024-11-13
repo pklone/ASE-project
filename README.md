@@ -80,7 +80,8 @@ will run a shell no matter the container you choose
 - ~~set gacha rarities percentages~~
 - use external volumes for db otherwise if db container crashes, we need to re-init it and we can lose data
 - GUI
-- market service
+- close auction in `market`
+- fix `show_one` and `show_all` functions in `market` (set gacha as dict instead of list)
 - transaction service
 - payment service
 - end-point gateway
@@ -90,5 +91,5 @@ will run a shell no matter the container you choose
 - ~~add `quantity` attribute in `player_gacha` table~~
 - docker secrets 
 - use foreign keys in `gacha_player` table
-- fix `expired_at` in `market_db` 
+- ~~fix `expired_at` in `market_db`~~
 - add decription in `gacha_db`
