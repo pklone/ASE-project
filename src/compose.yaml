@@ -49,6 +49,16 @@ services:
     volumes:
       - market_db:/var/lib/postgresql/data
 
+  transaction_db:
+    build: ./dbs/transaction
+    container_name: transaction_db
+    ports:
+      - "127.0.0.1:5437:5432"
+    env_file:
+     - path: ./dbs/transaction/.env
+    volumes:
+     - transaction_db:/var/lib/postgresql/data
+
  
   player_service:
     build: ./services/player
@@ -157,6 +167,25 @@ services:
           target: /app
         - action: rebuild
           path: ./services/market/requirements.txt
+
+  transaction_service:
+    build: ./services/transaction
+    container_name: transaction_service
+    env_file:
+      - path: ./services/transaction/.env
+    ports:
+      - "127.0.0.1:8087:5000"
+    depends_on:
+      - transaction_db
+    links:
+      - transaction_db
+    develop:
+     watch:
+      - action: sync
+        path: ./services/transaction/src
+        target: /app
+      - action: rebuild
+        path: ./services/transaction/requirements.txt
     
     
 volumes:
@@ -165,6 +194,7 @@ volumes:
  gacha_db:
  account_db:
  market_db:
+ transaction_db:
 
 
 
