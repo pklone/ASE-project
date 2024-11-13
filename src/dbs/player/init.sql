@@ -20,7 +20,7 @@ CREATE FUNCTION check_negative_wallet() RETURNS TRIGGER AS $$
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER negative_wallet 
-    BEFORE UPDATE ON player
+    BEFORE INSERT OR UPDATE OF wallet ON player
     FOR EACH ROW
     EXECUTE FUNCTION check_negative_wallet();
 
