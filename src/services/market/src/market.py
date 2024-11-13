@@ -1,4 +1,5 @@
-from flask import Flask, request, jsonify, abort, json
+from flask import Flask, request, jsonify, json
+from datetime import datetime, timezone
 import psycopg2
 import psycopg2.extras
 import os
@@ -162,7 +163,7 @@ def create_auction():
     auction_uuid = str(uuid.uuid4())
     gacha_uuid = request.json.get('gacha_uuid')
     starting_price = request.json.get('starting_price')
-    expired_at = 1111111
+    expired_at = int(datetime.now(tz=timezone.utc).timestamp + 3600*24)
 
     try: 
         conn = psycopg2.connect(
