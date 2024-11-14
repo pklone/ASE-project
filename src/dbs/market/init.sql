@@ -4,7 +4,8 @@ CREATE TABLE auction (
     base_price       INTEGER NOT NULL,
     gacha_uuid       VARCHAR NOT NULL,
     user_uuid        VARCHAR NOT NULL,
-    expired_at       BIGINT NOT NULL,
+    expired_at       TIMESTAMP NOT NULL,
+    closed           BOOLEAN DEFAULT FALSE,
 
     UNIQUE(uuid)
 );
@@ -17,8 +18,8 @@ CREATE TABLE bid (
 );
  
 INSERT INTO auction (id, uuid, base_price, gacha_uuid, user_uuid, expired_at) VALUES 
-    (1, '71520f05-80c5-4cb1-b05a-a9642f9aaaaa', 200, '09907f76-9b0f-4270-84a3-e9780b164ac4', '71520f05-80c5-4cb1-b05a-a9642f9ae44d', 1731594663),
-    (2, '71520f05-80c5-4cb1-b05a-a9642f9bbbbb', 250, 'c6cc4f1f-f5f8-4e76-a446-b01b48b10575', '71520f05-80c5-4cb1-b05a-a9642f9ae44d', 1731594736);
+    (1, '71520f05-80c5-4cb1-b05a-a9642f9aaaaa', 200, '09907f76-9b0f-4270-84a3-e9780b164ac4', '71520f05-80c5-4cb1-b05a-a9642f9ae44d', CURRENT_TIMESTAMP + INTERVAL '1 day'),
+    (2, '71520f05-80c5-4cb1-b05a-a9642f9bbbbb', 250, 'c6cc4f1f-f5f8-4e76-a446-b01b48b10575', '71520f05-80c5-4cb1-b05a-a9642f9ae44d', CURRENT_TIMESTAMP + INTERVAL '1 day');
 
 INSERT INTO bid (id, auction_uuid, user_uuid, offer) VALUES
     (1, '71520f05-80c5-4cb1-b05a-a9642f9aaaaa', '71520f05-80c5-4cb1-b05a-a9642f9ae44d', 300),

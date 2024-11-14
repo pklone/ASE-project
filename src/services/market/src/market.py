@@ -37,7 +37,7 @@ def show_all():
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute('SELECT id, uuid, base_price, gacha_uuid, user_uuid, expired_at from auction')
+        cursor.execute('SELECT id, uuid, base_price, gacha_uuid, user_uuid, expired_at, closed from auction')
         result = cursor.fetchall()
         if result:
             records = result
@@ -49,15 +49,7 @@ def show_all():
     r = requests.get(url="http://gacha_service:5000/collection")
     gacha_data = json.loads(r.text)
 
-    gachas = {
-    gacha[1]: { 
-        "gacha_uuid": gacha[1],
-        "name": gacha[2],
-        "rarity": gacha[5],
-        "image": gacha[4]
-    }
-    for gacha in gacha_data
-    }
+    gachas = {x['uuid']: x for x in gacha_data}
     
     for record in records:
         r = requests.get(url=f"http://player_service:5000/uuid/{record['user_uuid']}")
@@ -72,7 +64,8 @@ def show_all():
                 'base_price': record['base_price'],
                 'Gacha': gacha_info, 
                 'player_username': player_username,
-                'expired_at': record['expired_at']
+                'expired_at': record['expired_at'],
+                'closed': record['closed']
             }
 
             auctions.append(auction)
@@ -95,7 +88,7 @@ def show_one(auction_uuid):
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute('SELECT id, uuid, base_price, gacha_uuid, user_uuid, expired_at from auction where uuid = %s',
+        cursor.execute('SELECT id, uuid, base_price, gacha_uuid, user_uuid, expired_at, closed from auction where uuid = %s',
                         [auction_uuid])
         result = cursor.fetchone()
         if result:
@@ -108,16 +101,8 @@ def show_one(auction_uuid):
     r = requests.get(url="http://gacha_service:5000/collection")
     gacha_data = json.loads(r.text)
 
-    gachas = {
-    gacha[1]: { 
-        "gacha_uuid": gacha[1],
-        "name": gacha[2],
-        "rarity": gacha[5],
-        "image": gacha[4]
-    }
-    for gacha in gacha_data
-    }
-    
+    gachas = {x['uuid']: x for x in gacha_data}
+
     r = requests.get(url=f"http://player_service:5000/uuid/{record['user_uuid']}")
     player_username = json.loads(r.text)['response']['username']
 
@@ -130,7 +115,8 @@ def show_one(auction_uuid):
             'base_price': record['base_price'],
             'Gacha': gacha_info, 
             'player_username': player_username,
-            'expired_at': record['expired_at']
+            'expired_at': record['expired_at'],
+            'closed': record['closed']
         }
             
     return jsonify({'response': auction})
@@ -163,7 +149,7 @@ def create_auction():
     auction_uuid = str(uuid.uuid4())
     gacha_uuid = request.json.get('gacha_uuid')
     starting_price = request.json.get('starting_price')
-    expired_at = int(datetime.now(tz=timezone.utc).timestamp + 3600*24)
+    expired_at = int(datetime.now(tz=timezone.utc).timestamp() + 3600*24)
 
     try: 
         conn = psycopg2.connect(
@@ -261,7 +247,7 @@ def make_bid(auction_uuid):
     try: 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute('''
-            SELECT a.base_price, a.expired_at, COALESCE(b.offer, 0) AS offer
+            SELECT a.base_price, a.expired_at, a.closed, COALESCE(b.offer, 0) AS offer
                 FROM auction a 
                 LEFT JOIN bid b ON a.uuid = b.auction_uuid 
                 WHERE a.uuid = %s 
@@ -275,7 +261,7 @@ def make_bid(auction_uuid):
     
     current_time = int(datetime.now(tz=timezone.utc).timestamp())
 
-    final_time = record['expired_at']
+    final_time = int(record['expired_at'].timestamp())
     base_price = record['base_price']
     current_price = record['offer']
 
@@ -302,7 +288,96 @@ def make_bid(auction_uuid):
     except psycopg2.Error as e:
         return jsonify({'response': str(e)})
     
-    return jsonify({'response': {'auction_uuid': auction_uuid, 'player_uuid': player_uuid, 'offer': offer}})
+    return jsonify({'response': {'auction_uuid': auction_uuid, 'player_uuid': player_uuid, 'offer': offer, 'closed': record['closed']}})
+
+@app.route('/market/<string:auction_uuid>/close', methods=['POST'])
+def close_auction(auction_uuid):
+    endoded_jwt = request.cookies.get('session')
+
+    if not endoded_jwt:
+        return jsonify({'response': 'You\'re not logged'})
+    
+    try:
+        options = {
+            'require': ['exp'],
+            'verify_signature': True,
+            'verify_exp': True
+        }
+
+        decoded_jwt = jwt.decode(endoded_jwt, SECRET, algorithms=['HS256'], options=options)
+    except jwt.ExpiredSignatureError:
+        return jsonify({'response': 'Expired token'})
+    except jwt.InvalidTokenError:
+        return jsonify({'response': 'Invalid token'})
+    
+    if 'uuid' not in decoded_jwt:
+        return jsonify({'response': 'Try later'})
+    
+    player_uuid = decoded_jwt['uuid'] 
+
+    try:
+        conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT
+        )
+    except psycopg2.Error as e:
+        return jsonify({'response': str(e)})
+    
+    try: 
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('''
+            SELECT a.base_price, a.user_uuid, a.expired_at, a.closed, COALESCE(b.offer, 0) AS offer
+                FROM auction a 
+                LEFT JOIN bid b ON a.uuid = b.auction_uuid 
+                WHERE a.uuid = %s 
+                ORDER BY b.offer desc limit 1''',
+        [auction_uuid])
+        record = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+    except psycopg2.Error as e:
+        return jsonify({'response': str(e)})
+    
+    if record['user_uuid'] != player_uuid:
+        return jsonify({'response': 'You\'re not the owner of this auction'})
+     
+    if record['closed'] == True:
+        return jsonify({'response': 'Auction is already closed'})
+    
+    if record['offer'] == 0:
+        return jsonify({'response': 'There are no bids for this auction'})
+    
+    try: 
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('DELETE FROM bid WHERE auction_uuid = %s',
+            [auction_uuid])
+    except psycopg2.Error as e:
+        return jsonify({'response': str(e)})
+
+    try: 
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('UPDATE auction SET closed = TRUE WHERE uuid = %s',
+            [auction_uuid])
+    except psycopg2.Error as e:
+        return jsonify({'response': str(e)})
+    
+    data = {
+        'price': record['offer'],
+        'uuid_player': player_uuid
+    }
+    
+    r = requests.post(url='http://transaction_service:5000/', json=data)
+    if r.status_code != 200:
+        return jsonify({'response': 'Try later'})
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({'response': 'Auction closed'})
 
 
 if __name__ == '__main__':

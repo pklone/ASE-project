@@ -32,7 +32,7 @@ def show_all():
             port=DB_PORT
         )
 
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute("""
             SELECT g.id, uuid, g.name, description, image_path, r.name as rarity 
             FROM gacha g 
