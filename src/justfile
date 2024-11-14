@@ -55,13 +55,38 @@ down *args='':
 	fi
 
 # kill, re-build and run containers removing volumes
-restart volumes='':
+[positional-arguments]
+restart *args='':
 	#!/bin/bash
-	[ -z "{{ volumes }}" ] \
+	debug=False
+	volumes=False
+
+	while [ -n "$1" ]; do
+		case "$1" in 
+			d)
+				debug=True
+				;;
+
+			v)
+				volumes=True
+				;;
+
+			*)
+				echo "Error: unknown arg $1"
+				exit 1
+				;;
+
+		esac
+		shift
+	done
+
+	[ $volumes == False ] \
 		&& just down \
 		|| just down -v
-	
-	just up
+
+	[ $debug == False ] \
+		&& just up \
+		|| just up --build
 
 @watch:
 	docker compose watch --no-up
