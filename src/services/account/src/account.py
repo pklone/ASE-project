@@ -19,13 +19,9 @@ DB_PORT = os.getenv("DB_PORT")
 def page_not_found(error):
     return jsonify({'response': "page not found"}), 404
 
-@app.route('/', methods=['GET'])
-def curencyhtml():
+@app.route('/user', methods=['GET'])
+def signup():
     return render_template('signup.html')
-
-@app.route('/currency', methods=['GET'])
-def index():
-    return render_template('currency.html')
 
 @app.route('/user', methods=['POST'])
 def create():
@@ -134,7 +130,12 @@ def currency():
     r = requests.get(f'http://player_service:5000/uuid/{player_uuid}')
     wallet = json.loads(r.text)['response']['wallet']
 
-    return jsonify({"response": wallet}), 200
+    if 'application/json' in request.headers.get('Accept'):
+        return jsonify({'response': wallet}), 200
+    elif 'text/html' in request.headers.get('Accept'):
+        return render_template("currency.html", wallet=wallet), 200
+    else:
+        return jsonify({'response': 'Not supported'}), 400
 
 @app.route('/user/transactions', methods=['GET'])
 def transactions_all():
