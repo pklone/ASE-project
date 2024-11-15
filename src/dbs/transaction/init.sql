@@ -4,8 +4,10 @@ CREATE TABLE transaction (
     price            INTEGER NOT NULL,
     created_at       BIGINT NOT NULL,
     uuid_player      VARCHAR NOT NULL,
+    uuid_auction     VARCHAR NOT NULL,
 
-    UNIQUE(uuid)
+    UNIQUE(uuid),
+    UNIQUE(uuid_player, uuid_auction)
 );
 
 CREATE FUNCTION check_negative_price() RETURNS TRIGGER AS $$

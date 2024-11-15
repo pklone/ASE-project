@@ -311,7 +311,7 @@ def close_auction(auction_uuid):
         return jsonify({'response': 'Invalid token'})
     
     if 'uuid' not in decoded_jwt:
-        return jsonify({'response': 'Try later'})
+        return jsonify({'response': 'Try later - jwt error'})
     
     player_uuid = decoded_jwt['uuid'] 
 
@@ -366,12 +366,13 @@ def close_auction(auction_uuid):
     
     data = {
         'price': record['offer'],
-        'uuid_player': player_uuid
+        'uuid_player': player_uuid,
+        'uuid_auction': auction_uuid
     }
     
     r = requests.post(url='http://transaction_service:5000/', json=data)
     if r.status_code != 200:
-        return jsonify({'response': 'Try later'})
+        return jsonify({'response': 'Try later - transaction error'})
 
     conn.commit()
     cursor.close()

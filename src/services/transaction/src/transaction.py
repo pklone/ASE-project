@@ -55,12 +55,13 @@ def create():
 
     try:
         uuid_player = request.json['uuid_player']
+        uuid_auction = request.json['uuid_auction']
         price = request.json['price']
     except KeyError:
         return jsonify({'message': 'Missing data'}), 400
 
-    if not check_uuid(uuid_player):
-        return jsonify({'message': 'Invalid player uuid'}), 400
+    if not check_uuid(uuid_player) or not check_uuid(uuid_auction):
+        return jsonify({'message': 'Invalid uuids'}), 400
 
     created_at = int(datetime.now(tz=timezone.utc).timestamp())
     uuid_transaction = str(uuid.uuid4())
@@ -75,9 +76,9 @@ def create():
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute('INSERT INTO transaction (id, uuid, price, created_at, uuid_player) VALUES (DEFAULT, %s, %s, %s, %s)', 
-            [uuid_transaction, price, created_at, uuid_player])
-        cursor.execute('SELECT id, uuid, price, created_at, uuid_player FROM transaction WHERE uuid = %s', 
+        cursor.execute('INSERT INTO transaction (id, uuid, price, created_at, uuid_player, uuid_auction) VALUES (DEFAULT, %s, %s, %s, %s, %s)', 
+            [uuid_transaction, price, created_at, uuid_player, uuid_auction])
+        cursor.execute('SELECT id, uuid, price, created_at, uuid_player, uuid_auction FROM transaction WHERE uuid = %s', 
             [uuid_transaction])
         record = cursor.fetchone()
         conn.commit()
@@ -102,7 +103,7 @@ def show_by_uuid(transaction_uuid):
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute('SELECT id, uuid, price, created_at, uuid_player FROM transaction WHERE uuid = %s', 
+        cursor.execute('SELECT id, uuid, price, created_at, uuid_player, uuid_auction FROM transaction WHERE uuid = %s', 
             [transaction_uuid])
         record = cursor.fetchone()
 
@@ -117,7 +118,7 @@ def show_by_uuid(transaction_uuid):
     return jsonify({'response': result})
 
 @app.route('/user/<string:player_uuid>', methods=['GET'])
-def show_by_user(player_uuid):        
+def show_by_user(player_uuid):
     try:
         conn = psycopg2.connect(
             dbname=DB_NAME,
@@ -128,10 +129,9 @@ def show_by_user(player_uuid):
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute('SELECT id, uuid, price, created_at FROM transaction WHERE uuid_player = %s', 
+        cursor.execute('SELECT id, uuid, price, created_at, uuid_player, uuid_auction FROM transaction WHERE uuid_player = %s', 
             [player_uuid])
         records = cursor.fetchall()
-
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
