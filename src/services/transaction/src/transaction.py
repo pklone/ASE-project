@@ -118,7 +118,7 @@ def show_by_uuid(transaction_uuid):
     return jsonify({'response': result})
 
 @app.route('/user/<string:player_uuid>', methods=['GET'])
-def show_by_user(player_uuid):
+def show_all_by_user(player_uuid):
     try:
         conn = psycopg2.connect(
             dbname=DB_NAME,
@@ -138,6 +138,34 @@ def show_by_user(player_uuid):
         return jsonify({'response': str(e)})
 
     return jsonify({'response': records})
+
+@app.route('/user/<string:player_uuid>/<string:transaction_uuid>', methods=['GET'])
+def show_by_user(player_uuid, transaction_uuid):
+    result = {}
+
+    try:
+        conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT
+        )
+
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('SELECT id, uuid, price, created_at, uuid_player, uuid_auction FROM transaction WHERE uuid_player = %s AND uuid = %s', 
+            [player_uuid, transaction_uuid])
+        record = cursor.fetchone()
+
+        if record:
+            result = record
+        
+        cursor.close()
+        conn.close()
+    except psycopg2.Error as e:
+        return jsonify({'response': str(e)})
+
+    return jsonify({'response': record})
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)

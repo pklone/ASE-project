@@ -139,11 +139,63 @@ def currency():
 
 @app.route('/user/transactions', methods=['GET'])
 def transactions_all():
-    return jsonify({'response': 'ok!'})
+    encoded_jwt = request.cookies.get('session')
+
+    if not encoded_jwt:
+        return jsonify({'response': 'You\'re not logged'})
+
+    try:
+        options = {
+            'require': ['exp'], 
+            'verify_signature': True, 
+            'verify_exp': True
+        }
+
+        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
+    except jwt.ExpiredSignatureError:
+        return jsonify({'response': 'Expired token'})
+    except jwt.InvalidTokenError:
+        return jsonify({'response': 'Invalid token'})
+
+    if 'uuid' not in decoded_jwt:
+        return jsonify({'response': 'Try later'})
+
+    player_uuid = decoded_jwt['uuid']
+    r = requests.get(f'http://transaction_service:5000/user/{player_uuid}')
+    transactions = json.loads(r.text)['response']
+
+    return jsonify({"response": transactions}), 200
 
 @app.route('/user/transactions/<string:transaction_uuid>', methods=['GET'])
 def transaction(transaction_uuid):
-    return jsonify({'response': 'ok!'})
+    encoded_jwt = request.cookies.get('session')
+
+    if not encoded_jwt:
+        return jsonify({'response': 'You\'re not logged'})
+
+    try:
+        options = {
+            'require': ['exp'], 
+            'verify_signature': True, 
+            'verify_exp': True
+        }
+
+        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
+    except jwt.ExpiredSignatureError:
+        return jsonify({'response': 'Expired token'})
+    except jwt.InvalidTokenError:
+        return jsonify({'response': 'Invalid token'})
+
+    if 'uuid' not in decoded_jwt:
+        return jsonify({'response': 'Try later'})
+
+    player_uuid = decoded_jwt['uuid']
+
+    r = requests.get(f'http://transaction_service:5000/user/{player_uuid}/{transaction_uuid}')
+    return r.text
+    transaction = json.loads(r.text)['response']
+
+    return jsonify({"response": transaction}), 200
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
