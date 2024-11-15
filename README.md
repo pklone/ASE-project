@@ -98,8 +98,6 @@ will run a shell no matter the container you choose
 - ~~close auction in `market`~~
 - ~~fix `show_one` and `show_all` functions in `market` (set gacha as dict instead of list)~~
 - transaction service
-- payment service
-- end-point gateway
 - https
 - Oauth2
 - ~~roll function~~
@@ -112,3 +110,12 @@ will run a shell no matter the container you choose
 - use `r.json` instead of `json.loads(r.text)`
 - set timezone to UTC for `expire_at`
 - set .gitignore to ignore only the `.env` file with `JUST_CHOOSER` variable
+- payment service
+- postman tests
+- close transaction when expire (by external service)
+- github actions
+- set accessible/non-accessible routes on end-point gateway (security)
+- docker networks
+- admin routes
+- when a player makes a bid, checks if he has already the biggest bid
+- add link between `payment` and `player` services inside architecture image (and microfreshner)
