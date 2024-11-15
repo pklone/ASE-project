@@ -26,6 +26,10 @@ curl -X DELETE -b cookie.jar http://127.0.0.1:8083/user
 curl -X POST -H 'Content-Type: application/json' -d '{"username": "test", "password": "test"}' -c cookie.jar http://127.0.0.1:8081/login
 curl -X GET -b cookie.jar http://127.0.0.1:8083/user/collection
 curl -X DELETE -b cookie.jar http://127.0.0.1:8081/logout
+
+curl -X POST -H 'Content-Type: application/json' -d '{"username": "test", "password": "test"}' -c cookie.jar http://127.0.0.1:8081/login
+curl -X GET -b cookie.jar http://127.0.0.1:8083/user/collection
+curl -X POST -H 'Content-Type: application/json' -d '{"gacha_uuid": "09907f76-9b0f-4270-84a3-e9780b164ac4", "starting_price": 20}' -b cookie.jar http://127.0.0.1:8086/market
 ```
 Note: if you want to use the `gateway` adresses:
 ```
@@ -48,14 +52,20 @@ docker compose up --build --watch
 ## Just
 Here some useful `just` commands.
 ```
-just         # show recipes as a list
-just up      # docker compose up --build -d
-just rs      # docker compose down && docker compose up --build -d
-just rs v    # docker compose down -v && docker compose up --build -d
-just w       # docker compose watch --no-up
-just ps      # docker compose ps -a
-just ps a    # docker ps -a
-just run     # choose a just recipe to run
+just           # show recipes as a list
+just up        # docker compose up --build -d
+just up -      # docker compose up
+just rs        # docker compose down && docker compose up --build -d
+just rs v      # docker compose down -v && docker compose up --build -d
+just rs b      # docker compose down && docker compose up --build
+just rs d      # docker compose down && docker compose up -d
+just rs v b    # docker compose down -v && docker compose up --build
+just rs v d    # docker compose down -v && docker compose up -d
+just rs -      # docker compose down && docker compose up
+just w         # docker compose watch --no-up
+just ps        # docker compose ps -a
+just ps d      # docker ps -a
+just run       # choose a just recipe to run
 ```
 Note that `just up`, `just down` and `just exec` accept an **unlimited** number of args. In particular,
 `just up` overwrites its default arguments, i.e.
@@ -85,8 +95,8 @@ will run a shell no matter the container you choose
 - ~~set gacha rarities percentages~~
 - use external volumes for db otherwise if db container crashes, we need to re-init it and we can lose data
 - GUI
-- close auction in `market`
-- fix `show_one` and `show_all` functions in `market` (set gacha as dict instead of list)
+- ~~close auction in `market`~~
+- ~~fix `show_one` and `show_all` functions in `market` (set gacha as dict instead of list)~~
 - transaction service
 - payment service
 - end-point gateway
@@ -98,3 +108,7 @@ will run a shell no matter the container you choose
 - use foreign keys in `gacha_player` table
 - ~~fix `expired_at` in `market_db`~~
 - add decription in `gacha_db`
+- check uuid with regex
+- use `r.json` instead of `json.loads(r.text)`
+- set timezone to UTC for `expire_at`
+- set .gitignore to ignore only the `.env` file with `JUST_CHOOSER` variable
