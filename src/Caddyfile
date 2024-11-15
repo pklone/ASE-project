@@ -28,7 +28,11 @@ ase.localhost {
         reverse_proxy currency_service:5000
     }
 
-    handle_path /market/* {
+    handle /* {
+        reverse_proxy gacha_service:5000
+    }
+
+    handle /market {
         reverse_proxy market_service:5000
     }
 }

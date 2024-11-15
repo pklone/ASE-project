@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, json
+from flask import Flask, request, jsonify, json, render_template
 from datetime import datetime, timezone
 import psycopg2
 import psycopg2.extras
@@ -69,9 +69,13 @@ def show_all():
             }
 
             auctions.append(auction)
-
             
-    return jsonify({'response': auctions})
+        if 'application/json' in request.headers.get('Accept'):
+            return jsonify({'response': auctions}), 200
+        elif 'text/html' in request.headers.get('Accept'):
+            return render_template("marketplace.html", auctions=auctions), 200
+        else:
+            return jsonify({'response': 'Not supported'}), 400
 
 @app.route('/market/<string:auction_uuid>', methods=['GET'])
 def show_one(auction_uuid):
