@@ -1,4 +1,22 @@
 services:
+  caddy:
+    image: caddy:latest
+    container_name: caddy_gateway
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - player_service
+      - authentication_service
+      - gacha_service
+      - account_service
+      - currency_service
+      - market_service
+    volumes:
+    - ./Caddyfile:/etc/caddy/Caddyfile
+    - caddy_data:/data
+    - caddy_config:/config
+
   player_db:
     build: ./dbs/player
     container_name: player_db
@@ -195,7 +213,8 @@ volumes:
  account_db:
  market_db:
  transaction_db:
-
+ caddy_data:
+ caddy_config:
 
 
 
