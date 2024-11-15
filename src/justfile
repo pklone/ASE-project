@@ -34,11 +34,39 @@ off: down
 
 # run containers
 [positional-arguments]
-up *args='--build -d': on
+up *args='b d': on
 	#!/bin/bash
 	if [ $(docker compose ps -q | wc -l) -eq 0 ]; then
 		echo "Starting containers..."
-		docker compose up $@
+		
+		# convert 'b d' into 'b' 'd'
+		set -- $@
+
+		args=""
+		while [ -n "$1" ]; do
+			case "$1" in 
+				b)
+					args="$args --build"
+					;;
+
+				d)
+					args="$args --detach"
+					;;
+
+				-)
+					:
+					;;
+
+				*)
+					echo "Error: unknown arg $1"
+					exit 1
+					;;
+
+			esac
+			shift
+		done
+
+		docker compose up $args
 	else
 		echo "Containers are already running..."
 	fi
@@ -49,7 +77,28 @@ down *args='':
 	#!/bin/bash
 	if [ $(docker compose ps -aq | wc -l) -ne 0 ]; then
 		echo "Removing containers..."
-		docker compose down $@
+		
+		args=""
+		while [ -n "$1" ]; do
+			case "$1" in 
+				v)
+					args="$args --volumes"
+					;;
+
+				-)
+					:
+					;;
+
+				*)
+					echo "Error: unknown arg $1"
+					exit 1
+					;;
+
+			esac
+			shift
+		done
+
+		docker compose down $args
 	else
 		echo "There are no containers..."
 	fi
@@ -58,17 +107,26 @@ down *args='':
 [positional-arguments]
 restart *args='':
 	#!/bin/bash
-	debug=False
-	volumes=False
 
+	up_args=""
+	down_args=""
 	while [ -n "$1" ]; do
 		case "$1" in 
+			b)
+				up_args="$up_args b"
+				;;
+
 			d)
-				debug=True
+				up_args="$up_args d"
 				;;
 
 			v)
-				volumes=True
+				down_args="$down_args v"
+				;;
+
+			-)
+				up_args="-"
+				down_args="-"
 				;;
 
 			*)
@@ -80,13 +138,7 @@ restart *args='':
 		shift
 	done
 
-	[ $volumes == False ] \
-		&& just down \
-		|| just down -v
-
-	[ $debug == False ] \
-		&& just up \
-		|| just up --build
+	just down ${down_args} && just up ${up_args}
 
 @watch:
 	docker compose watch --no-up
@@ -112,12 +164,29 @@ stop:
 	fi
 
 # show running/stopped containers info
-ps all='':
+[positional-arguments]
+ps *args='':
 	#!/bin/bash
 	if $(systemctl --quiet is-active docker); then
-		[ -z "{{ all }}" ] \
-			&& docker compose ps -a \
-			|| docker ps -a
+		docker=False
+		while [ -n "$1" ]; do
+			case "$1" in 
+				d)
+					docker=True
+					;;
+
+				*)
+					echo "Error: unknown arg $1"
+					exit 1
+					;;
+
+			esac
+			shift
+		done
+
+		[ $docker == True ] \
+			&& docker ps -a  \
+			|| docker compose ps -a
 	else
 		echo "Docker deamon is stopped."
 	fi
