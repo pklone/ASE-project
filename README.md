@@ -27,6 +27,11 @@ curl -X POST -H 'Content-Type: application/json' -d '{"username": "test", "passw
 curl -X GET -b cookie.jar http://127.0.0.1:8083/user/collection
 curl -X DELETE -b cookie.jar http://127.0.0.1:8081/logout
 ```
+Note: if you want to use the `gateway` adresses:
+```
+curl -X POST -k -H 'Content-Type: application/json' -H 'Accept: application/json' -d '{"username": "test", "password": "test"}' -c cookie.jar https://ase.localhost/login
+```
+the `-k` options makes curl ignores the self signed certified and the new `Accept` headers forces curl to give an application/json responses
 
 ## Compose Watch
 It's possible to use `docker compose watch` to rebuild/resync the image/container when files change.
