@@ -5,6 +5,7 @@ import os
 import jwt
 import random
 import requests
+import uuid
 
 app = Flask(__name__, static_url_path='/assets')
 
@@ -196,6 +197,121 @@ def roll():
 
     return jsonify({'response': record})
 
+@app.route('/admin/collection', methods=['POST'])
+def add_gacha():
+    encoded_jwt = request.cookies.get('session')
+
+    if not encoded_jwt:
+        return jsonify({'response': 'You\'re not logged'})
+
+    try:
+        options = {
+            'require': ['exp'], 
+            'verify_signature': True, 
+            'verify_exp': True
+        }
+
+        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
+    except jwt.ExpiredSignatureError:
+        return jsonify({'response': 'Expired token'})
+    except jwt.InvalidTokenError:
+        return jsonify({'response': 'Invalid token'})
+
+    if 'admin' not in decoded_jwt:
+        return jsonify({'response': 'You are not autorized'})
+    
+    if decoded_jwt['admin'] == False:
+        return jsonify({'response': 'You are not autorized'})
+    
+    new_uuid = str(uuid.uuid4())
+    new_name = request.json.get('name')
+    new_description = request.json.get('description')
+    new_image_path = request.json.get('image_path')
+    new_rarity = request.json.get('id_rarity')
+
+    try:
+        conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT
+        )
+
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("""
+            INSERT INTO gacha (id, uuid, name, description, image_path, id_rarity) 
+            VALUES (DEFAULT, %s, %s, %s, %s, %s)""", 
+            (new_uuid, new_name, new_description, new_image_path, new_rarity))
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except psycopg2.Error as e:
+        return jsonify({'response': str(e)})
+    
+    return jsonify({'response': 'Gacha added'})
+    
+@app.route('/admin/collection/<string:gacha_uuid>', methods=['PUT'])
+def modify_gacha(gacha_uuid):
+    encoded_jwt = request.cookies.get('session')
+
+    if not encoded_jwt:
+        return jsonify({'response': 'You\'re not logged'})
+
+    try:
+        options = {
+            'require': ['exp'], 
+            'verify_signature': True, 
+            'verify_exp': True
+        }
+
+        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
+    except jwt.ExpiredSignatureError:
+        return jsonify({'response': 'Expired token'})
+    except jwt.InvalidTokenError:
+        return jsonify({'response': 'Invalid token'})
+
+    if 'admin' not in decoded_jwt:
+        return jsonify({'response': 'You are not autorized'})
+    
+    if decoded_jwt['admin'] == False:
+        return jsonify({'response': 'You are not autorized'})
+    
+    new_name = request.json.get('name')
+    new_description = request.json.get('description')
+    new_image_path = request.json.get('image_path')
+    new_rarity = request.json.get('id_rarity')
+    if new_rarity <= 0 or new_rarity > 5:
+        return jsonify({'response': 'Invalid rarity'})
+
+    try:
+        conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT
+        )
+
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("""
+        UPDATE gacha
+        SET
+        name = COALESCE(%s, name),
+        description = COALESCE(%s, description),
+        image_path = COALESCE(%s, image_path),
+        id_rarity = COALESCE(%s, id_rarity)
+        WHERE uuid = %s;
+        """, (new_name, new_description, new_image_path, new_rarity, gacha_uuid))
+        if cursor.rowcount == 0:
+            return jsonify({'response': 'Query as not updated nothing'}), 404
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except psycopg2.Error as e:
+        return jsonify({'response': str(e)})
+    
+    return jsonify({'response': 'Gacha updated'})
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
