@@ -1,10 +1,10 @@
 from flask import Flask, request, jsonify, make_response, json, render_template
 from datetime import datetime, timezone, timedelta
 import psycopg2, os
+import psycopg2.extras
 import jwt
 import bcrypt
 import requests
-import bcrypt
 
 app = Flask(__name__)
 
@@ -24,6 +24,68 @@ def page_not_found(error):
 @app.route('/login', methods=['GET'])
 def index():
     return render_template('index.html')
+
+@app.route('/admin/login', methods=['GET'])
+def admin():
+    return render_template('admin.html')
+
+@app.route('/admin/login', methods=['POST'])
+def admin_login():
+    result = {}
+    encoded_jwt = request.cookies.get('session')
+
+    if encoded_jwt:
+        return jsonify({'response': 'Already logged in'})
+    
+    if request.headers.get('Content-Type') != 'application/json':
+        return jsonify({'response': 'Content-type not supported'}), 400
+    
+    admin_username = request.json.get('username')
+    admin_password = request.json.get('password')
+
+    if not admin_username or not admin_password:
+        return jsonify({'response': 'Missing credentials'}), 400
+    
+    try:
+        conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT
+        )
+
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('SELECT * FROM admin WHERE username = %s', 
+            [admin_username])
+        record = cursor.fetchone()
+
+        if record:
+            result = record
+
+        cursor.close()
+        conn.close()
+    except psycopg2.Error as e:
+        return jsonify({'response': str(e)})
+    
+    admin = result
+
+    if admin == {} or not bcrypt.checkpw(admin_password.encode(), admin['password_hash'].encode()):
+        return jsonify({'response': 'Invalid credentials'}), 401
+    
+    expire = datetime.now(tz=timezone.utc) + timedelta(seconds=3600)
+    payload = {
+        'id': admin['id'], 
+        'admin': True,
+        'exp': expire
+    }
+    
+    encoded_jwt = jwt.encode(payload, SECRET, algorithm='HS256')
+    response = make_response(jsonify({'response': 'Logged as admin'}), 200)
+    response.set_cookie('session', encoded_jwt, httponly=True, expires=expire)
+
+    return response
+
 
 @app.route('/login', methods=['POST'])
 def login():

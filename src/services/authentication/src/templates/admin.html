@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+    <style>
+        body {
+            background-color: #f5f5f5;
+        }
+        .hero {
+            background-color: #ff3860; /* Red Bulma color */
+            color: white;
+        }
+        .button.is-danger {
+            background-color: #ff3860;
+            border-color: transparent;
+        }
+        .button.is-danger:hover {
+            background-color: #ff4d6d;
+        }
+        .input:focus {
+            border-color: #ff3860;
+            box-shadow: 0 0 0 0.125em rgba(255, 56, 96, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <section class="hero is-danger is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title has-text-centered">Admin Login</h1>
+                <h2 class="subtitle has-text-centered">Secure Access for Administrators Only</h2>
+            </div>
+        </div>
+    </section>
+
+    <!-- Login Form -->
+    <section class="section">
+        <div class="container">
+            <div class="columns is-centered">
+                <div class="column is-5">
+                    <div class="box">
+                        <form id="adminLoginForm">
+                            <div class="field">
+                                <label class="label has-text-danger">Username</label>
+                                <div class="control">
+                                    <input class="input is-danger" type="text" id="username" placeholder="Enter admin username" required>
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label class="label has-text-danger">Password</label>
+                                <div class="control">
+                                    <input class="input is-danger" type="password" id="password" placeholder="Enter password" required>
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <div class="control">
+                                    <button class="button is-danger is-fullwidth" type="submit">Login</button>
+                                </div>
+                            </div>
+                        </form>
+                        <div id="responseMessage" class="notification is-hidden"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        document.getElementById('adminLoginForm').onsubmit = async function (e) {
+            e.preventDefault();
+    
+            // Get username and password from the form
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+    
+            try {
+                // Send POST request to the backend
+                const response = await fetch('/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+    
+                const result = await response.json();
+    
+                // Display the backend response on the page
+                const responseDiv = document.getElementById('responseMessage');
+                responseDiv.innerHTML = `<p>${result.response}</p>`;
+                responseDiv.className = response.ok ? 'notification is-success' : 'notification is-danger';
+    
+            } catch (error) {
+                // Handle errors
+                const responseDiv = document.getElementById('responseMessage');
+                responseDiv.innerHTML = `<p>Error connecting to the server. Please try again later.</p>`;
+                responseDiv.className = 'notification is-danger';
+                console.error(error);
+            }
+        };
+    </script>
+    
+</body>
+</html>
