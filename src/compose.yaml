@@ -27,15 +27,15 @@ services:
     volumes:
      - player_db:/var/lib/postgresql/data
 
-  authentication_db:
-    build: ./dbs/authentication
-    container_name: authentication_db
+  admin_db:
+    build: ./dbs/admin
+    container_name: admin_db
     ports:
       - "127.0.0.1:5433:5432"
     env_file:
-      - path: ./dbs/authentication/.env
+      - path: ./dbs/admin/.env
     volumes:
-     - authentication_db:/var/lib/postgresql/data
+     - admin_db:/var/lib/postgresql/data
 
   gacha_db:
     build: ./dbs/gacha/
@@ -105,9 +105,9 @@ services:
     ports:
       - "127.0.0.1:8081:5000"
     depends_on:
-      - authentication_db
+      - admin_db
     links:
-      - authentication_db
+      - admin_db
     develop:
      watch:
       - action: sync
@@ -208,7 +208,7 @@ services:
     
 volumes:
  player_db:
- authentication_db:
+ admin_db:
  gacha_db:
  account_db:
  market_db:

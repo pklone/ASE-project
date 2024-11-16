@@ -2,11 +2,18 @@
 ase.localhost {
     # Inoltra tutte le richieste da /api/login al servizio ...5000/login
     # handle_path /api/login {
-    #     rewrite * /login
+    #     rewrite /login
     #     method /login POST
     #     reverse_proxy authentication_service:5000
     # }
-    
+    method /admin/logout DELETE
+    handle_path /admin/logout {
+        rewrite /logout
+        reverse_proxy authentication_service:5000
+    }
+    handle /admin/login {
+        reverse_proxy authentication_service:5000
+    }
     # Rende disponibile /login del servizio al gateway
     handle /login {
         reverse_proxy authentication_service:5000
