@@ -95,6 +95,45 @@ def show_by_uuid(player_uuid):
 
     return jsonify({'response': result})
 
+@app.route('/uuid/<string:player_uuid>', methods=['PUT'])
+def modify_by_uuid(player_uuid):
+    result = {}
+
+    new_username = request.json.get('username')
+    new_wallet = request.json.get('wallet')
+
+    new_player = {
+        'username': new_username,
+        'wallet': new_wallet
+    }
+
+    try:
+        conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT
+        )
+
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("""
+        UPDATE player
+        SET
+        username = COALESCE(%s, username),
+        wallet = COALESCE(%s, wallet)
+        WHERE uuid = %s;
+        """, (new_player['username'], new_player['wallet'], player_uuid))
+        if cursor.rowcount == 0:
+            return jsonify({'response': 'Query as not updated nothing'}), 404
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except psycopg2.Error as e:
+        return jsonify({'response': str(e)})
+
+    return jsonify({'response': "User updated Successfully!"}), 200
+
 @app.route('/username/<string:player_username>', methods=['GET'])
 def show_by_username(player_username):
     result = {}

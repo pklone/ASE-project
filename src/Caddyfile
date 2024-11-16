@@ -22,7 +22,13 @@ ase.localhost {
         method /logout DELETE
         reverse_proxy authentication_service:5000
     }
-    
+
+    handle /admin/users/* {
+        reverse_proxy account_service:5000
+    }
+    handle /admin/users {
+        reverse_proxy account_service:5000
+    }
     handle /user {
         reverse_proxy account_service:5000
     }
