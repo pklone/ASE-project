@@ -56,7 +56,7 @@ def users():
     except json.JSONDecodeError as e:
         return jsonify({'response': 'Json error'}), 500
     
-    return jsonify(response), 200
+    return jsonify(response['response']), 200
 
 @app.route('/admin/users/<string:user_uuid>', methods=['GET'])
 def user(user_uuid):
