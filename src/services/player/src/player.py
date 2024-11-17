@@ -268,6 +268,30 @@ def update():
 
     return jsonify({'response': 'ok!'})
 
+@app.route('/<string:uuid>/wallet', methods=['PUT'])
+def update_wallet(uuid):
+    amount = request.json['amount']
+    try:
+        conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT
+        )
+        
+        cursor = conn.cursor()
+        cursor.execute('UPDATE player SET wallet = wallet + %s WHERE uuid = %s', [amount, uuid])
+        if cursor.rowcount == 0:
+            return jsonify({'response': 'Query as not updated nothing'}), 404
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except psycopg2.Error as e:
+        return jsonify({'response': str(e)})
+
+    return jsonify({'response': "wallet updated Successfully!"}), 200
+
 @app.route('/currency/buy', methods=['POST'])
 def currency():
     player_uuid = request.json['player_uuid']
