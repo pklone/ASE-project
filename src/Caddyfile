@@ -35,6 +35,16 @@ ase.localhost {
     handle /user/currency {
         reverse_proxy account_service:5000
     }
+    handle /user/collection {
+        reverse_proxy account_service:5000
+    }
+    handle /user/transactions {
+        reverse_proxy account_service:5000
+    }
+    handle /user/transactions/* {
+        reverse_proxy account_service:5000
+    }
+
 
     handle /collection {
         reverse_proxy gacha_service:5000
