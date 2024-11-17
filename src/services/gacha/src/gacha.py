@@ -100,6 +100,39 @@ def show_by_player(player_id):
 
     return jsonify(records)
 
+@app.route('/collection/user/<int:player_uuid>', methods=['PUT'])
+def update_quantity(player_uuid, gacha_uuid, q): # q is 1 (buyer) or -1 (owner)
+    try:
+        conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT
+        )
+    except psycopg2.Error as e:
+        return str(e)
+
+    r = requests.get(url=f'http://player_service:5000/uuid/{player_uuid}')
+    response = json.loads(r.text)
+
+    try: 
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('SELECT 1 FROM player_gacha WHERE id = %s', [response['response']['id']])
+        if cursor.rowcount == 0:
+            cursor.execute('INSERT INTO player_gacha (id_player, id_gacha) VALUES (%s, (SELECT id FROM gacha WHERE uuid = %s))',
+                [response['response']['id'], gacha_uuid])
+        else:
+            record = cursor.fetchone()
+            cursor.execute('UPDATE player_gacha SET quantity = quantity + %s WHERE id = %s', [q, record['id']])
+        conn.commit()
+        cursor.close()
+    except psycopg2.Error as e:
+        return str(e)
+    
+    return jsonify({'response': 'success'})
+
+
 @app.route('/roll', methods=['GET'])
 def roll():
     encoded_jwt = request.cookies.get('session')
