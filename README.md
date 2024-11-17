@@ -34,6 +34,7 @@ curl -X POST -H 'Content-Type: application/json' -d '{"gacha_uuid": "09907f76-9b
 Note: if you want to use the `gateway` adresses:
 ```
 curl -X POST -k -H 'Content-Type: application/json' -H 'Accept: application/json' -d '{"username": "test", "password": "test"}' -c cookie.jar https://ase.localhost/login
+curl -X POST -k -H 'Content-Type: application/json' -d '{"name": "wyvern", "description": "new description", "id_rarity": 5, "image_path": "/home/asset..." }' -b cookie.jar https://ase.localhost/admin/collection
 ```
 the `-k` options makes curl ignores the self signed certified and the new `Accept` headers forces curl to give an application/json responses
 
