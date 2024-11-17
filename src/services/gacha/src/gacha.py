@@ -162,7 +162,7 @@ def roll():
         'purchase': -10
     }
 
-    r = requests.post(url='http://player_service:5000/currency', json=data)
+    r = requests.post(url='http://player_service:5000/currency/buy', json=data)
     if r.status_code != 200:
         return jsonify({'response': 'Try later'})
 
@@ -218,10 +218,10 @@ def add_gacha():
         return jsonify({'response': 'Invalid token'})
 
     if 'admin' not in decoded_jwt:
-        return jsonify({'response': 'You are not autorized'})
+        return jsonify({'response': 'You are not autorized'}), 401
     
     if decoded_jwt['admin'] == False:
-        return jsonify({'response': 'You are not autorized'})
+        return jsonify({'response': 'You are not autorized'}), 401
     
     new_uuid = str(uuid.uuid4())
     new_name = request.json.get('name')
@@ -272,10 +272,10 @@ def modify_gacha(gacha_uuid):
         return jsonify({'response': 'Invalid token'})
 
     if 'admin' not in decoded_jwt:
-        return jsonify({'response': 'You are not autorized'})
+        return jsonify({'response': 'You are not autorized'}), 401
     
     if decoded_jwt['admin'] == False:
-        return jsonify({'response': 'You are not autorized'})
+        return jsonify({'response': 'You are not autorized'}), 401
     
     new_name = request.json.get('name')
     new_description = request.json.get('description')
