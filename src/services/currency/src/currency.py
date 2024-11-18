@@ -19,7 +19,7 @@ def buy():
     encoded_jwt = request.cookies.get('session')
 
     if not encoded_jwt:
-        return jsonify({'response': 'You\'re not logged'})
+        return jsonify({'response': 'You\'re not logged'}), 401
 
     try:
         options = {
@@ -30,12 +30,12 @@ def buy():
 
         decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
     except jwt.ExpiredSignatureError:
-        return jsonify({'response': 'Expired token'})
+        return jsonify({'response': 'Expired token'}), 401
     except jwt.InvalidTokenError:
-        return jsonify({'response': 'Invalid token'})
+        return jsonify({'response': 'Invalid token'}), 401
 
     if 'uuid' not in decoded_jwt:
-        return jsonify({'response': 'Try later'})
+        return jsonify({'response': 'Try later'}), 400
 
     player_uuid = decoded_jwt['uuid']
     purchase = request.json.get('purchase')
