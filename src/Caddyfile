@@ -50,7 +50,7 @@ ase.localhost {
         reverse_proxy gacha_service:5000
     }
 
-    handle_path /currency/buy {
+    handle /currency/buy {
         reverse_proxy currency_service:5000
     }
 
