@@ -1,8 +1,9 @@
 set dotenv-load
 
-command_std := '/bin/bash'
-command_app := command_std
-command_db  := 'psql -U postgres'
+devel_compose := 'compose.develop.yaml'
+command_std   := '/bin/bash'
+command_app   := command_std
+command_db    := 'psql -U postgres'
 
 alias rs := restart
 alias w  := watch
@@ -13,6 +14,10 @@ _default:
 [private]
 run:
 	@just --choose --unsorted
+
+test:
+	#!/bin/bash
+	docker compose -f {{devel_compose}} up -d
 
 # start docker daemon
 on:
@@ -36,7 +41,7 @@ off: down
 [positional-arguments]
 up *args='b d': on
 	#!/bin/bash
-	if [ $(docker compose ps -q | wc -l) -eq 0 ]; then
+	if [ $(docker compose -f {{devel_compose}} ps -q | wc -l) -eq 0 ]; then
 		echo "Starting containers..."
 		
 		# convert 'b d' into 'b' 'd'
@@ -70,7 +75,7 @@ up *args='b d': on
 			shift
 		done
 
-		docker compose up $args
+		docker compose -f {{devel_compose}} up $args
 	else
 		echo "Containers are already running..."
 	fi
@@ -79,7 +84,7 @@ up *args='b d': on
 [positional-arguments]
 down *args='':
 	#!/bin/bash
-	if [ $(docker compose ps -aq | wc -l) -ne 0 ]; then
+	if [ $(docker compose -f {{devel_compose}} ps -aq | wc -l) -ne 0 ]; then
 		echo "Removing containers..."
 		
 		args=""
@@ -102,7 +107,7 @@ down *args='':
 			shift
 		done
 
-		docker compose down $args
+		docker compose -f {{devel_compose}} down $args
 	else
 		echo "There are no containers..."
 	fi
@@ -149,14 +154,14 @@ restart *args='':
 	just down ${down_args} && just up ${up_args}
 
 @watch:
-	docker compose watch --no-up
+	docker compose -f {{devel_compose}} watch --no-up
 
 # start containers (if they're stopped)
 start: on
 	#!/bin/bash
-	if [ $(docker compose ps -q --status exited | wc -l) -ne 0 ]; then
+	if [ $(docker compose -f {{devel_compose}} ps -q --status exited | wc -l) -ne 0 ]; then
 		echo "Starting containers..."
-		docker compose start
+		docker compose -f {{devel_compose}} start
 	else
 		echo "Containers are already running..."
 	fi
@@ -164,9 +169,9 @@ start: on
 # stop containers (if they're running)
 stop:
 	#!/bin/bash
-	if [ $(docker compose ps -q | wc -l) -ne 0 ]; then
+	if [ $(docker compose -f {{devel_compose}} ps -q | wc -l) -ne 0 ]; then
 		echo "Stopping containers..."
-		docker compose stop
+		docker compose -f {{devel_compose}} stop
 	else
 		echo "Containers are stopped..."
 	fi
@@ -194,7 +199,7 @@ ps *args='':
 
 		[ $docker == True ] \
 			&& docker ps -a  \
-			|| docker compose ps -a
+			|| docker compose -f {{devel_compose}} ps -a
 	else
 		echo "Docker deamon is stopped."
 	fi
@@ -209,7 +214,7 @@ exec *args='': up
 		exit 0
 	fi
 
-	containers=$(docker compose ps --format json \
+	containers=$(docker compose -f {{devel_compose}} ps --format json \
 		| jq -rs 'map(.Name) | @sh // empty' \
 		| tr -d \')
 	
@@ -257,8 +262,8 @@ exec *args='': up
 
 # build images
 build: on
-	docker compose build
+	docker compose -f {{devel_compose}} build
 
 # return compose.yml file in canonical form
 config: on
-	docker compose config
+	docker compose -f {{devel_compose}} config

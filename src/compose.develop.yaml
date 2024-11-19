@@ -13,13 +13,15 @@ services:
       - currency_service
       - market_service
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-
+    - ./Caddyfile:/etc/caddy/Caddyfile
+    - caddy_data:/data
+    - caddy_config:/config
+    
   player_db:
     build: ./dbs/player
     container_name: player_db
+    ports:
+      - "127.0.0.1:5432:5432"
     env_file:
      - path: ./dbs/player/.env
     volumes:
@@ -28,30 +30,38 @@ services:
   admin_db:
     build: ./dbs/admin
     container_name: admin_db
+    ports:
+      - "127.0.0.1:5433:5432"
     env_file:
       - path: ./dbs/admin/.env
     volumes:
-      - admin_db:/var/lib/postgresql/data
+     - admin_db:/var/lib/postgresql/data
 
   gacha_db:
     build: ./dbs/gacha/
     container_name: gacha_db
+    ports:
+      - "127.0.0.1:5434:5432"
     env_file:
-      - path: ./dbs/gacha/.env
+     - path: ./dbs/gacha/.env
     volumes:
-      - gacha_db:/var/lib/postgresql/data
+     - gacha_db:/var/lib/postgresql/data
 
   account_db:
     build: ./dbs/account/
     container_name: account_db
+    ports:
+      - "127.0.0.1:5435:5432"
     env_file:
-      - path: ./dbs/account/.env
+     - path: ./dbs/account/.env
     volumes:
-      - account_db:/var/lib/postgresql/data
+     - account_db:/var/lib/postgresql/data
 
   market_db:
     build: ./dbs/market/
     container_name: market_db
+    ports:
+      - "127.0.0.1:5436:5432"
     env_file:
       - path: ./dbs/market/.env
     volumes:
@@ -60,10 +70,12 @@ services:
   transaction_db:
     build: ./dbs/transaction
     container_name: transaction_db
+    ports:
+      - "127.0.0.1:5437:5432"
     env_file:
-      - path: ./dbs/transaction/.env
+     - path: ./dbs/transaction/.env
     volumes:
-      - transaction_db:/var/lib/postgresql/data
+     - transaction_db:/var/lib/postgresql/data
 
  
   player_service:
@@ -71,6 +83,8 @@ services:
     container_name: player_service
     env_file:
       - path: ./services/player/.env
+    ports:
+      - "127.0.0.1:8080:5000"
     depends_on:
       - player_db
     links:
@@ -82,24 +96,14 @@ services:
         target: /app
       - action: rebuild
         path: ./services/player/requirements.txt
-  
-  admin_service:
-    build: ./services/admin
-    container_name: admin_service
-    develop:
-      watch:
-        - action: sync
-          path: ./services/admin/src
-          target: /app
-        - action: rebuild
-          path: ./services/admin/requirements.txt
-
 
   authentication_service:
     build: ./services/authentication
     container_name: authentication_service
     env_file:
       - path: ./services/authentication/.env
+    ports:
+      - "127.0.0.1:8081:5000"
     depends_on:
       - admin_db
     links:
@@ -117,6 +121,8 @@ services:
     container_name: gacha_service
     env_file:
       - path: ./services/gacha/.env
+    ports:
+      - "127.0.0.1:8082:5000"
     depends_on:
       - gacha_db
     links:
@@ -134,6 +140,8 @@ services:
     container_name: account_service
     env_file:
       - path: ./services/account/.env
+    ports:
+      - "127.0.0.1:8083:5000"
     depends_on:
       - account_db
     links:
@@ -149,6 +157,8 @@ services:
   currency_service:
     build: ./services/currency
     container_name: currency_service
+    ports:
+      - "127.0.0.1:8084:5000"
     develop:
      watch:
       - action: sync
@@ -162,6 +172,8 @@ services:
     container_name: market_service
     env_file:
       - path: ./services/market/.env
+    ports:
+      - "127.0.0.1:8086:5000"
     depends_on:
       - market_db
       - rabbitmq_broker
@@ -181,6 +193,8 @@ services:
     container_name: transaction_service
     env_file:
       - path: ./services/transaction/.env
+    ports:
+      - "127.0.0.1:8087:5000"
     depends_on:
       - transaction_db
     links:
@@ -198,14 +212,17 @@ services:
     hostname: rabbitmq_broker
     image: rabbitmq:3-management
     container_name: rabbitmq_broker
+    ports:
+     - "127.0.0.1:5672:5672"
+     - "127.0.0.1:15672:15672"
   
   celery_worker:
     hostname: celery_worker
     build: ./services/celery
     links:
-      - rabbitmq_broker
+     - rabbitmq_broker
     depends_on:
-      - rabbitmq_broker
+     - rabbitmq_broker
     
 volumes:
  player_db:
@@ -216,6 +233,3 @@ volumes:
  transaction_db:
  caddy_data:
  caddy_config:
-
-
-
