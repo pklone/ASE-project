@@ -13,7 +13,8 @@ jobs:
         uses: hoverkraft-tech/compose-action@v2.0.1
         with:
           compose-file: "./src/compose.yaml"
-          down-flags: "-v"
+          up-flags: "--build"
+          down-flags: "--volumes"
       - name: Install Postman CLI
         run: |
           curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
