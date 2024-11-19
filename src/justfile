@@ -53,6 +53,10 @@ up *args='b d': on
 					args="$args --detach"
 					;;
 
+				w)
+					args="$args --watch"
+					;;
+
 				-)
 					:
 					;;
@@ -118,6 +122,10 @@ restart *args='':
 
 			d)
 				up_args="$up_args d"
+				;;
+
+			w)
+				up_args="$up_args w"
 				;;
 
 			v)
