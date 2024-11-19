@@ -1,11 +1,6 @@
 
 ase.localhost {
-    # Inoltra tutte le richieste da /api/login al servizio ...5000/login
-    # handle_path /api/login {
-    #     rewrite /login
-    #     method /login POST
-    #     reverse_proxy authentication_service:5000
-    # }
+    
     method /admin/logout DELETE
     handle_path /admin/logout {
         rewrite /logout
@@ -22,6 +17,7 @@ ase.localhost {
         method /logout DELETE
         reverse_proxy authentication_service:5000
     }
+
 
     handle /admin/users/* {
         reverse_proxy admin_service:5000
@@ -51,23 +47,34 @@ ase.localhost {
         reverse_proxy account_service:5000
     }
 
-
     handle /collection {
         reverse_proxy gacha_service:5000
     }
+    handle /collection/{http.request.uri.path.1} {
+        reverse_proxy gacha_service:5000
+    }
+    handle /roll {
+        reverse_proxy gacha_service:5000
+    }
+    handle /collection/user/{http.request.uri.path.2} {
+        reverse_proxy gacha_service:5000
+    }
+
 
     handle /currency/buy {
         reverse_proxy currency_service:5000
     }
 
-    handle /* {
-        reverse_proxy gacha_service:5000
-    }
-
     handle /market {
         reverse_proxy market_service:5000
     }
-    handle /market/* {
+    handle /market/{http.request.uri.path.1} {
+        reverse_proxy market_service:5000
+    }
+    handle /market/{http.request.uri.path.1}/bid {
+        reverse_proxy market_service:5000
+    }   
+    handle /market/{http.request.uri.path.1}/close {
         reverse_proxy market_service:5000
     }
 }
