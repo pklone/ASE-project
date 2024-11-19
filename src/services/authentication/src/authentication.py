@@ -25,27 +25,13 @@ def page_not_found(error):
 def index():
     return render_template('index.html')
 
-@app.route('/admin/login', methods=['GET'])
-def admin():
-    return render_template('admin.html')
-
-@app.route('/admin/login', methods=['POST'])
+@app.route('/admin_login', methods=['POST'])
 def admin_login():
     result = {}
-    encoded_jwt = request.cookies.get('session')
-
-    if encoded_jwt:
-        return jsonify({'response': 'Already logged in'})
-    
-    if request.headers.get('Content-Type') != 'application/json':
-        return jsonify({'response': 'Content-type not supported'}), 400
     
     admin_username = request.json.get('username')
     admin_password = request.json.get('password')
 
-    if not admin_username or not admin_password:
-        return jsonify({'response': 'Missing credentials'}), 400
-    
     try:
         conn = psycopg2.connect(
             dbname=DB_NAME,
@@ -81,7 +67,7 @@ def admin_login():
     }
     
     encoded_jwt = jwt.encode(payload, SECRET, algorithm='HS256')
-    response = make_response(jsonify({'response': 'Logged as admin'}), 200)
+    response = make_response(jsonify({'response': 'Logged as admin'}))
     response.set_cookie('session', encoded_jwt, httponly=True, expires=expire)
 
     return response
