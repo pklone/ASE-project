@@ -230,37 +230,13 @@ def roll():
 
     return jsonify({'response': record})
 
-@app.route('/admin/collection', methods=['POST'])
+@app.route('/collection', methods=['POST'])
 def add_gacha():
-    encoded_jwt = request.cookies.get('session')
-
-    if not encoded_jwt:
-        return jsonify({'response': 'You\'re not logged'})
-
-    try:
-        options = {
-            'require': ['exp'], 
-            'verify_signature': True, 
-            'verify_exp': True
-        }
-
-        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
-    except jwt.ExpiredSignatureError:
-        return jsonify({'response': 'Expired token'})
-    except jwt.InvalidTokenError:
-        return jsonify({'response': 'Invalid token'})
-
-    if 'admin' not in decoded_jwt:
-        return jsonify({'response': 'You are not autorized'}), 401
-    
-    if decoded_jwt['admin'] == False:
-        return jsonify({'response': 'You are not autorized'}), 401
-    
     new_uuid = str(uuid.uuid4())
     new_name = request.json.get('name')
     new_description = request.json.get('description')
     new_image_path = request.json.get('image_path')
-    new_rarity = request.json.get('id_rarity')
+    new_rarity = request.json.get('new_rarity')
 
     try:
         conn = psycopg2.connect(
@@ -282,41 +258,14 @@ def add_gacha():
     except psycopg2.Error as e:
         return jsonify({'response': str(e)})
     
-    return jsonify({'response': 'Gacha added'})
+    return jsonify({'response': 'Gacha added'}), 200
     
-@app.route('/admin/collection/<string:gacha_uuid>', methods=['PUT'])
+@app.route('/collection/<string:gacha_uuid>', methods=['PUT'])
 def modify_gacha(gacha_uuid):
-    encoded_jwt = request.cookies.get('session')
-
-    if not encoded_jwt:
-        return jsonify({'response': 'You\'re not logged'})
-
-    try:
-        options = {
-            'require': ['exp'], 
-            'verify_signature': True, 
-            'verify_exp': True
-        }
-
-        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
-    except jwt.ExpiredSignatureError:
-        return jsonify({'response': 'Expired token'})
-    except jwt.InvalidTokenError:
-        return jsonify({'response': 'Invalid token'})
-
-    if 'admin' not in decoded_jwt:
-        return jsonify({'response': 'You are not autorized'}), 401
-    
-    if decoded_jwt['admin'] == False:
-        return jsonify({'response': 'You are not autorized'}), 401
-    
-    new_name = request.json.get('name')
-    new_description = request.json.get('description')
-    new_image_path = request.json.get('image_path')
-    new_rarity = request.json.get('id_rarity')
-    if new_rarity <= 0 or new_rarity > 5:
-        return jsonify({'response': 'Invalid rarity'})
-
+    new_name = request.json.get('new_name')
+    new_description = request.json.get('new_description')
+    new_image_path = request.json.get('new_image_path')
+    new_rarity = request.json.get('new_rarity')
     try:
         conn = psycopg2.connect(
             dbname=DB_NAME,
