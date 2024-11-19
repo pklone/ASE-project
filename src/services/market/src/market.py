@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, json, render_template
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import psycopg2
 import psycopg2.extras
 import os
@@ -235,7 +235,7 @@ def create_auction():
     auction_uuid = str(uuid.uuid4())
     gacha_uuid = request.json.get('gacha_uuid')
     starting_price = request.json.get('starting_price')
-    expired_at = int(datetime.now(tz=timezone.utc).timestamp() + 3600*24)
+    expired_at = datetime.now(tz=timezone.utc) + timedelta(days=1)
 
     try: 
         conn = psycopg2.connect(
@@ -349,7 +349,6 @@ def make_bid(auction_uuid):
         return jsonify({'response': str(e)})
     
     current_time = int(datetime.now(tz=timezone.utc).timestamp())
-
     final_time = int(record['expired_at'].timestamp())
     base_price = record['base_price']
     current_price = record['offer']
