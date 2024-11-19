@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, json, render_template
 from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 import psycopg2
 import psycopg2.extras
 import os
@@ -40,7 +41,7 @@ def show_all():
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute('SELECT id, uuid, base_price, gacha_uuid, user_uuid, expired_at, closed from auction')
+        cursor.execute('''SELECT id, uuid, base_price, gacha_uuid, user_uuid, to_char(expired_at, 'DD/MM/YYYY HH:MI:SSOF:00') as expired_at, closed from auction''')
         result = cursor.fetchall()
         if result:
             records = result
@@ -66,12 +67,15 @@ def show_all():
             gacha_info = gachas[record['gacha_uuid']]
 
         if gacha_info: 
+            expire_utc = datetime.strptime(record['expired_at'], '%d/%m/%Y %H:%M:%S%z')
+            expire = expire_utc.astimezone(ZoneInfo('Europe/Rome'))
+
             auction = {
                 'auction_uuid': record['uuid'],
                 'base_price': record['base_price'],
                 'Gacha': gacha_info, 
                 'player_username': player_username,
-                'expired_at': record['expired_at'],
+                'expired_at': expire.strftime('%d/%m/%Y %H:%M:%S %Z'),
                 'closed': record['closed']
             }
 
@@ -325,7 +329,7 @@ def make_bid(auction_uuid):
     
     return jsonify({'response': {'auction_uuid': auction_uuid, 'player_uuid': player_uuid, 'offer': offer, 'closed': record['closed']}})
 
-@app.route('/market/<string:auction_uuid>/close', methods=['POST'])
+@app.route('/market/<string:auction_uuid>/close', methods=['PUT'])
 def close_auction(auction_uuid):
     #endoded_jwt = request.cookies.get('session')
 #
