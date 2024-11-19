@@ -39,11 +39,9 @@ def admin_login():
 
     r = requests.post(url='http://authentication_service:5000/admin_login', json=data)
 
-    #try:
-    #    r_json = json.loads(r.text)
-    #except json.JSONDecodeError as e:
-    #    return jsonify({'response': 'Json error'}), 500
-
+    if r.status_code != 200:
+        return r.text, r.status_code
+    
     response = make_response(r.text)
     response.headers['Set-Cookie'] = r.headers['Set-Cookie']
 
