@@ -73,14 +73,14 @@ def users():
     if decoded_jwt['admin'] == False:
         return jsonify({'response': 'You are not autorized'})
     
-    r = requests.get(url='http://account_service:5000/users')
+    r = requests.get(url='http://player_service:5000/')
 
     try:
         response = json.loads(r.text)
     except json.JSONDecodeError as e:
         return jsonify({'response': 'Json error'}), 500
     
-    return response
+    return jsonify(response['response']), 200
 
 @app.route('/admin/users/<string:user_uuid>', methods=['GET'])
 def user(user_uuid):
@@ -109,7 +109,7 @@ def user(user_uuid):
         return response
     
     
-    r = requests.get(url=f'http://account_service:5000/users/{user_uuid}')
+    r = requests.get(url=f'http://player_service:5000/uuid/{user_uuid}')
 
     try:
         response = json.loads(r.text)
@@ -152,7 +152,7 @@ def user_modify(user_uuid):
         'wallet': new_wallet
     }
 
-    r = requests.put(url=f'http://account_service:5000/users/{user_uuid}', json=new_player)
+    r = requests.put(url=f'http://player_service:5000/uuid/{user_uuid}', json=new_player)
 
     return r.text
 

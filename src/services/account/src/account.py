@@ -23,42 +23,6 @@ def page_not_found(error):
 def signup():
     return render_template('signup.html')
 
-@app.route('/users', methods=['GET'])
-def users():
-    r = requests.get(url='http://player_service:5000/')
-
-    try:
-        response = json.loads(r.text)
-    except json.JSONDecodeError as e:
-        return jsonify({'response': 'Json error'}), 500
-    
-    return jsonify(response['response']), 200
-
-@app.route('/users/<string:user_uuid>', methods=['GET'])
-def user(user_uuid):    
-    r = requests.get(url=f'http://player_service:5000/uuid/{user_uuid}')
-
-    try:
-        response = json.loads(r.text)
-    except json.JSONDecodeError as e:
-        return jsonify({'response': 'Json error'}), 500
-    
-    return jsonify(response), 200
-
-@app.route('/users/<string:user_uuid>', methods=['PUT'])
-def user_modify(user_uuid):    
-    new_username = request.json.get('username')
-    new_wallet = request.json.get('wallet')
-
-    new_player = {
-        'username': new_username,
-        'wallet': new_wallet
-    }
-
-    r = requests.put(url=f'http://player_service:5000/uuid/{user_uuid}', json=new_player)
-
-    return r.text
-
 @app.route('/user', methods=['POST'])
 def create():
     username = request.json['username']
