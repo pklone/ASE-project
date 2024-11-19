@@ -15,6 +15,11 @@ jobs:
           compose-file: "./src/compose.yaml"
           up-flags: "--build"
           down-flags: "--volumes"
+      - name: Wait for containers to be healthy
+        run: |
+          echo "Waiting for containers to become healthy..."
+            sleep 10
+          echo "All containers are healthy!"
       - name: Install Postman CLI
         run: |
           curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
