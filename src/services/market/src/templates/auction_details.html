@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auction Details</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar is-light" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="/">
+                <strong>Marketplace</strong>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Auction Details -->
+    <section class="section">
+        <div class="container has-text-centered" style='width: 50%'>
+            <h1 class="title">Auction Details</h1>
+            <div class="box has-text-centered">
+                <h2 class="subtitle">{{auction.Gacha.name}}</h2>
+                <p><strong>Rarity:</strong> {{auction.Gacha.rarity}}</p>
+                <img src="{{auction.Gacha.image_path}}" alt="Gacha Image" style='width: 40%'>
+                <p><strong>Base Price:</strong> {{auction.base_price}}</p>
+                <p><strong>Current Offer:</strong> {{auction.actual_offer}}</p>
+                <p><strong>Owner:</strong> {{auction.player_username}}</p>
+                <p><strong>Expiration:</strong> {{auction.expired_at}}</p>
+                <p><strong>Status:</strong> {{'Closed' if auction.closed else 'Open'}}</p>
+            </div>
+        </div>
+    </section>
+</body>
+</html>
