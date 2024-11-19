@@ -1,7 +1,58 @@
 # ASE-project
 
-## Database
-You can connect to the database with the following command.
+## Getting started
+Firstly, go into the `src` directory. Now, build all the images.
+```
+docker compose build
+```
+Then, you can run the containers.
+```
+docker compose up -d
+````
+You can also do everything with one command.
+```
+docker compose up -d --build
+```
+The application is accessible from the proxy end-point at `https://ase.localhost`.
+
+> [!IMPORTANT]
+> End-point proxy uses a **self-signed** certificate to provide HTTPS. If you want to use `curl` to communicate with the APIs, use `-k` flag to disable CA signature verification.
+
+## Testing
+In order to test each service API without accessing the proxy, you can use another docker configuration file, i.e. `compose.testing.yaml`. It maps all the components (services, databases, etc.) with the external network, so you can access them from the host. Use the following command to run the application in _test mode_. 
+```
+docker compose -f compose.develop.yaml up -d --build
+```
+
+### Port mapping
+Here is the list of all the accessible components and their related ports.
+- Databases are mapped to ports in range `5432-5437`
+
+  | Database                  | Port |
+  | ------------------------- | ---- |
+  | Player Database           | 5432 |
+  | Admin Database            | 5433 |
+  | Gacha Database            | 5434 |
+  | Account Database          | 5435 |
+  | Market Database           | 5436 |
+  | Transaction Database      | 5437 |
+
+- Services are mapped to ports in range `8080-8087` (`8086` excluded)
+  
+  | Service                   | Port |
+  | ------------------------- | ---- |
+  | Player Service            | 8080 |
+  | Authentication Service    | 8081 |
+  | Gacha Service             | 8082 |
+  | Account Service           | 8083 |
+  | Currency Service          | 8084 |
+  | Market Service            | 8086 |
+  | Transaction Service       | 8087 |
+  
+- RabbitMQ is mapped to the ports `5672` and `15672`
+
+### Database
+You can connect to a database with the following command.
 ```
 psql -U postgres
 ```
@@ -15,30 +66,34 @@ Here some useful `psql` commands.
 \q                 # quit
 ```
 
-## Curl
-Here some useful `curl` commands.
-```
-curl -X POST -H 'Content-Type: application/json' -d '{"username": "kek", "password": "kek"}' -c cookie.jar http://127.0.0.1:8083/user
-curl -X POST -H 'Content-Type: application/json' -d '{"username": "kek", "password": "kek"}' -c cookie.jar http://127.0.0.1:8081/login
-curl -X GET -b cookie.jar http://127.0.0.1:8082/roll
-curl -X DELETE -b cookie.jar http://127.0.0.1:8083/user
+### Curl
+Here some useful `curl` commands to test the APIs.
+- Register as a player, login, roll a new gacha and delete the account.
+  ```
+  curl -X POST -H 'Content-Type: application/json' -d '{"username": "kek", "password": "kek"}' -c cookie.jar http://127.0.0.1:8083/user
+  curl -X POST -H 'Content-Type: application/json' -d '{"username": "kek", "password": "kek"}' -c cookie.jar http://127.0.0.1:8081/login
+  curl -X GET -b cookie.jar http://127.0.0.1:8082/roll
+  curl -X DELETE -b cookie.jar http://127.0.0.1:8083/user
+  ```
+- Register as a player, login, roll a gacha, get gachas uuids of own collection, create an auction, logout, login as `test` player, get the auctions uuids and make a bid
+  ```
+  curl -X POST -H 'Content-Type: application/json' -d '{"username": "kek", "password": "kek"}' -c cookie.jar http://127.0.0.1:8083/user
+  curl -X POST -H 'Content-Type: application/json' -d '{"username": "kek", "password": "kek"}' -c cookie.jar http://127.0.0.1:8081/login
+  curl -X GET -b cookie.jar http://127.0.0.1:8082/roll
+  curl -X GET -b cookie.jar http://127.0.0.1:8083/user/collection
+  curl -X POST -H 'Content-Type: application/json' -d '{"gacha_uuid": "8930305e-262f-4ae9-92a0-f6d5dccc4d1f", "starting_price": 20}' -b cookie.jar http://127.0.0.1:8086/market
+  curl -X DELETE -b cookie.jar http://127.0.0.1:8081/logout
+  curl -X POST -H 'Content-Type: application/json' -d '{"username": "test", "password": "test"}' -c cookie.jar http://127.0.0.1:8081/login
+  curl -X GET -H 'Accept: application/json' http://127.0.0.1:8086/market
+  curl -X POST -H 'Content-Type: application/json' -d '{"offer": 50}' -b cookie.jar http://127.0.0.1:8086/market/6aa807c0-07c4-46ea-ae0a-ca027e7094d1/bid
+  ```
+- login as admin and insert a new gacha
+  ```
+  curl -X POST -k -H 'Content-Type: application/json' -H 'Accept: application/json' -d '{"username": "admin", "password": "admin"}' -c cookie.jar http://127.0.0.1/admin/login
+  curl -X POST -k -H 'Content-Type: application/json' -d '{"name": "wyvern", "description": "new description", "id_rarity": 5, "image_path": "/home/asset..." }' -b cookie.jar http://127.0.0.1/admin/collection
+  ```
 
-curl -X POST -H 'Content-Type: application/json' -d '{"username": "test", "password": "test"}' -c cookie.jar http://127.0.0.1:8081/login
-curl -X GET -b cookie.jar http://127.0.0.1:8083/user/collection
-curl -X DELETE -b cookie.jar http://127.0.0.1:8081/logout
-
-curl -X POST -H 'Content-Type: application/json' -d '{"username": "test", "password": "test"}' -c cookie.jar http://127.0.0.1:8081/login
-curl -X GET -b cookie.jar http://127.0.0.1:8083/user/collection
-curl -X POST -H 'Content-Type: application/json' -d '{"gacha_uuid": "09907f76-9b0f-4270-84a3-e9780b164ac4", "starting_price": 20}' -b cookie.jar http://127.0.0.1:8086/market
-```
-Note: if you want to use the `gateway` adresses:
-```
-curl -X POST -k -H 'Content-Type: application/json' -H 'Accept: application/json' -d '{"username": "test", "password": "test"}' -c cookie.jar https://ase.localhost/login
-curl -X POST -k -H 'Content-Type: application/json' -d '{"name": "wyvern", "description": "new description", "id_rarity": 5, "image_path": "/home/asset..." }' -b cookie.jar https://ase.localhost/admin/collection
-```
-the `-k` options makes curl ignores the self signed certified and the new `Accept` headers forces curl to give an application/json responses
-
-## Compose Watch
+### Compose Watch
 It's possible to use `docker compose watch` to rebuild/resync the image/container when files change.
 If you don't want to see container logs, use
 ```
@@ -50,18 +105,21 @@ If instead you need to see them, use
 docker compose up --build --watch
 ```
 
-## Just
+### Just
 Here some useful `just` commands.
 ```
 just           # show recipes as a list
 just up        # docker compose up --build -d
+just up w      # docker compose up -w
 just up -      # docker compose up
 just rs        # docker compose down && docker compose up --build -d
 just rs v      # docker compose down -v && docker compose up --build -d
 just rs b      # docker compose down && docker compose up --build
 just rs d      # docker compose down && docker compose up -d
+just rs w      # docker compose down && docker compose up -w
 just rs v b    # docker compose down -v && docker compose up --build
 just rs v d    # docker compose down -v && docker compose up -d
+just rs v b w  # docker compose down -v && docker compose up --build -w
 just rs -      # docker compose down && docker compose up
 just w         # docker compose watch --no-up
 just ps        # docker compose ps -a
@@ -113,10 +171,22 @@ will run a shell no matter the container you choose
 - set .gitignore to ignore only the `.env` file with `JUST_CHOOSER` variable
 - payment service
 - postman tests
-- close transaction when expire (by external service)
+- close auction when expire (by external service)
 - github actions
 - set accessible/non-accessible routes on end-point gateway (security)
 - docker networks
 - admin routes
 - when a player makes a bid, checks if he has already the biggest bid
 - add link between `payment` and `player` services inside architecture image (and microfreshner)
+- an admin can ban a player. Also, if a player wins an auction but he doesn't have enough money to pay the final price, 
+  a counter will be increased by 1. When this counter becomes equal to 3, the player will be banned.
+- use `pip install --no-cache-dir` to create smaller images
+- remove id and use only uuid
+- jwt secret with env variable
+- check `Accept` headers in all APIs
+- check if celery worker still close auction if it crash (backend?)
+- check consistency of functions that performs multi actions to other services or databases
+- market and transaction APIs in admin service
+- add checks to market `close` API (e.g. admin can close every auction but player can close only his auctions)
+- check null arguments in APIs
+- add delete gacha API
