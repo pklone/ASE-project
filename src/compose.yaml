@@ -82,19 +82,7 @@ services:
         target: /app
       - action: rebuild
         path: ./services/player/requirements.txt
-  
-  admin_service:
-    build: ./services/admin
-    container_name: admin_service
-    develop:
-      watch:
-        - action: sync
-          path: ./services/admin/src
-          target: /app
-        - action: rebuild
-          path: ./services/admin/requirements.txt
-
-
+        
   authentication_service:
     build: ./services/authentication
     container_name: authentication_service
@@ -156,6 +144,17 @@ services:
         target: /app
       - action: rebuild
         path: ./services/currency/requirements.txt
+
+  admin_service:
+    build: ./services/admin
+    container_name: admin_service
+    develop:
+      watch:
+        - action: sync
+          path: ./services/admin/src
+          target: /app
+        - action: rebuild
+          path: ./services/admin/requirements.txt
 
   market_service:
     build: ./services/market

@@ -167,6 +167,19 @@ services:
       - action: rebuild
         path: ./services/currency/requirements.txt
 
+  admin_service:
+    build: ./services/admin
+    container_name: admin_service
+    ports:
+      - "127.0.0.1:8085:5000"
+    develop:
+      watch:
+        - action: sync
+          path: ./services/admin/src
+          target: /app
+        - action: rebuild
+          path: ./services/admin/requirements.txt
+
   market_service:
     build: ./services/market
     container_name: market_service
