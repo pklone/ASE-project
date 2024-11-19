@@ -23,32 +23,8 @@ def page_not_found(error):
 def signup():
     return render_template('signup.html')
 
-@app.route('/admin/users', methods=['GET'])
+@app.route('/users', methods=['GET'])
 def users():
-    encoded_jwt = request.cookies.get('session')
-
-    if not encoded_jwt:
-        return jsonify({'response': 'You\'re not logged'})
-
-    try:
-        options = {
-            'require': ['exp'], 
-            'verify_signature': True, 
-            'verify_exp': True
-        }
-
-        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
-    except jwt.ExpiredSignatureError:
-        return jsonify({'response': 'Expired token'})
-    except jwt.InvalidTokenError:
-        return jsonify({'response': 'Invalid token'})
-
-    if 'admin' not in decoded_jwt:
-        return jsonify({'response': 'You are not autorized'})
-    
-    if decoded_jwt['admin'] == False:
-        return jsonify({'response': 'You are not autorized'})
-    
     r = requests.get(url='http://player_service:5000/')
 
     try:
@@ -58,33 +34,8 @@ def users():
     
     return jsonify(response['response']), 200
 
-@app.route('/admin/users/<string:user_uuid>', methods=['GET'])
-def user(user_uuid):
-    encoded_jwt = request.cookies.get('session')
-
-    if not encoded_jwt:
-        return jsonify({'response': 'You\'re not logged'})
-
-    try:
-        options = {
-            'require': ['exp'], 
-            'verify_signature': True, 
-            'verify_exp': True
-        }
-
-        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
-    except jwt.ExpiredSignatureError:
-        return jsonify({'response': 'Expired token'})
-    except jwt.InvalidTokenError:
-        return jsonify({'response': 'Invalid token'})
-
-    if 'admin' not in decoded_jwt:
-        return jsonify({'response': 'You are not autorized'})
-    
-    if decoded_jwt['admin'] == False:
-        return jsonify({'response': 'You are not autorized'})
-    
-    
+@app.route('/users/<string:user_uuid>', methods=['GET'])
+def user(user_uuid):    
     r = requests.get(url=f'http://player_service:5000/uuid/{user_uuid}')
 
     try:
@@ -94,32 +45,8 @@ def user(user_uuid):
     
     return jsonify(response), 200
 
-@app.route('/admin/users/<string:user_uuid>', methods=['PUT'])
-def user_modify(user_uuid):
-    encoded_jwt = request.cookies.get('session')
-
-    if not encoded_jwt:
-        return jsonify({'response': 'You\'re not logged'})
-
-    try:
-        options = {
-            'require': ['exp'], 
-            'verify_signature': True, 
-            'verify_exp': True
-        }
-
-        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
-    except jwt.ExpiredSignatureError:
-        return jsonify({'response': 'Expired token'})
-    except jwt.InvalidTokenError:
-        return jsonify({'response': 'Invalid token'})
-
-    if 'admin' not in decoded_jwt:
-        return jsonify({'response': 'You are not autorized'})
-    
-    if decoded_jwt['admin'] == False:
-        return jsonify({'response': 'You are not autorized'})
-    
+@app.route('/users/<string:user_uuid>', methods=['PUT'])
+def user_modify(user_uuid):    
     new_username = request.json.get('username')
     new_wallet = request.json.get('wallet')
 
@@ -198,8 +125,8 @@ def collection():
         decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
     except jwt.ExpiredSignatureError:
         return jsonify({'response': 'Expired token'})
-    except jwt.InvalidTokenError:
-        return jsonify({'response': 'Invalid token'})
+    except jwt.InvalidTokenError as e:
+        return jsonify({'response': str(e)})
 
     if 'uuid' not in decoded_jwt:
         return jsonify({'response': 'Try later'})
