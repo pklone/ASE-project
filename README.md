@@ -37,7 +37,7 @@ Here is the list of all the accessible components and their related ports.
   | Market Database           | 5436 |
   | Transaction Database      | 5437 |
 
-- Services are mapped to ports in range `8080-8087` (`8086` excluded)
+- Services are mapped to ports in range `8080-8087`
   
   | Service                   | Port |
   | ------------------------- | ---- |
@@ -46,6 +46,7 @@ Here is the list of all the accessible components and their related ports.
   | Gacha Service             | 8082 |
   | Account Service           | 8083 |
   | Currency Service          | 8084 |
+  | Admin Service             | 8085 |
   | Market Service            | 8086 |
   | Transaction Service       | 8087 |
   
@@ -190,3 +191,5 @@ will run a shell no matter the container you choose
 - add checks to market `close` API (e.g. admin can close every auction but player can close only his auctions)
 - check null arguments in APIs
 - add delete gacha API
+- add message broker
+- check what service connects to `close` function in market (if caddy proxy connects to the functions, the player jwt must be checked)
