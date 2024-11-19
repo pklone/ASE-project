@@ -171,8 +171,6 @@ services:
   currency_service:
     build: ./services/currency
     container_name: currency_service
-    ports:
-      - "127.0.0.1:8084:5000"
     develop:
      watch:
       - action: sync
