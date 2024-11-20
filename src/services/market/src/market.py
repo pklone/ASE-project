@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, json, render_template
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
+import socket
 import psycopg2
 import psycopg2.extras
 import os
@@ -210,7 +211,6 @@ def create_auction():
     
     if not player_gacha or player_gacha['quantity'] < 1:
         return jsonify({'response': 'You don\'t have this gacha'})
-
     
     try: 
         cursor = conn.cursor()
@@ -300,7 +300,6 @@ def make_bid(auction_uuid):
     base_price = record['base_price']
     current_price = record['offer']
 
-    #controllo se utente non è il proprietario dell'asta
     if player_uuid == record['user_uuid']:
         return jsonify({'response': 'You\'re the owner of this auction'})
 
@@ -331,39 +330,91 @@ def make_bid(auction_uuid):
 
 @app.route('/market/<string:auction_uuid>/close', methods=['PUT'])
 def close_auction(auction_uuid):
-    #endoded_jwt = request.cookies.get('session')
-#
-    #if not endoded_jwt:
-    #    return jsonify({'response': 'You\'re not logged'})
-    #
-    #try:
-    #    options = {
-    #        'require': ['exp'],
-    #        'verify_signature': True,
-    #        'verify_exp': True
-    #    }
-#
-    #    decoded_jwt = jwt.decode(endoded_jwt, SECRET, algorithms=['HS256'], options=options)
-    #except jwt.ExpiredSignatureError:
-    #    return jsonify({'response': 'Expired token'})
-    #except jwt.InvalidTokenError:
-    #    return jsonify({'response': 'Invalid token'})
-    #
-    #if 'uuid' not in decoded_jwt:
-    #    return jsonify({'response': 'Try later - jwt error'})
-    #
-    #player_uuid = decoded_jwt['uuid'] 
 
-    res = _close_auction(auction_uuid)
+    player_uuid = None
+    is_admin = False
 
-    http_status = 200
-    if res['error']:
-        http_status = 400
+    hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]
+
+    if hostname == 'admin_service':
+        is_admin = True
+
+    try: 
+        conn = psycopg2.connect(
+                dbname=DB_NAME,
+                user=DB_USER,
+                password=DB_PASSWORD,
+                host=DB_HOST,
+                port=DB_PORT
+            )
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('''
+            SELECT a.user_uuid, a.closed, COALESCE(b.offer, 0) AS offer
+                FROM auction a 
+                LEFT JOIN bid b ON a.uuid = b.auction_uuid 
+                WHERE a.uuid = %s 
+                ORDER BY b.offer desc limit 1''',
+        [auction_uuid])
         
-    return jsonify({'response': res['response']}), http_status
+        if cursor.rowcount == 0:
+            return {'response': 'Auction not found'}
+        
+        record = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+    except psycopg2.Error as e:
+        return {'error': True, 'response': str(e)}
+    
+    if not is_admin:
+        endoded_jwt = request.cookies.get('session')
+
+        if not endoded_jwt:
+            return jsonify({'response': 'You\'re not logged'})
+
+        try:
+            options = {
+                'require': ['exp'],
+                'verify_signature': True,
+                'verify_exp': True
+            }
+
+            decoded_jwt = jwt.decode(endoded_jwt, SECRET, algorithms=['HS256'], options=options)
+        except jwt.ExpiredSignatureError:
+            return jsonify({'response': 'Expired token'})
+        except jwt.InvalidTokenError:
+            return jsonify({'response': 'Invalid token'})
+
+        if 'uuid' not in decoded_jwt:
+            return jsonify({'response': 'Try later - jwt error'})
+
+        player_uuid = decoded_jwt['uuid']
+
+        if record['user_uuid'] != player_uuid:
+            return jsonify({'response': 'You\'re not the owner of this auction'})
+        if record['offer'] != 0:
+            return {'error': True, 'response': 'Not possible to close auction with bids'}
+
+    if record['closed'] == True:
+        return {'response': 'Auction is already closed'}
+    try: 
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('DELETE FROM bid WHERE auction_uuid = %s',
+            [auction_uuid])
+        cursor.execute('UPDATE auction SET closed = TRUE WHERE uuid = %s',
+            [auction_uuid])
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except psycopg2.Error as e:
+        return {'error': True, 'response': str(e)}
+    return {'error': False, 'response': 'Auction closed'}
 
 @app.route('/market/<string:auction_uuid>/payment', methods=['POST'])
 def payment(auction_uuid):
+    #TODO
+    #hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]
+    #if hostname != 'celery_worker':
+    #    return jsonify({'response': 'You\'re not authorized'})
 
     try:
         conn = psycopg2.connect(
@@ -412,16 +463,24 @@ def payment(auction_uuid):
         cursor.close()
     except psycopg2.Error as e:
         return jsonify({'response': str(e)}) 
-    
-    #if record[0]['closed'] == True:
-    #    return jsonify({'response': 'Auction is already closed'})
-    
+        
     if len(record) == 0 or (record[0]['offer'] == 0 and record[1]['offer'] == 0 and record[2]['offer'] == 0):
         return jsonify({'response': 'There are no bids for this auction'})
-         
-    res = _close_auction(auction_uuid)
-    if res['error']:
-        return jsonify({'response': 'Failed to close the auction', 'details': r['response']})    
+    
+    if record[0]['closed'] == True:
+        return {'response': 'Auction is already closed'}
+    
+    try: 
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('DELETE FROM bid WHERE auction_uuid = %s',
+            [auction_uuid])
+        cursor.execute('UPDATE auction SET closed = TRUE WHERE uuid = %s',
+            [auction_uuid])
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except psycopg2.Error as e:
+        return {'response': str(e)}  
 
     for i in range(min(3, len(record))):
         buyer_uuid = record[i]['buyer']
@@ -473,69 +532,6 @@ def payment(auction_uuid):
         return jsonify({'response': 'Transaction completed', 'transaction': transaction_data})
         
     return jsonify({'response': 'No buyers with sufficient funds'})
-
-
-def _close_auction(auction_uuid):
-    try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT
-        )
-    except psycopg2.Error as e:
-        return {'error': True, 'response': str(e)}
-    
-    try: 
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        #cursor.execute('''
-        #    SELECT a.base_price, a.user_uuid, a.expired_at, a.closed, COALESCE(b.offer, 0) AS offer
-        #        FROM auction a 
-        #        LEFT JOIN bid b ON a.uuid = b.auction_uuid 
-        #        WHERE a.uuid = %s 
-        #        ORDER BY b.offer desc limit 1''',
-        #[auction_uuid])
-        cursor.execute('SELECT closed FROM auction WHERE uuid = %s', [auction_uuid])
-        record = cursor.fetchone()
-        conn.commit()
-        cursor.close()
-    except psycopg2.Error as e:
-        return {'error': True, 'response': str(e)}
-    
-    #if record['user_uuid'] != player_uuid:
-    #    return jsonify({'response': 'You\'re not the owner of this auction'})
-     
-    if record['closed'] == True:
-        return {'error': True, 'response': 'Auction is already closed'}
-    
-    #if record['offer'] == 0:
-    #    return {'error': True, 'response': 'There are no bids for this auction'}
-    
-    try: 
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute('DELETE FROM bid WHERE auction_uuid = %s',
-            [auction_uuid])
-        cursor.execute('UPDATE auction SET closed = TRUE WHERE uuid = %s',
-            [auction_uuid])
-        conn.commit()
-        cursor.close()
-        conn.close()
-    except psycopg2.Error as e:
-        return {'error': True, 'response': str(e)}
-
-    return {'error': False, 'response': 'Auction closed'}
-    
-    #data = {
-    #    'price': record['offer'],
-    #    'uuid_player': record['user_uuid'],
-    #    'uuid_auction': auction_uuid
-    #}
-    #r = requests.post(url='http://transaction_service:5000/', json=data)
-    #if r.status_code != 200:
-        #return jsonify({'response': 'Try later - transaction error'})
-
-    #return jsonify({'response': 'Auction closed'})
 
 
 if __name__ == '__main__':

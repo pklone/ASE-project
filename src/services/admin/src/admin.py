@@ -242,6 +242,35 @@ def modify_gacha(gacha_uuid):
     
     return r.text
 
+@app.route('/admin/close/<string:auction_uuid>', methods=['PUT'])
+def close(auction_uuid):
+    encoded_jwt = request.cookies.get('session')
+
+    if not encoded_jwt:
+        return jsonify({'response': 'You\'re not logged'})
+
+    try:
+        options = {
+            'require': ['exp'], 
+            'verify_signature': True, 
+            'verify_exp': True
+        }
+
+        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
+    except jwt.ExpiredSignatureError:
+        return jsonify({'response': 'Expired token'})
+    except jwt.InvalidTokenError:
+        return jsonify({'response': 'Invalid token'})
+
+    if 'admin' not in decoded_jwt:
+        return jsonify({'response': 'You are not autorized'}), 401
+    
+    if decoded_jwt['admin'] == False:
+        return jsonify({'response': 'You are not autorized'}), 401
+    
+    r = requests.put(f'http://market_service:5000/market/{auction_uuid}/close')
+    return r.text, r.status_code
+
 #TODO aggiungere admin functionality market(to add) player(to add) currency(to add)
 
 
