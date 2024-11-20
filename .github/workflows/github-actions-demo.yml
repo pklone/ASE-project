@@ -28,10 +28,10 @@ jobs:
           down-flags: "--volumes"
 
       - name: Save Docker cache
-      uses: actions/cache/save@v4
-      with:
-        path: /tmp/.buildx-cache 
-        key: ${{ runner.os }}-docker-${{ hashFiles('**/src/compose.yaml') }}
+        uses: actions/cache/save@v4
+        with:
+          path: /tmp/.buildx-cache 
+          key: ${{ runner.os }}-docker-${{ hashFiles('**/src/compose.yaml') }}
 
       - name: Wait for containers to be healthy
         run: |
