@@ -31,6 +31,10 @@ ase.localhost {
     handle /admin/collection/* {
         reverse_proxy admin_service:5000
     }
+    handle /admin/close/{http.request.uri.path.2} {
+        reverse_proxy admin_service:5000
+    }
+
     handle /user {
         reverse_proxy account_service:5000
     }
@@ -76,5 +80,13 @@ ase.localhost {
     }   
     handle /market/{http.request.uri.path.1}/close {
         reverse_proxy market_service:5000
+    }
+    handle /market/{http.request.uri.path.1}/payment {
+        reverse_proxy market_service:5000
+    }
+    
+    handle {
+        header Content-Type application/json
+        respond `{"response": "page not found}` 404
     }
 }
