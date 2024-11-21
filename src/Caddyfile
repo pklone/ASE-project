@@ -31,7 +31,16 @@ ase.localhost {
     handle /admin/collection/* {
         reverse_proxy admin_service:5000
     }
+    handle /admin/market {
+        reverse_proxy admin_service:5000
+    }
+    handle /admin/market/{http.request.uri.path.2} {
+        reverse_proxy admin_service:5000
+    }
     handle /admin/close/{http.request.uri.path.2} {
+        reverse_proxy admin_service:5000
+    }
+    handle /admin/transaction/{http.request.uri.path.2} {
         reverse_proxy admin_service:5000
     }
 
