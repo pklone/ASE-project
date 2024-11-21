@@ -16,6 +16,7 @@ SECRET = 'secret' # change secret for deployment
 
 app = Flask(__name__, static_url_path=STATIC_DIR_PATH)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1000 * 1000  # 16 MB
 
 #set db connection
 DB_NAME = os.getenv("DB_NAME")
