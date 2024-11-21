@@ -32,6 +32,12 @@ def show_all():
     auctions = []
     gachas = {}
     records = {}
+
+    is_admin = False
+    hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]
+    if hostname == 'admin_service':
+        is_admin = True
+
     try:
         conn = psycopg2.connect(
             dbname=DB_NAME,
@@ -79,9 +85,17 @@ def show_all():
                 'expired_at': expire.strftime('%d/%m/%Y %H:%M:%S %Z'),
                 'closed': record['closed']
             }
-
-            auctions.append(auction)
             
+            if not is_admin:
+                if record['closed'] == True:
+                    continue
+                else:
+                    auctions.append(auction)
+            else:
+                auctions.append(auction)
+
+    return jsonify({'response': auctions}), 200
+    #TODO non fa la return dice not suported
     if 'application/json' in request.headers.get('Accept'):
         return jsonify({'response': auctions}), 200
     elif 'text/html' in request.headers.get('Accept'):
@@ -93,6 +107,11 @@ def show_all():
 def show_one(auction_uuid):
     gachas = {}
     record = {}
+
+    is_admin = False
+    hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]
+    if hostname == 'admin_service' or hostname == 'transaction_service': #TODO controllare se transaction service funge
+        is_admin = True
 
     try:
         conn = psycopg2.connect(
@@ -141,10 +160,14 @@ def show_one(auction_uuid):
             'base_price': record['base_price'],
             'Gacha': gacha_info, 
             'player_username': player_username,
+            'player_uuid': record['user_uuid'],
             'expired_at': record['expired_at'],
             'closed': record['closed'],
             'actual_offer': record['offer']
         }
+
+    if not is_admin and record['closed'] == True:
+        return jsonify({'response': 'Auction is closed'}), 200 
             
     if 'application/json' in request.headers.get('Accept'):
         return jsonify({'response': auction}), 200
@@ -329,7 +352,7 @@ def make_bid(auction_uuid):
 
 @app.route('/market/<string:auction_uuid>/close', methods=['PUT'])
 def close_auction(auction_uuid):
-
+    
     player_uuid = None
     is_admin = False
 
@@ -362,7 +385,7 @@ def close_auction(auction_uuid):
         conn.commit()
         cursor.close()
     except psycopg2.Error as e:
-        return {'error': True, 'response': str(e)}
+        return {'response': str(e)}
     
     if not is_admin:
         endoded_jwt = request.cookies.get('session')
@@ -391,7 +414,7 @@ def close_auction(auction_uuid):
         if record['user_uuid'] != player_uuid:
             return jsonify({'response': 'You\'re not the owner of this auction'})
         if record['offer'] != 0:
-            return {'error': True, 'response': 'Not possible to close auction with bids'}
+            return {'response': 'Not possible to close auction with bids'}
 
     if record['closed'] == True:
         return {'response': 'Auction is already closed'}
@@ -405,8 +428,8 @@ def close_auction(auction_uuid):
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return {'error': True, 'response': str(e)}
-    return {'error': False, 'response': 'Auction closed'}
+        return {'response': str(e)}
+    return {'response': 'Auction closed'}
 
 @app.route('/market/<string:auction_uuid>/payment', methods=['POST'])
 def payment(auction_uuid):
