@@ -360,6 +360,37 @@ def close(auction_uuid):
     r = requests.put(f'http://market_service:5000/market/{auction_uuid}/close')
     return r.text, r.status_code
 
+@app.route('/admin/transaction/<string:player_uuid>', methods=['GET'])
+def transactions(player_uuid):
+    encoded_jwt = request.cookies.get('session')
+
+    if not encoded_jwt:
+        return jsonify({'response': 'You\'re not logged'})
+
+    try:
+        options = {
+            'require': ['exp'], 
+            'verify_signature': True, 
+            'verify_exp': True
+        }
+
+        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
+    except jwt.ExpiredSignatureError:
+        return jsonify({'response': 'Expired token'})
+    except jwt.InvalidTokenError:
+        return jsonify({'response': 'Invalid token'})
+
+    if 'admin' not in decoded_jwt:
+        return jsonify({'response': 'You are not autorized'})
+    
+    if decoded_jwt['admin'] == False:
+        return jsonify({'response': 'You are not autorized'})
+    
+    r = requests.get(url=f"http://transaction_service:5000/user/{player_uuid}")
+    if r.status_code != 200:
+        return jsonify({'response': 'Try later - transaction service error'})
+    return r.text, 200
+    
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
