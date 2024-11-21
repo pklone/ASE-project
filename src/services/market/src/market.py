@@ -295,7 +295,6 @@ def make_bid(auction_uuid):
         return jsonify({'response': str(e)})
     
     current_time = int(datetime.now(tz=timezone.utc).timestamp())
-
     final_time = int(record['expired_at'].timestamp())
     base_price = record['base_price']
     current_price = record['offer']

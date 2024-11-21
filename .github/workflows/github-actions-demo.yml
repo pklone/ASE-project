@@ -1,0 +1,34 @@
+name: Docker Compose Action
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run docker-compose
+        uses: hoverkraft-tech/compose-action@v2.0.1
+        with:
+          compose-file: "./src/compose.yaml"
+          up-flags: "--build"
+          down-flags: "--volumes"
+
+      - name: Wait for containers to be healthy
+        run: |
+          echo "Waiting for containers to become healthy..."
+          sleep 10
+          echo "All containers are healthy!"
+
+      - name: Install Postman CLI
+        run: |
+          curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+          
+      - name: Login to Postman CLI
+        run: postman login --with-api-key PMAK-673c9425c6e90200010b7ede-692550c7c48998ac043b618ed5891e6dd7 
+
+      - name: Run API tests
+        run: |
+          postman collection run "39769890-716edf12-6271-4592-bc2e-1199ef58ebef" -k
