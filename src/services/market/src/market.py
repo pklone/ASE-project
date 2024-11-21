@@ -433,10 +433,10 @@ def close_auction(auction_uuid):
 
 @app.route('/market/<string:auction_uuid>/payment', methods=['POST'])
 def payment(auction_uuid):
-    #TODO
-    #hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]
-    #if hostname != 'celery_worker':
-    #    return jsonify({'response': 'You\'re not authorized'})
+    hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]
+    
+    if 'celery_worker' not in hostname:
+        return jsonify({'response': 'You\'re not authorized'})
 
     try:
         conn = psycopg2.connect(
