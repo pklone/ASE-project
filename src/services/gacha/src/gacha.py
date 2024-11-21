@@ -345,5 +345,26 @@ def modify_gacha(gacha_uuid):
     
     return jsonify({'response': 'Gacha updated'})
 
+@app.route('/collection/<string:gacha_uuid>', methods=['DELETE'])
+def mdelete_gacha(gacha_uuid):
+    try:
+        conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT
+        )
+
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("DELETE FROM gacha WHERE uuid = %s", [gacha_uuid])
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except psycopg2.Error as e:
+        return jsonify({'response': str(e)})
+    
+    return jsonify({'response': 'Gacha deleted'})
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)

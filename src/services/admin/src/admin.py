@@ -261,6 +261,36 @@ def modify_gacha(gacha_uuid):
     
     return r.text
 
+@app.route('/admin/collection/<string:gacha_uuid>', methods=['DELETE'])
+def remove_gacha(gacha_uuid):
+    encoded_jwt = request.cookies.get('session')
+
+    if not encoded_jwt:
+        return jsonify({'response': 'You\'re not logged'})
+
+    try:
+        options = {
+            'require': ['exp'], 
+            'verify_signature': True, 
+            'verify_exp': True
+        }
+
+        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
+    except jwt.ExpiredSignatureError:
+        return jsonify({'response': 'Expired token'})
+    except jwt.InvalidTokenError:
+        return jsonify({'response': 'Invalid token'})
+
+    if 'admin' not in decoded_jwt:
+        return jsonify({'response': 'You are not autorized'}), 401
+    
+    if decoded_jwt['admin'] == False:
+        return jsonify({'response': 'You are not autorized'}), 401
+    
+    r = requests.delete(url=f'http://gacha_service:5000/collection/{gacha_uuid}')
+    
+    return r.text
+
 @app.route('/admin/market', methods=['GET'])
 def show_all():
     encoded_jwt = request.cookies.get('session')
