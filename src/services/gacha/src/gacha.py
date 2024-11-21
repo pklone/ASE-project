@@ -110,8 +110,11 @@ def show_by_player(player_id):
 
     return jsonify(records)
 
-@app.route('/collection/user/<int:player_uuid>', methods=['PUT'])
-def update_quantity(player_uuid, gacha_uuid, q): # q is 1 (buyer) or -1 (owner)
+@app.route('/collection/user/<string:player_uuid>', methods=['PUT'])
+def update_quantity(player_uuid): # q is 1 (buyer) or -1 (owner)
+    q = request.json.get('q')
+    uuid_gacha = request.json.get('gacha_uuid')
+
     try:
         conn = psycopg2.connect(
             dbname=DB_NAME,
@@ -125,16 +128,20 @@ def update_quantity(player_uuid, gacha_uuid, q): # q is 1 (buyer) or -1 (owner)
 
     r = requests.get(url=f'http://player_service:5000/uuid/{player_uuid}')
     response = json.loads(r.text)
+    id_player = response['response']['id']
 
     try: 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute('SELECT 1 FROM player_gacha WHERE id = %s', [response['response']['id']])
+        cursor.execute('SELECT 1 FROM player_gacha WHERE id_player = %s AND id_gacha = (SELECT id FROM gacha WHERE uuid = %s)', 
+            [id_player, uuid_gacha])
+
         if cursor.rowcount == 0:
             cursor.execute('INSERT INTO player_gacha (id_player, id_gacha) VALUES (%s, (SELECT id FROM gacha WHERE uuid = %s))',
-                [response['response']['id'], gacha_uuid])
+                [id_player, uuid_gacha])
         else:
-            record = cursor.fetchone()
-            cursor.execute('UPDATE player_gacha SET quantity = quantity + %s WHERE id = %s', [q, record['id']])
+            cursor.execute('UPDATE player_gacha SET quantity = quantity + (%s) WHERE id_player = %s AND id_gacha = (SELECT id FROM gacha WHERE uuid = %s)', 
+                [q, id_player, uuid_gacha])
+        
         conn.commit()
         cursor.close()
     except psycopg2.Error as e:
