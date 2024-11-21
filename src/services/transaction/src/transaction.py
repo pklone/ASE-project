@@ -1,7 +1,8 @@
-from flask import Flask, request, jsonify, abort
+from flask import Flask, request, jsonify, json, abort
 from datetime import datetime, timezone
 import psycopg2
 import psycopg2.extras
+import requests
 import os
 import uuid
 import re
@@ -119,6 +120,10 @@ def show_by_uuid(transaction_uuid):
 
 @app.route('/user/<string:player_uuid>', methods=['GET'])
 def show_all_by_user(player_uuid):
+    transactions = []
+    transactions_in = []
+    transactions_out = []
+
     try:
         conn = psycopg2.connect(
             dbname=DB_NAME,
@@ -136,8 +141,68 @@ def show_all_by_user(player_uuid):
         conn.close()
     except psycopg2.Error as e:
         return jsonify({'response': str(e)})
+    
+    for record in records:
+        r = requests.get(url=f"http://market_service:5000/market/{record['uuid_auction']}", headers={'Accept': 'application/json'})
+        response = json.loads(r.text)
+        if response.get("response"):
+            to_player = response['response']['player_uuid']
+    
+            transaction = {
+                'id': record['id'],
+                'uuid': record['uuid'],
+                'price': record['price'],
+                'created_at': record['created_at'],
+                'bought': player_uuid,
+                'sold': to_player,
+                'uuid_auction': record['uuid_auction']
+            }
+            transactions_out.append(transaction)
+    r = requests.get(url=f"http://market_service:5000/market/user/{player_uuid}") 
+    response = json.loads(r.text)
+    if response.get("response"):
+        for r in response['response']:
+            response_uuid = r['uuid']
+    
+            try:
+                conn = psycopg2.connect(
+                    dbname=DB_NAME,
+                    user=DB_USER,
+                    password=DB_PASSWORD,
+                    host=DB_HOST,
+                    port=DB_PORT
+                )
 
-    return jsonify({'response': records})
+                cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+                cursor.execute('SELECT id, uuid, price, created_at, uuid_player, uuid_auction FROM transaction WHERE uuid_auction = %s', 
+                    [response_uuid])
+                records = cursor.fetchall()
+                cursor.close()
+                conn.close()
+            except psycopg2.Error as e:
+                return jsonify({'response': str(e)})
+
+            for record in records:
+                r = requests.get(url=f"http://market_service:5000/market/{record['uuid_auction']}", headers={'Accept': 'application/json'})
+                if response.get("response"):
+                    response = json.loads(r.text)
+                    to_player = response['response']['player_uuid']
+
+                transaction = {
+                    'id': record['id'],
+                    'uuid': record['uuid'],
+                    'price': record['price'],
+                    'created_at': record['created_at'],
+                    'bought': to_player,
+                    'sold': record['uuid_player'],
+                    'uuid_auction': record['uuid_auction']
+                }
+                transactions_in.append(transaction)
+        transactions.append(transactions_in)
+    
+    transactions.append(transactions_out)
+
+    return jsonify({'response': transactions}), 200
 
 @app.route('/user/<string:player_uuid>/<string:transaction_uuid>', methods=['GET'])
 def show_by_user(player_uuid, transaction_uuid):
