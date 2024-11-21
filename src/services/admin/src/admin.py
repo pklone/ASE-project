@@ -8,6 +8,10 @@ app = Flask(__name__)
 
 SECRET = 'secret' # change secret for deployment
 
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 @app.errorhandler(404)
 def page_not_found(error):
     return jsonify({'response': "page not found"}), 404
@@ -182,19 +186,34 @@ def add_gacha():
     if decoded_jwt['admin'] == False:
         return jsonify({'response': 'You are not autorized'}), 401
     
-    new_name = request.json.get('name')
-    new_description = request.json.get('description')
-    new_image_path = request.json.get('image_path')
-    new_rarity = request.json.get('id_rarity')
+    if 'gacha_image' not in request.files:
+        return {'response': 'gacha image not found'}
 
-    new_gacha = {
+    file = request.files['gacha_image']
+    if file.filename == '':
+        return {'response': 'filename not found'}
+
+    if not file:
+        return {'response': 'invalid image'}
+    
+    try:
+        new_name = request.form['name']
+        new_description = request.form['description']
+        new_rarity = request.form['new_rarity']
+    except KeyError:
+        return {'response': 'Missing data'}, 400
+
+    data = {
         'name': new_name,
         'description': new_description,
-        'image_path': new_image_path,
         'new_rarity': new_rarity
     }
 
-    r = requests.post(url=f'http://gacha_service:5000/collection', json=new_gacha)
+    files = {
+        'gacha_image': (file.filename, file.stream, file.mimetype)
+    }
+
+    r = requests.post(url=f'http://gacha_service:5000/collection', data=data, files=files)
 
     return r.text
 
