@@ -1,5 +1,5 @@
 tosca_definitions_version: micro_tosca_yaml_1.1
-description: microservicesArchitecture
+description: micro.tosca
 imports:
 - micro: https://di-unipi-socc.github.io/microTOSCA/1.1/microTOSCA.yaml
 topology_template:
@@ -7,15 +7,10 @@ topology_template:
     PlayerService:
       type: micro.nodes.Service
       requirements:
-      - interaction: PlayerDB
       - interaction:
           node: CurrencyService
           relationship: c
-      - interaction:
-          node: MarketService
-          relationship: c
-    PlayerDB:
-      type: micro.nodes.Datastore
+      - interaction: PlayerDB
     AdminDB:
       type: micro.nodes.Datastore
     CurrencyService:
@@ -26,7 +21,6 @@ topology_template:
       - interaction:
           node: PlayerService
           relationship: c
-      - interaction: PlayerGachaDB
       - interaction:
           node: CollectionService
           relationship: c
@@ -37,21 +31,18 @@ topology_template:
       type: micro.nodes.Service
       requirements:
       - interaction: TransactionDB
-    PaymentService:
-      type: micro.nodes.Service
-      requirements:
-      - interaction:
-          node: TransactionService
-          relationship: c
     MarketService:
       type: micro.nodes.Service
       requirements:
-      - interaction:
-          node: PaymentService
-          relationship: c
       - interaction: AuctionDB
       - interaction:
           node: CollectionService
+          relationship: c
+      - interaction:
+          node: TransactionService
+          relationship: c
+      - interaction:
+          node: PlayerService
           relationship: c
     CollectionService:
       type: micro.nodes.Service
@@ -60,8 +51,6 @@ topology_template:
     AuctionDB:
       type: micro.nodes.Datastore
     GachaDB:
-      type: micro.nodes.Datastore
-    PlayerGachaDB:
       type: micro.nodes.Datastore
     TransactionDB:
       type: micro.nodes.Datastore
@@ -80,6 +69,33 @@ topology_template:
       - interaction: AuthenticationService
       - interaction: MarketService
       - interaction: CurrencyService
+      - interaction: AdminService
+    PlayerDB:
+      type: micro.nodes.Datastore
+    Auction Monitor Service:
+      type: micro.nodes.Service
+      requirements:
+      - interaction:
+          node: MarketService
+          relationship: c
+    AdminService:
+      type: micro.nodes.Service
+      requirements:
+      - interaction:
+          node: AuthenticationService
+          relationship: c
+      - interaction:
+          node: PlayerService
+          relationship: c
+      - interaction:
+          node: TransactionService
+          relationship: c
+      - interaction:
+          node: CollectionService
+          relationship: c
+      - interaction:
+          node: MarketService
+          relationship: c
   groups:
     adad:
       type: micro.groups.Edge
