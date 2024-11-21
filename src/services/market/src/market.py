@@ -555,6 +555,33 @@ def payment(auction_uuid):
         
     return jsonify({'response': 'No buyers with sufficient funds'})
 
+@app.route('/market/user/<string:player_uuid>', methods=['GET'])
+def show_user_auctions(player_uuid):
+    records = {}
+
+    try:
+        conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT
+        )
+
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('''SELECT id, uuid, base_price, gacha_uuid, user_uuid, to_char(expired_at, 'DD/MM/YYYY HH:MI:SSOF:00') as expired_at, closed from auction
+                          WHERE user_uuid = %s''', 
+                        [player_uuid])
+        result = cursor.fetchall()
+        if result:
+            records = result
+        cursor.close()
+        conn.close()
+    except psycopg2.Error as e:
+        return jsonify({'response': str(e)})    
+
+    return jsonify({'response': records}), 200 
+
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
