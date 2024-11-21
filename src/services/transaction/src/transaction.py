@@ -158,6 +158,7 @@ def show_all_by_user(player_uuid):
                 'uuid_auction': record['uuid_auction']
             }
             transactions_out.append(transaction)
+
     r = requests.get(url=f"http://market_service:5000/market/user/{player_uuid}") 
     response = json.loads(r.text)
     if response.get("response"):
@@ -198,9 +199,11 @@ def show_all_by_user(player_uuid):
                     'uuid_auction': record['uuid_auction']
                 }
                 transactions_in.append(transaction)
-        transactions.append(transactions_in)
-    
-    transactions.append(transactions_out)
+
+    transactions = {
+        "incoming transactions": transactions_in,
+        "outgoing transactions": transactions_out
+    }
 
     return jsonify({'response': transactions}), 200
 
