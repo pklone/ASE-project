@@ -55,16 +55,6 @@ services:
     networks:
       - gacha_net
 
-  account_db:
-    build: ./dbs/account/
-    container_name: account_db
-    ports:
-      - "127.0.0.1:5435:5432"
-    env_file:
-      - path: ./dbs/account/.env
-    volumes:
-      - account_db:/var/lib/postgresql/data
-
   market_db:
     build: ./dbs/market/
     container_name: market_db
@@ -157,8 +147,6 @@ services:
       - path: ./services/account/.env
     ports:
       - "127.0.0.1:8083:5000"
-    depends_on:
-      - account_db
     networks:
       - internal_net
     develop:
@@ -263,7 +251,6 @@ volumes:
  player_db:
  admin_db:
  gacha_db:
- account_db:
  market_db:
  transaction_db:
  caddy_data:

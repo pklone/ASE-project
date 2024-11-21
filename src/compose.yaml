@@ -49,14 +49,6 @@ services:
     networks:
       - gacha_net
 
-  account_db:
-    build: ./dbs/account/
-    container_name: account_db
-    env_file:
-      - path: ./dbs/account/.env
-    volumes:
-      - account_db:/var/lib/postgresql/data
-
   market_db:
     build: ./dbs/market/
     container_name: market_db
@@ -137,8 +129,6 @@ services:
     container_name: account_service
     env_file:
       - path: ./services/account/.env
-    depends_on:
-      - account_db
     networks:
       - internal_net
     develop:
@@ -232,7 +222,6 @@ volumes:
  player_db:
  admin_db:
  gacha_db:
- account_db:
  market_db:
  transaction_db:
  caddy_data:
