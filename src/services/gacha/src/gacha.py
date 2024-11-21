@@ -6,10 +6,16 @@ import jwt
 import random
 import requests
 import uuid
+from werkzeug.utils import secure_filename
 
-app = Flask(__name__, static_url_path='/assets')
-
+UPLOAD_FOLDER = './static/images/gachas'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+STATIC_DIR_PATH = '/assets'
+GACHAS_DIR_PATH = STATIC_DIR_PATH + '/images/gachas'
 SECRET = 'secret' # change secret for deployment
+
+app = Flask(__name__, static_url_path=STATIC_DIR_PATH)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 #set db connection
 DB_NAME = os.getenv("DB_NAME")
@@ -17,6 +23,10 @@ DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.errorhandler(404)
 def page_not_found(error):
@@ -232,11 +242,22 @@ def roll():
 
 @app.route('/collection', methods=['POST'])
 def add_gacha():
-    new_uuid = str(uuid.uuid4())
-    new_name = request.json.get('name')
-    new_description = request.json.get('description')
-    new_image_path = request.json.get('image_path')
-    new_rarity = request.json.get('new_rarity')
+    if 'gacha_image' not in request.files:
+        return {'response': 'gacha image not found'}
+
+    file = request.files['gacha_image']
+    if file.filename == '':
+        return {'response': 'filename not found'}
+
+    if not file or not allowed_file(file.filename):
+        return {'response': 'invalid image format or empty image'}
+    
+    try:
+        new_name = request.form['name']
+        new_description = request.form['description']
+        new_rarity = request.form['new_rarity']
+    except KeyError:
+        return {'response': 'Missing data'}, 400
 
     try:
         conn = psycopg2.connect(
@@ -248,10 +269,31 @@ def add_gacha():
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('SELECT id from Rarity where symbol = %s', [new_rarity])
+        
+        if cursor.rowcount == 0:
+            return {'response': 'invalid rarity'}
+
+        record = cursor.fetchone()
+        rarity_id = record['id']
+    except psycopg2.Error as e:
+        return jsonify({'response': str(e)})
+
+    try:
+        filename = secure_filename(file.filename)
+        destination_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(destination_path)
+    except FileNotFoundError:
+        return {'response': 'Internal error'}, 500
+
+    new_uuid = str(uuid.uuid4())
+    new_image_path = os.path.join(GACHAS_DIR_PATH, filename)
+
+    try:
         cursor.execute("""
             INSERT INTO gacha (id, uuid, name, description, image_path, id_rarity) 
             VALUES (DEFAULT, %s, %s, %s, %s, %s)""", 
-            (new_uuid, new_name, new_description, new_image_path, new_rarity))
+            (new_uuid, new_name, new_description, new_image_path, rarity_id))
         conn.commit()
         cursor.close()
         conn.close()
