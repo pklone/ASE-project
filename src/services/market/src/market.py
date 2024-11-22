@@ -34,7 +34,12 @@ def show_all():
     records = {}
 
     is_admin = False
-    hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]
+
+    try:
+        hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]    
+    except socket.herror:
+        return {'response': 'unknown host'}, 500
+
     if hostname == 'admin_service':
         is_admin = True
 

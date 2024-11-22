@@ -205,18 +205,62 @@ services:
 
   rabbitmq_broker:
     hostname: rabbitmq_broker
-    image: rabbitmq:3-management
+    build: ./services/rabbitmq
     container_name: rabbitmq_broker
     networks:
      - internal_net
-  
-  celery_worker:
-    hostname: celery_worker
+    healthcheck:
+      test: curl guest:guest@127.0.0.1:15672/api/overview || exit 1
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 15s
+
+  celery_worker_1:
+    hostname: celery_worker_1
     build: ./services/celery
-    depends_on:
+    links:
      - rabbitmq_broker
     networks:
      - internal_net
+    depends_on:
+      rabbitmq_broker:
+        condition: service_healthy
+    healthcheck:
+      test: celery -A mycelery inspect ping -d celery@$${HOSTNAME} || exit 1
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 15s
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 60s
+      
+  celery_worker_2:
+    hostname: celery_worker_2
+    build: ./services/celery
+    links:
+     - rabbitmq_broker
+    networks:
+     - internal_net
+    depends_on:
+      rabbitmq_broker:
+        condition: service_healthy
+    healthcheck:
+      test: celery -A mycelery inspect ping -d celery@$${HOSTNAME} || exit 1
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 15s
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 60s
     
 volumes:
  player_db:
