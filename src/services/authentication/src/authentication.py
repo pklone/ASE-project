@@ -5,8 +5,14 @@ import psycopg2.extras
 import jwt
 import bcrypt
 import requests
+import pybreaker
 
 app = Flask(__name__)
+
+circuitbreaker = pybreaker.CircuitBreaker(
+    fail_max=5, 
+    reset_timeout=60*5
+    )
 
 SECRET = 'secret' # change secret for deployment
 
@@ -89,7 +95,10 @@ def login():
     if not username or not password:
         return jsonify({'response': 'Missing credentials'}), 400
 
-    r = requests.get(f'http://player_service:5000/username/{username}')
+    try:
+        r = circuitbreaker.call(requests.get, f'http://player_service:5000/username/{username}')
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
     
     try:
         response = json.loads(r.text)

@@ -3,3 +3,4 @@ requests == 2.32.3
 psycopg2-binary == 2.9.10
 PyJWT == 2.8.0
 bcrypt == 4.2.0
+pybreaker == 1.2.0
