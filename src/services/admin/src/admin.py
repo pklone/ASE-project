@@ -3,8 +3,14 @@ from datetime import datetime
 import os
 import requests
 import jwt
+import pybreaker
 
 app = Flask(__name__)
+
+circuitbreaker = pybreaker.CircuitBreaker(
+    fail_max=5, 
+    reset_timeout=60*5
+)
 
 # set jwt
 SECRET = os.getenv("JWT_SECRET")
@@ -38,7 +44,10 @@ def admin_login():
         'password': admin_password
     }
 
-    r = requests.post(url='http://authentication_service:5000/admin_login', json=data)
+    try:
+        r = circuitbreaker.call(requests.post, 'http://authentication_service:5000/admin_login', json=data)
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
 
     if r.status_code != 200:
         return r.text, r.status_code
@@ -74,7 +83,11 @@ def users():
     if decoded_jwt['admin'] == False:
         return jsonify({'response': 'You are not autorized'})
     
-    r = requests.get(url='http://player_service:5000/')
+    try:
+        r = circuitbreaker.call(requests.get, 'http://player_service:5000/')
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
+    
 
     try:
         response = json.loads(r.text)
@@ -109,8 +122,10 @@ def user(user_uuid):
     if decoded_jwt['admin'] == False:
         return response
     
-    
-    r = requests.get(url=f'http://player_service:5000/uuid/{user_uuid}')
+    try:
+        r = circuitbreaker.call(requests.get, f'http://player_service:5000/uuid/{user_uuid}')
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
 
     try:
         response = json.loads(r.text)
@@ -153,7 +168,10 @@ def user_modify(user_uuid):
         'wallet': new_wallet
     }
 
-    r = requests.put(url=f'http://player_service:5000/uuid/{user_uuid}', json=new_player)
+    try:
+        r = circuitbreaker.call(requests.put, f'http://player_service:5000/uuid/{user_uuid}', json=new_player)
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
 
     return r.text
 
@@ -183,7 +201,10 @@ def user_delete(user_uuid):
     if decoded_jwt['admin'] == False:
         return jsonify({'response': 'You are not autorized'})
 
-    r = requests.delete(url=f'http://player_service:5000/uuid/{user_uuid}')
+    try:
+        r = circuitbreaker.call(requests.delete, f'http://player_service:5000/uuid/{user_uuid}')
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
 
     return r.text
 
@@ -240,7 +261,10 @@ def add_gacha():
         'gacha_image': (file.filename, file.stream, file.mimetype)
     }
 
-    r = requests.post(url=f'http://gacha_service:5000/collection', data=data, files=files)
+    try:
+        r = circuitbreaker.call(requests.post, 'http://gacha_service:5000/collection', data=data, files=files)
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
 
     return r.text
 
@@ -287,7 +311,10 @@ def modify_gacha(gacha_uuid):
         'new_rarity': request.form.get('new_rarity')
     }
 
-    r = requests.put(url=f'http://gacha_service:5000/collection/{gacha_uuid}', data=data, files=files)
+    try:
+        r = circuitbreaker.call(requests.put, f'http://gacha_service:5000/collection/{gacha_uuid}', data=data, files=files)
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
 
     return r.text
 
@@ -317,7 +344,10 @@ def remove_gacha(gacha_uuid):
     if decoded_jwt['admin'] == False:
         return jsonify({'response': 'You are not autorized'}), 401
     
-    r = requests.delete(url=f'http://gacha_service:5000/collection/{gacha_uuid}')
+    try:
+        r = circuitbreaker.call(requests.delete, f'http://gacha_service:5000/collection/{gacha_uuid}')
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
     
     return r.text
 
@@ -347,7 +377,10 @@ def show_all():
     if decoded_jwt['admin'] == False:
         return jsonify({'response': 'You are not autorized'})
     
-    r = requests.get(url='http://market_service:5000/market')
+    try:
+        r = circuitbreaker.call(requests.get, 'http://market_service:5000/market')
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
 
     try:
         response = json.loads(r.text)
@@ -382,7 +415,10 @@ def show_one(auction_uuid):
     if decoded_jwt['admin'] == False:
         return jsonify({'response': 'You are not autorized'})
     
-    r = requests.get(url=f'http://market_service:5000/market/{auction_uuid}', headers={'Accept': 'application/json'})
+    try:
+        r = circuitbreaker.call(requests.get, f'http://market_service:5000/market/{auction_uuid}', headers={'Accept': 'application/json'})
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
 
     try:
         response = json.loads(r.text)
@@ -417,7 +453,10 @@ def close(auction_uuid):
     if decoded_jwt['admin'] == False:
         return jsonify({'response': 'You are not autorized'}), 401
     
-    r = requests.put(f'http://market_service:5000/market/{auction_uuid}/close')
+    try:
+        r = circuitbreaker.call(requests.put, f'http://market_service:5000/market/{auction_uuid}/close')
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
     return r.text, r.status_code
 
 @app.route('/admin/transaction/<string:player_uuid>', methods=['GET'])
@@ -446,7 +485,11 @@ def transactions(player_uuid):
     if decoded_jwt['admin'] == False:
         return jsonify({'response': 'You are not autorized'})
     
-    r = requests.get(url=f"http://transaction_service:5000/user/{player_uuid}")
+    try:
+        r = circuitbreaker.call(requests.get, f'http://transaction_service:5000/user/{player_uuid}')
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
+
     if r.status_code != 200:
         return jsonify({'response': 'Try later - transaction service error'})
     return r.text, 200
