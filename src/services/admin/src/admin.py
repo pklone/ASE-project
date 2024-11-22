@@ -274,22 +274,25 @@ def modify_gacha(gacha_uuid):
     if decoded_jwt['admin'] == False:
         return jsonify({'response': 'You are not autorized'}), 401
     
-    new_name = request.json.get('name')
-    new_description = request.json.get('description')
-    new_image_path = request.json.get('image_path')
-    new_rarity = request.json.get('id_rarity')
-    if new_rarity <= 0 or new_rarity > 5:
-        return jsonify({'response': 'Invalid rarity'})
-    
-    mod_gacha = {
-        'new_name': new_name,
-        'new_description': new_description,
-        'new_image_path': new_image_path,
-        'new_rarity': new_rarity
+    file = {}
+    if 'gacha_image' in request.files:
+        file = request.files['gacha_image']
+
+        if file.filename == '':
+            return {'response': 'filename not found'}
+
+        files = {
+            'gacha_image': (file.filename, file.stream, file.mimetype)
+        }
+
+    data = {
+        'name': request.form.get('name'),
+        'description': request.form.get('description'),
+        'new_rarity': request.form.get('new_rarity')
     }
-    
-    r = requests.put(url=f'http://gacha_service:5000/collection/{gacha_uuid}', json=mod_gacha)
-    
+
+    r = requests.put(url=f'http://gacha_service:5000/collection/{gacha_uuid}', data=data, files=files)
+
     return r.text
 
 @app.route('/admin/collection/<string:gacha_uuid>', methods=['DELETE'])

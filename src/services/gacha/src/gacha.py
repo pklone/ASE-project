@@ -314,10 +314,13 @@ def add_gacha():
     
 @app.route('/collection/<string:gacha_uuid>', methods=['PUT'])
 def modify_gacha(gacha_uuid):
-    new_name = request.json.get('new_name')
-    new_description = request.json.get('new_description')
-    new_image_path = request.json.get('new_image_path')
-    new_rarity = request.json.get('new_rarity')
+    new_name = request.form.get('name')
+    new_description = request.form.get('description')
+    new_rarity = request.form.get('new_rarity')
+    
+    new_image_path = None
+    rarity_id = None
+
     try:
         conn = psycopg2.connect(
             dbname=DB_NAME,
@@ -328,17 +331,50 @@ def modify_gacha(gacha_uuid):
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    except psycopg2.Error as e:
+        return jsonify({'response': str(e)})
+
+    if new_rarity:
+        try:
+            cursor.execute('SELECT id from Rarity where symbol = %s', [new_rarity])
+            
+            if cursor.rowcount == 0:
+                return {'response': 'invalid rarity'}
+
+            record = cursor.fetchone()
+            rarity_id = record['id']
+        except psycopg2.Error as e:
+            return jsonify({'response': str(e)})
+    
+    if 'gacha_image' in request.files:
+        file = request.files['gacha_image']
+
+        if file.filename == '':
+            return {'response': 'gacha image filename not found'}
+
+        if not file or not allowed_file(file.filename):
+            return {'response': 'invalid image format or empty image'}
+        
+        try:
+            filename = secure_filename(file.filename)
+            destination_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(destination_path)
+            new_image_path = os.path.join(GACHAS_DIR_PATH, filename)
+        except FileNotFoundError:
+            return {'response': 'Internal error'}, 500
+
+    try:
         cursor.execute("""
-        UPDATE gacha
-        SET
-        name = COALESCE(%s, name),
-        description = COALESCE(%s, description),
-        image_path = COALESCE(%s, image_path),
-        id_rarity = COALESCE(%s, id_rarity)
-        WHERE uuid = %s;
-        """, (new_name, new_description, new_image_path, new_rarity, gacha_uuid))
+            UPDATE gacha SET
+                name = COALESCE(%s, name),
+                description = COALESCE(%s, description),
+                image_path = COALESCE(%s, image_path),
+                id_rarity = COALESCE(%s, id_rarity)
+            WHERE uuid = %s""", [new_name, new_description, new_image_path, rarity_id, gacha_uuid])
+
         if cursor.rowcount == 0:
             return jsonify({'response': 'Query as not updated nothing'}), 404
+
         conn.commit()
         cursor.close()
         conn.close()
