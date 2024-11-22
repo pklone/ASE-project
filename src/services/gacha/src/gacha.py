@@ -12,7 +12,6 @@ UPLOAD_FOLDER = './static/images/gachas'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 STATIC_DIR_PATH = '/assets'
 GACHAS_DIR_PATH = STATIC_DIR_PATH + '/images/gachas'
-SECRET = 'secret' # change secret for deployment
 
 app = Flask(__name__, static_url_path=STATIC_DIR_PATH)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -24,6 +23,9 @@ DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
+
+# set jwt
+SECRET = os.getenv("JWT_SECRET")
 
 def allowed_file(filename):
     return '.' in filename and \

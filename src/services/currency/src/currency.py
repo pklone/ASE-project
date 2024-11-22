@@ -8,9 +8,10 @@ app = Flask(__name__)
 circuitbreaker = pybreaker.CircuitBreaker(
     fail_max=5, 
     reset_timeout=60*5
-    )
+)
 
-SECRET = 'secret' # change secret for deployment
+# set jwt
+SECRET = os.getenv("JWT_SECRET")
 
 @app.errorhandler(404)
 def page_not_found(error):

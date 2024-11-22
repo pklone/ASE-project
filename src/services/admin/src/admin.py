@@ -6,7 +6,8 @@ import jwt
 
 app = Flask(__name__)
 
-SECRET = 'secret' # change secret for deployment
+# set jwt
+SECRET = os.getenv("JWT_SECRET")
 
 def allowed_file(filename):
     return '.' in filename and \
