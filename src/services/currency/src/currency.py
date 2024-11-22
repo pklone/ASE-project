@@ -1,8 +1,14 @@
 from flask import Flask, request, jsonify, abort, render_template
 import requests
 import jwt
+import pybreaker
 
 app = Flask(__name__)
+
+circuitbreaker = pybreaker.CircuitBreaker(
+    fail_max=5, 
+    reset_timeout=60*5
+    )
 
 SECRET = 'secret' # change secret for deployment
 
@@ -45,8 +51,11 @@ def buy():
         'purchase' : purchase
     }
 
-    r = requests.post(url='http://player_service:5000/currency/buy', json=player_purchasing)
-
+    try:
+        r = circuitbreaker.call(requests.post, 'http://player_service:5000/currency/buy', json=player_purchasing)
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
+    
     return r.text
 
 
