@@ -440,7 +440,7 @@ def close_auction(auction_uuid):
 def payment(auction_uuid):
     hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]
     
-    if 'celery_worker' not in hostname:
+    if 'celery_worker' not in hostname or 'admin_service' not in hostname:
         return jsonify({'response': 'You\'re not authorized'})
 
     try:
