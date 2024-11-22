@@ -249,25 +249,6 @@ def remove_by_uuid(player_uuid):
 
     return jsonify({'response': 'ok!'})
 
-@app.route('/<string:uuid>', methods=['PUT'])
-def update():
-    try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT
-        )
-        
-        cursor = conn.cursor()
-        cursor.close()
-        conn.close()
-    except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
-
-    return jsonify({'response': 'ok!'})
-
 @app.route('/<string:uuid>/wallet', methods=['PUT'])
 def update_wallet(uuid):
     amount = request.json['amount']

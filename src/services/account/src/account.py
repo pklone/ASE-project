@@ -46,10 +46,7 @@ def create():
     except Exception as e:
         return jsonify({'response': str(e)}), 500
     
-    if "error" not in r.text:
-        return r.text
-    else:
-        return r.text
+    return r.text
 
 @app.route('/user', methods=['DELETE'])
 def remove():
@@ -85,7 +82,43 @@ def remove():
 
 @app.route('/user', methods=['PUT'])
 def update():
-    return jsonify({'response': 'ok!'})
+    encoded_jwt = request.cookies.get('session')
+
+    if not encoded_jwt:
+        return jsonify({'response': 'You\'re not logged'})
+
+    try:
+        options = {
+            'require': ['exp'], 
+            'verify_signature': True, 
+            'verify_exp': True
+        }
+
+        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
+    except jwt.ExpiredSignatureError:
+        return jsonify({'response': 'Expired token'})
+    except jwt.InvalidTokenError:
+        return jsonify({'response': 'Invalid token'})
+
+    if 'uuid' not in decoded_jwt:
+        return jsonify({'response': 'Try later'})
+
+    player_uuid = decoded_jwt['uuid']
+
+    new_username = request.json.get('username')
+    new_wallet = request.json.get('wallet')
+
+    new_player = {
+        'username': new_username,
+        'wallet': new_wallet
+    }
+
+    try:
+        r = circuitbreaker.call(requests.put, f'http://player_service:5000/uuid/{player_uuid}', json=new_player)
+    except Exception as e:  
+        return jsonify({'response': str(e)}), 500
+
+    return r.text
 
 @app.route('/user/collection', methods=['GET'])
 def collection():
