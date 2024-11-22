@@ -9,10 +9,6 @@ app = Flask(__name__)
 # set jwt
 SECRET = os.getenv("JWT_SECRET")
 
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 @app.errorhandler(404)
 def page_not_found(error):
     return jsonify({'response': "page not found"}), 404
