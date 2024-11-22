@@ -1,7 +1,11 @@
 # ASE-project
 
 ## Getting started
-Firstly, go into the `src` directory. Now, build all the images.
+Firstly, clone the repo.
+```
+git clone https://github.com/pklone/ASE-project.git
+```
+Then, go into the `src` directory. Now, build all the images.
 ```
 docker compose build
 ```
@@ -68,7 +72,7 @@ Here some useful `psql` commands.
 ```
 
 ### Curl
-Here some useful `curl` commands to test the APIs.
+Here some useful `curl` commands to test the APIs. We provide also some [additional examples](/test/README.md).
 - Register as a player, login, roll a new gacha and delete the account.
   ```
   curl -X POST -H 'Content-Type: application/json' -d '{"username": "kek", "password": "kek"}' -c cookie.jar http://127.0.0.1:8083/user
@@ -76,7 +80,7 @@ Here some useful `curl` commands to test the APIs.
   curl -X GET -b cookie.jar http://127.0.0.1:8082/roll
   curl -X DELETE -b cookie.jar http://127.0.0.1:8083/user
   ```
-- Register as a player, login, roll a gacha, get gachas uuids of own collection, create an auction, logout, login as `test` player, get the auctions uuids and make a bid
+- Register as a player, login, roll a gacha, get gachas uuids of own collection, create an auction, logout, login as `test` player, get the auctions uuids and make a bid.
   ```
   curl -X POST -H 'Content-Type: application/json' -d '{"username": "kek", "password": "kek"}' -c cookie.jar http://127.0.0.1:8083/user
   curl -X POST -H 'Content-Type: application/json' -d '{"username": "kek", "password": "kek"}' -c cookie.jar http://127.0.0.1:8081/login
@@ -88,12 +92,11 @@ Here some useful `curl` commands to test the APIs.
   curl -X GET -H 'Accept: application/json' http://127.0.0.1:8086/market
   curl -X POST -H 'Content-Type: application/json' -d '{"offer": 50}' -b cookie.jar http://127.0.0.1:8086/market/6aa807c0-07c4-46ea-ae0a-ca027e7094d1/bid
   ```
-- login as admin and insert a new gacha
+- login as admin and insert a new gacha.
   ```
-  curl -X POST -k -H 'Content-Type: application/json' -H 'Accept: application/json' -d '{"username": "admin", "password": "admin"}' -c cookie.jar http://127.0.0.1/admin/login
-  curl -X POST -k -H 'Content-Type: application/json' -d '{"name": "wyvern", "description": "new description", "id_rarity": 5, "image_path": "/home/asset..." }' -b cookie.jar http://127.0.0.1/admin/collection
+  curl -X POST -H 'Content-Type: application/json' -H 'Accept: application/json' -d '{"username": "admin", "password": "admin"}' -c cookie.jar http://127.0.0.1:8085/admin/login
+  curl -X POST -b cookie.jar -F 'gacha_image=@/path/to/image' -F 'name=placeholder' -F 'description=placeholder' -F 'new_rarity=S' http://127.0.0.1:8085/admin/collection
   ```
-- For others tests see here [here](/test/README.md)
 
 ### Compose Watch
 It's possible to use `docker compose watch` to rebuild/resync the image/container when files change.
@@ -154,43 +157,61 @@ will run a shell no matter the container you choose
 - use single quotes instead of double quotes whenever is possible
 - ~~store player's `uuid` instead of `id` inside jwt token~~
 - ~~set gacha rarities percentages~~
-- use external volumes for db otherwise if db container crashes, we need to re-init it and we can lose data
+- ~~use external volumes for db otherwise if db container crashes, we need to re-init it and we can lose data~~
 - GUI
 - ~~close auction in `market`~~
 - ~~fix `show_one` and `show_all` functions in `market` (set gacha as dict instead of list)~~
-- transaction service
+- ~~transaction service~~
 - https
 - Oauth2
 - ~~roll function~~
 - ~~add `quantity` attribute in `player_gacha` table~~
 - docker secrets 
-- use foreign keys in `gacha_player` table
+- use foreign keys in `gacha_player` table (?)
 - ~~fix `expired_at` in `market_db`~~
-- add decription in `gacha_db`
+- ~~add decription in `gacha_db~~`
 - check uuid with regex
 - use `r.json` instead of `json.loads(r.text)`
 - set timezone to UTC for `expire_at`
 - set .gitignore to ignore only the `.env` file with `JUST_CHOOSER` variable
-- payment service
+- ~~payment service~~
 - postman tests
-- close auction when expire (by external service)
-- github actions
+- ~~close auction when expire (by external service)~~
+- ~~github actions~~
 - set accessible/non-accessible routes on end-point gateway (security)
-- docker networks
+- ~~docker networks~~
 - admin routes
-- when a player makes a bid, checks if he has already the biggest bid
+- when a player makes a bid, checks if he has already the biggest bid (?)
 - add link between `payment` and `player` services inside architecture image (and microfreshner)
 - an admin can ban a player. Also, if a player wins an auction but he doesn't have enough money to pay the final price, 
   a counter will be increased by 1. When this counter becomes equal to 3, the player will be banned.
 - use `pip install --no-cache-dir` to create smaller images
 - remove id and use only uuid
-- jwt secret with env variable
+- ~~jwt secret with env variable~~
 - check `Accept` headers in all APIs
-- check if celery worker still close auction if it crash (backend?)
+- ~~check if celery worker still close auction if it crashes (backend?)~~
 - check consistency of functions that performs multi actions to other services or databases
-- market and transaction APIs in admin service
+- ~~market and transaction APIs in admin service~~
 - add checks to market `close` API (e.g. admin can close every auction but player can close only his auctions)
 - check null arguments in APIs
-- add delete gacha API
-- add message broker
-- check what service connects to `close` function in market (if caddy proxy connects to the functions, the player jwt must be checked)
+- ~~add delete gacha API~~
+- ~~add message broker~~
+- ~~check what service connects to `close` function in market (if caddy proxy connects to the functions, the player jwt must be checked)~~
+- docker compose healthcheck
+- delete id from database image
+- change name of table `Player_Auction` to `Bid` in database image
+- player can only see active auctions. Admin can see all
+- ~~insert new gacha adding a new image~~
+- http://ase.localhost must return an error (note: http instead of https)
+- ~~delete account db since it is useless~~
+- change `admin_db` to `authentication_db` 
+- check caddyfile POST on gacha_service:5000/collection/ (only the admin can insert a new gacha)
+- ~~merge pull request~~
+- ~~`update` function in account.py~~
+- make repo public
+- cursor as dict in player registration
+- unknown host when checking hostname
+- ~~create a `test` directory and insert a README.md file with all the curl commands (there are too many curl commands in this README)~~
+- add new password in modify_by_uuid inside `player.py`
+- change `doc` in `docs`
+- add http status codes to openAPI and to the python code
