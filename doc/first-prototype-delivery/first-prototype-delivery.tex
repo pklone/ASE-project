@@ -130,6 +130,21 @@ The player wants to login into the application.
     \item An http response containing the session token will be sent back to the proxy, which will forward it to the user.
 \end{enumerate}
 
+\subsection{User create auction}
+The player wants to create a new auction.
+\begin{enumerate}
+    \item The player sends a POST request to the reverse proxy at \emph{/market} with the required data: the UUID of the gacha to be auctioned and the starting price.
+    \item The proxy forwards the request to the \emph{Market Service}.
+    \item The microservice checks the presence and validity of the JWT session token from the request cookie and extracts the player's UUID from the token payload.
+    \item The \emph{Market Service} sends a GET request to the \emph{Player Service} at \emph{/uuid/<player\_uuid>}. 
+    \item The \emph{Player Service} retrieves the player's ID and send back to the \emph{Market Service}.
+    \item The microservice retrieves the player's gacha collection by sending a GET request to the \emph{Gacha Service} at \emph{/collection/user/<player\_id>}.
+    \item Then \emph{Market Service} verifies if the player owns the specified \emph{gacha\_uuid} in sufficient quantity and checks the database for active auctions of the same item.
+    \item If the player does not own the item or the number of active auctions matches or exceeds the available quantity, an error is returned.
+    \item If all checks pass, a new auction is inserted into the database with a unique UUID, the specified starting price, and the auction's expiration time.
+    \item After inserting the auction, the microservice retrieves the details of the created auction from the database, and a background task is scheduled using \emph{invoke\_payment} to handle auction's expiration.
+    \item An HTTP response containing the created auction's details is sent back to the proxy, which forwards it to the user.
+\end{enumerate}
 
 \section{How to run}
 The application has been virtualized using \emph{Docker}. Each component (services, databases, message brokers, etc.) is a container and we can manage them with \emph{Docker Compose}. In order to run the application, clone the github repo and enter inside \emph{src/} directory. Then, build the images and run the containers.
