@@ -459,8 +459,8 @@ def close(auction_uuid):
         return jsonify({'response': str(e)}), 500
     return r.text, r.status_code
 
-@app.route('/admin/transaction/<string:player_uuid>', methods=['GET'])
-def transactions(player_uuid):
+@app.route('/admin/transaction/<string:user_uuid>', methods=['GET'])
+def transactions(user_uuid):
     encoded_jwt = request.cookies.get('session')
 
     if not encoded_jwt:
@@ -486,7 +486,7 @@ def transactions(player_uuid):
         return jsonify({'response': 'You are not autorized'})
     
     try:
-        r = circuitbreaker.call(requests.get, f'http://transaction_service:5000/user/{player_uuid}')
+        r = circuitbreaker.call(requests.get, f'http://transaction_service:5000/user/{user_uuid}')
     except Exception as e:
         return jsonify({'response': str(e)}), 500
 
