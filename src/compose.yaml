@@ -142,6 +142,8 @@ services:
   currency_service:
     build: ./services/currency
     container_name: currency_service
+    env_file:
+      - path: ./services/currency/.env
     networks:
       - internal_net
     develop:
@@ -155,6 +157,8 @@ services:
   admin_service:
     build: ./services/admin
     container_name: admin_service
+    env_file:
+      - path: ./services/admin/.env
     networks:
       - internal_net
     develop:

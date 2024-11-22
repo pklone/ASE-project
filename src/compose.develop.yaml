@@ -160,6 +160,8 @@ services:
   currency_service:
     build: ./services/currency
     container_name: currency_service
+    env_file:
+      - path: ./services/currency/.env
     ports:
       - "127.0.0.1:8084:5000"
     networks:
@@ -175,6 +177,8 @@ services:
   admin_service:
     build: ./services/admin
     container_name: admin_service
+    env_file:
+      - path: ./services/admin/.env
     ports:
       - "127.0.0.1:8085:5000"
     networks:
