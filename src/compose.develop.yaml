@@ -244,9 +244,9 @@ services:
      - internal_net
     healthcheck:
       test: curl guest:guest@127.0.0.1:15672/api/overview || exit 1
-      interval: 30s
-      timeout: 30s
-      retries: 3
+      interval: 5s
+      timeout: 5s
+      retries: 5
       start_period: 15s
 
   celery_worker_1:
