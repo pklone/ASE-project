@@ -145,6 +145,16 @@ The player wants to create a new auction.
     \item After inserting the auction, the microservice retrieves the details of the created auction from the database, and a background task is scheduled using \emph{invoke\_payment} to handle auction's expiration.
     \item An HTTP response containing the created auction's details is sent back to the proxy, which forwards it to the user.
 \end{enumerate}
+\subsection{Currency purchase}
+The player wants to purchase in-game currency.
+\begin{enumerate}
+\item The player sends a POST request to the reverse proxy at \emph{/currency/buy} with the desired purchase.
+\item The reverse proxy forwards the request to the \emph{Currency Purchase Endpoint} of the \emph{Player Service}.
+\item The service retrieves the \emph{JWT session token} from the player's cookie and verifies its validity.
+\item If the token is valid, the service sends a POST request to the \emph{Player Service} endpoint \emph{/currency/buy} with the player's \emph{uuid} and the purchase details.
+\item The \emph{Player Service} using the player \emph{uuid} and the purchase details updates the player's wallet in the database.
+\item If the operation is successful, the service sends a response to the reverse proxy, which forwards it to the player.
+\end{enumerate}
 
 \section{How to run}
 The application has been virtualized using \emph{Docker}. Each component (services, databases, message brokers, etc.) is a container and we can manage them with \emph{Docker Compose}. In order to run the application, clone the github repo and enter inside \emph{src/} directory. Then, build the images and run the containers.
