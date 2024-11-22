@@ -21,11 +21,12 @@
 TBD...
 
 \section{Architecture}
-The architecture is based on microservices and each one implements a specific functionality. The overall structure is described in Figure 1.
+The architecture is based on microservices and each one implements a specific functionality. The overall structure is described in Figure \ref{fig:general_architecture}.
 \begin{figure}[ht]
     \centering
     \includegraphics[width=12cm]{architecture-v2.drawio.png}
     \caption{General architecture}
+    \label{fig:general_architecture}
 \end{figure}
 
 A player can register himself through the \emph{Account Service}. Then, he can login by \emph{Authentication Service}. After that, he can perform some operations inside the website, e.g.
@@ -35,13 +36,27 @@ A player can register himself through the \emph{Account Service}. Then, he can l
     \item Create an auction to sell a gacha and make bids on active auctions (\emph{Market Service})
     \item Purchase in-game currency (\emph{Currency Service})
 \end{itemize}
-\emph{Player Service} and \emph{Transaction Service} manage the access to the databases (\emph{Player} and \emph{Transaction} tables). Players and admins can access only the API exposed by a \emph{CaddyServer} web proxy, which allows to map specific services API to the outside. The login functionality is based on jwt tokens and each service can check the token validity to accept/discard an http request.
+Unlike the other services, \emph{Player Service} and \emph{Transaction Service} are not linked to the outside since they only manage the access to the databases (\emph{Player} and \emph{Transaction} tables). Players and admins can access only the API exposed by a \emph{CaddyServer} web reverse proxy, which allows to map specific services API to the outside. The login functionality is based on jwt tokens and each service can check the token validity to accept/discard an http request.
 
+The \emph{RabbitMQ} message broker allows to send \emph{tasks} to the \emph{Celery Worker}. In order to manage the auction closing operation, \emph{Market Service} sends a new task to the worker, which will wait until auction expires before notify the service to close the auction.
+
+\subsection{Architectural Smells}
+The \emph{MicroFreshener} architecture is described in Figure \ref{fig:microfreshener_architecture}.
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[width=12cm]{microFreshenerArchitecture.png}
+    \caption{MicroFreshener architecture}
+    \label{fig:microfreshener_architecture}
+\end{figure}
+
+Using the \emph{MicroFreshener} tool, we searched for architectural smells and we solved them accordingly. We used the \emph{circuit breaker} design pattern to handle the \emph{wobbly service interaction smell}. No additional smells came out during analysis phase.
+
+\newpage
 \subsection{Database}
 Here is an E-R diagram of the previous monolithic database.
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=12cm]{ASE-er-v4.png}
+    \includegraphics[width=12cm]{ASE-er-v5.drawio.png}
     \caption{Database structure}
 \end{figure}
 
@@ -103,10 +118,19 @@ The \textbf{Collection Service} manages the system gacha collection and the rela
 
 The \textbf{Market Service} is the most complex component of the architecture. It manages auctions, bids and payments. When a player creates a new auction, the service sends a task to the \emph{Celery Worker} in order to guarantee that the auction ends when expire time comes. In particular, the worker will do a POST request to \emph{/payment} market API and the service will close the auction managing both the payment operations and gacha transfer from seller to buyer. If the payment is successfull, a new transaction record is created.
 
-\section{Testing}
-TBD...
+\section{Use Cases}
+\subsection{User login}
+The player wants to login into the application.
+\begin{enumerate}
+    \item The player sends a POST request to the reverse proxy at \emph{/login} with username and password.
+    \item The proxy forwards the request to the \emph{Authentication Service}.
+    \item The microservice checks if the user is already logged. If not, it sends a GET request to the \emph{Player Service} at \emph{/username/<username>} to retrieve the player informations.
+    \item The \emph{Player Service} retrieves user data from the database and sends them to the \emph{Authentication Service}.
+    \item It checks if the password is not wrong and, if so, it generates a JWT session token.
+    \item An http response containing the session token will be sent back to the proxy, which will forward it to the user.
+\end{enumerate}
 
-\newpage
+
 \section{How to run}
 The application has been virtualized using \emph{Docker}. Each component (services, databases, message brokers, etc.) is a container and we can manage them with \emph{Docker Compose}. In order to run the application, clone the github repo and enter inside \emph{src/} directory. Then, build the images and run the containers.
 \begin{verbatim}
