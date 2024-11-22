@@ -18,7 +18,7 @@
 
 \newpage
 \section{Introduction}
-TBD...
+This project aims to develop a microservices-based web application to collect and exchange gachas. In the first section, a brief description of the architecture and database structure is provided. Later, we present some use cases to describe deeper the funcionalities of the system. Finally, we explain how to execute the application inside a virtualized environment based on \emph{Docker}.
 
 \section{Architecture}
 The architecture is based on microservices and each one implements a specific functionality. The overall structure is described in Figure \ref{fig:general_architecture}.
@@ -124,36 +124,56 @@ The player wants to login into the application.
 \begin{enumerate}
     \item The player sends a POST request to the reverse proxy at \emph{/login} with username and password.
     \item The proxy forwards the request to the \emph{Authentication Service}.
-    \item The microservice checks if the user is already logged. If not, it sends a GET request to the \emph{Player Service} at \emph{/username/<username>} to retrieve the player informations.
+    \item The microservice checks if the user is already logged. If not, it sends a GET request to the \emph{Player Service} at \emph{/username/\{username\}} to retrieve the player informations.
     \item The \emph{Player Service} retrieves user data from the database and sends them to the \emph{Authentication Service}.
     \item It checks if the password is not wrong and, if so, it generates a JWT session token.
     \item An http response containing the session token will be sent back to the proxy, which will forward it to the user.
 \end{enumerate}
 
-\subsection{User create auction}
-The player wants to create a new auction.
+\subsection{Create auction}
+After login, the player creates a new auction.
 \begin{enumerate}
-    \item The player sends a POST request to the reverse proxy at \emph{/market} with the required data: the UUID of the gacha to be auctioned and the starting price.
+    \item The player sends a POST request to the reverse proxy at \emph{/market} with the required data, i.e. a gacha's UUID and the starting price.
     \item The proxy forwards the request to the \emph{Market Service}.
     \item The microservice checks the presence and validity of the JWT session token from the request cookie and extracts the player's UUID from the token payload.
-    \item The \emph{Market Service} sends a GET request to the \emph{Player Service} at \emph{/uuid/<player\_uuid>}. 
-    \item The \emph{Player Service} retrieves the player's ID and send back to the \emph{Market Service}.
-    \item The microservice retrieves the player's gacha collection by sending a GET request to the \emph{Gacha Service} at \emph{/collection/user/<player\_id>}.
+    \item The microservice retrieves the player's gacha collection by sending a GET request to the \emph{Collection Service} at \emph{/collection/user/\{player\_uuid\}}.
     \item Then \emph{Market Service} verifies if the player owns the specified \emph{gacha\_uuid} in sufficient quantity and checks the database for active auctions of the same item.
     \item If the player does not own the item or the number of active auctions matches or exceeds the available quantity, an error is returned.
     \item If all checks pass, a new auction is inserted into the database with a unique UUID, the specified starting price, and the auction's expiration time.
-    \item After inserting the auction, the microservice retrieves the details of the created auction from the database, and a background task is scheduled using \emph{invoke\_payment} to handle auction's expiration.
+    \item After inserting the auction, the microservice retrieves the details of the created auction from the database, and a background task \emph{invoke\_payment} is scheduled to handle auction's expiration.
     \item An HTTP response containing the created auction's details is sent back to the proxy, which forwards it to the user.
 \end{enumerate}
-\subsection{Currency purchase}
-The player wants to purchase in-game currency.
+
+\subsection{Gacha roll}
+After login, the player rolls a new gacha.
 \begin{enumerate}
-\item The player sends a POST request to the reverse proxy at \emph{/currency/buy} with the desired purchase.
-\item The reverse proxy forwards the request to the \emph{Currency Purchase Endpoint} of the \emph{Player Service}.
-\item The service retrieves the \emph{JWT session token} from the player's cookie and verifies its validity.
-\item If the token is valid, the service sends a POST request to the \emph{Player Service} endpoint \emph{/currency/buy} with the player's \emph{uuid} and the purchase details.
-\item The \emph{Player Service} using the player \emph{uuid} and the purchase details updates the player's wallet in the database.
-\item If the operation is successful, the service sends a response to the reverse proxy, which forwards it to the player.
+    \item The player sends a GET request to the reverse proxy at \emph{/collection/roll}.
+    \item The proxy forwards the request to the \emph{Collection Service}.
+    \item The \emph{Collection Service} checks if JWT session token is valid.
+    \item The microservice randomly picks a gacha.
+          \begin{itemize}
+              \item It retrieves the rarity probabilities from the database and use them to randomly choose a rarity.
+              \item All the gachas whose rarity matches the selected one are fetched from the database.
+              \item A gacha is randomly selected.
+          \end{itemize}
+    \item The \emph{Collection Service} sends a POST request to \emph{Player Service} at \emph{/currency/buy} in order to update the player wallet.
+    \item The microservice checks the database if the player already owns the gacha.
+          \begin{itemize}
+              \item If the player has the gacha, the quantity is incremented.
+              \item Otherwise, a new record is inserted.
+          \end{itemize}
+    \item The \emph{Collection Service} sends an HTTP response with the gacha infos to the proxy, which forwards it to the user.
+\end{enumerate}
+
+\subsection{Currency purchase}
+After login, the player purchases in-game currency.
+\begin{enumerate}
+    \item The player sends a POST request to the reverse proxy at \emph{/currency/buy} with the desired purchase.
+    \item The proxy forwards the request to the \emph{Currency Service}.
+    \item The service retrieves the JWT session token from the player's cookie and verifies its validity.
+    \item If the token is valid, the service sends a POST request to the \emph{Player Service}'s endpoint \emph{/currency/buy} with the player's UUID and the purchase details.
+    \item The \emph{Player Service} updates the player's wallet in the database.
+    \item If the operation is successful, the microservice sends an HTTP response to the reverse proxy, which forwards it to the player.
 \end{enumerate}
 
 \section{How to run}
@@ -167,5 +187,5 @@ The application is accessible from the proxy end-point at
 \begin{verbatim}
     https://ase.localhost
 \end{verbatim}
-At the moment, no web GUI is available. However, you can use tools like \emph{curl} to interact with the application. Check the \href{https://github.com/pklone/ASE-project/test/README.md}{github repo} for examples.
+At the moment, no web GUI is available. However, you can use tools like \emph{curl} to interact with the application. Check the \href{https://github.com/pklone/ASE-project/blob/main/README.md}{github repo} for some examples.
 \end{document}
