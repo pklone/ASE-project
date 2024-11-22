@@ -4,12 +4,8 @@ ase.localhost {
     method /admin/logout DELETE
     handle_path /admin/logout {
         rewrite /logout
-        reverse_proxy admin_service:5000
+        reverse_proxy authentication_service:5000
     }
-    handle /admin/login {
-        reverse_proxy admin_service:5000
-    }
-    # Rende disponibile /login del servizio al gateway
     handle /login {
         reverse_proxy authentication_service:5000
     }
@@ -19,6 +15,9 @@ ase.localhost {
     }
 
 
+    handle /admin/login {
+        reverse_proxy admin_service:5000
+    }
     handle /admin/users/* {
         reverse_proxy admin_service:5000
     }
@@ -77,6 +76,7 @@ ase.localhost {
     handle /currency/buy {
         reverse_proxy currency_service:5000
     }
+
 
     handle /market {
         reverse_proxy market_service:5000
