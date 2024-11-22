@@ -8,11 +8,17 @@ import os
 import uuid
 import requests
 import jwt
+import pybreaker
 from mytasks import add, req, invoke_payment
 
 #Controllare la close della connection al db ogni volta
 
 app = Flask(__name__)
+
+circuitbreaker = pybreaker.CircuitBreaker(
+    fail_max=5, 
+    reset_timeout=60*5
+)
 
 #set db connection
 DB_NAME = os.getenv("DB_NAME")
@@ -63,7 +69,11 @@ def show_all():
     except psycopg2.Error as e:
         return jsonify({'response': str(e)})
 
-    r = requests.get(url="http://gacha_service:5000/collection")
+    try:
+        r = circuitbreaker.call(requests.get, 'http://gacha_service:5000/collection')
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
+
     if r.status_code != 200:
         return jsonify({'response': 'Try later - gacha service error'})
     gacha_data = json.loads(r.text)
@@ -71,7 +81,10 @@ def show_all():
     gachas = {x['uuid']: x for x in gacha_data}
     
     for record in records:
-        r = requests.get(url=f"http://player_service:5000/uuid/{record['user_uuid']}")
+        try:
+            r = circuitbreaker.call(requests.get, f'http://player_service:5000/uuid/{record["user_uuid"]}')
+        except Exception as e:
+            return jsonify({'response': str(e)}), 500
         if r.status_code != 200:   
             return jsonify({'response': 'Try later - player service error'})
         player_username = json.loads(r.text)['response']['username']
@@ -145,14 +158,20 @@ def show_one(auction_uuid):
     except psycopg2.Error as e:
         return jsonify({'response': str(e)})
     
-    r = requests.get(url="http://gacha_service:5000/collection")
+    try:
+        r = circuitbreaker.call(requests.get, 'http://gacha_service:5000/collection')
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
     if r.status_code != 200:
         return jsonify({'response': 'Try later - gacha service error'})
     gacha_data = json.loads(r.text)
 
     gachas = {x['uuid']: x for x in gacha_data}
 
-    r = requests.get(url=f"http://player_service:5000/uuid/{record['user_uuid']}")
+    try:
+        r = circuitbreaker.call(requests.get, f'http://player_service:5000/uuid/{record["user_uuid"]}')
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
     if r.status_code != 200:
         return jsonify({'response': 'Try later - player service error'})
     player_username = json.loads(r.text)['response']['username']
@@ -222,12 +241,18 @@ def create_auction():
     except psycopg2.Error as e:
         return jsonify({'response': str(e)})
     
-    r = requests.get(url=f'http://player_service:5000/uuid/{player_uuid}')
+    try:
+        r = circuitbreaker.call(requests.get, f'http://player_service:5000/uuid/{player_uuid}')
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
     if r.status_code != 200:
         return jsonify({'response': 'Try later - player service error'})
     player_id = json.loads(r.text)['response']['id']
 
-    r = requests.get(url=f'http://gacha_service:5000/collection/user/{player_id}')
+    try:
+        r = circuitbreaker.call(requests.get, f'http://gacha_service:5000/collection/user/{player_id}')
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
     if r.status_code != 200:
         return jsonify({'response': 'Try later - gacha service error'})
     player_collection = json.loads(r.text)
@@ -515,7 +540,10 @@ def payment(auction_uuid):
         owner_uuid = record[i]['owner']
         offer = record[i]['offer']
 
-        r = requests.get(url=f'http://player_service:5000/uuid/{buyer_uuid}')
+        try:
+            r = circuitbreaker.call(requests.get, f'http://player_service:5000/uuid/{buyer_uuid}')
+        except Exception as e:
+            return jsonify({'response': str(e)}), 500
         if r.status_code != 200:
             continue
         buyer_data = json.loads(r.text)['response']
@@ -529,7 +557,10 @@ def payment(auction_uuid):
             'price': offer
         }
 
-        r = requests.post(url='http://transaction_service:5000/', json=transaction_data)
+        try:
+            r = circuitbreaker.call(requests.post, 'http://transaction_service:5000/', json=transaction_data)
+        except Exception as e:
+            return jsonify({'response': str(e)}), 500
         if r.status_code != 200:
             return jsonify({'response': 'Failed to create transaction', 'details': r.json()})
         
@@ -541,19 +572,31 @@ def payment(auction_uuid):
             'amount': offer
         }
         
-        r = requests.put(url=f'http://player_service:5000/{buyer_uuid}/wallet', json=amount_buyer)
+        try:
+            r = circuitbreaker.call(requests.put, f'http://player_service:5000/uuid/{buyer_uuid}/wallet', json=amount_buyer)
+        except Exception as e:
+            return jsonify({'response': str(e)}), 500
         if r.status_code != 200:
             return jsonify({'response': 'Failed to update buyer wallet', 'details': r.json()})
 
-        r = requests.put(url=f'http://player_service:5000/{owner_uuid}/wallet', json=amount_owner)
+        try:
+            r = circuitbreaker.call(requests.put, f'http://player_service:5000/uuid/{owner_uuid}/wallet', json=amount_owner)
+        except Exception as e:
+            return jsonify({'response': str(e)}), 500
         if r.status_code != 200:
             return jsonify({'response': 'Failed to update owner wallet', 'details': r.json()})
 
-        requests.put(url=f"http://gacha_service:5000/collection/user/{buyer_uuid}", json={'gacha_uuid': record[i]['gacha_uuid'], 'q' : 1})
+        try:
+            r = circuitbreaker.call(requests.put, f'http://gacha_service:5000/collection/user/{buyer_uuid}', json={'gacha_uuid': record[i]['gacha_uuid'], 'q' : 1})
+        except Exception as e:
+            return jsonify({'response': str(e)}), 500
         if r.status_code != 200:
             return jsonify({'response': 'Failed to update buyer collection', 'details': r.json()})
 
-        requests.put(url=f"http://gacha_service:5000/collection/user/{owner_uuid}", json={'gacha_uuid': record[i]['gacha_uuid'], 'q' : -1,})
+        try:
+            r = circuitbreaker.call(requests.put, f'http://gacha_service:5000/collection/user/{owner_uuid}', json={'gacha_uuid': record[i]['gacha_uuid'], 'q' : -1})
+        except Exception as e:
+            return jsonify({'response': str(e)}), 500
         if r.status_code != 200:
             return jsonify({'response': 'Failed to update owner collection', 'details': r.json()})
 
