@@ -7,14 +7,15 @@ topology_template:
     PlayerService:
       type: micro.nodes.Service
       requirements:
-      - interaction:
-          node: CurrencyService
-          relationship: c
       - interaction: PlayerDB
     AdminDB:
       type: micro.nodes.Datastore
     CurrencyService:
       type: micro.nodes.Service
+      requirements:
+      - interaction:
+          node: PlayerService
+          relationship: c
     AccountService:
       type: micro.nodes.Service
       requirements:
@@ -44,6 +45,7 @@ topology_template:
       - interaction:
           node: PlayerService
           relationship: c
+      - interaction: CeleryWorker MarketService
     CollectionService:
       type: micro.nodes.Service
       requirements:
@@ -72,12 +74,6 @@ topology_template:
       - interaction: AdminService
     PlayerDB:
       type: micro.nodes.Datastore
-    Auction Monitor Service:
-      type: micro.nodes.Service
-      requirements:
-      - interaction:
-          node: MarketService
-          relationship: c
     AdminService:
       type: micro.nodes.Service
       requirements:
@@ -96,6 +92,12 @@ topology_template:
       - interaction:
           node: MarketService
           relationship: c
+    CeleryWorker:
+      type: micro.nodes.Service
+      requirements:
+      - interaction: CeleryWorker MarketService
+    CeleryWorker MarketService:
+      type: micro.nodes.MessageBroker
   groups:
     adad:
       type: micro.groups.Edge
