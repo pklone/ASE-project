@@ -47,7 +47,7 @@ Here is the list of all the accessible components and their related ports.
   | ------------------------- | ---- |
   | Player Service            | 8080 |
   | Authentication Service    | 8081 |
-  | Gacha Service             | 8082 |
+  | Collection Service        | 8082 |
   | Account Service           | 8083 |
   | Currency Service          | 8084 |
   | Admin Service             | 8085 |
@@ -215,3 +215,4 @@ will run a shell no matter the container you choose
 - add new password in modify_by_uuid inside `player.py`
 - change `doc` in `docs`
 - add http status codes to openAPI and to the python code
+- change roll random technique (?)
