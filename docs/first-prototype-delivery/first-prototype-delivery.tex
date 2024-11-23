@@ -2,10 +2,10 @@
 \usepackage{graphicx} % \includegraphics
 \usepackage{hyperref} % \href
 
-\graphicspath{{./images/}}
+\graphicspath{{./img/}}
 
 \begin{document}
-\title{\includegraphics[scale=.2]{logo.png} \\[3ex] A.S.E - 2024/2025 \\ First Prototype Delivery}
+\title{\includegraphics[scale=.2]{logo-unipi/logo.png} \\[3ex] A.S.E - 2024/2025 \\ First Prototype Delivery}
 \author{{\large \emph{EzGacha Team}} \\[1ex] Gioele Dimilta \\ Andrea Mugnai \\ Jacopo Tucci}
 \date{}
 
@@ -18,13 +18,13 @@
 
 \newpage
 \section{Introduction}
-This project aims to develop a microservices-based web application to collect and exchange gachas. In the first section, a brief description of the architecture and database structure is provided. Later, we present some use cases to describe deeper the funcionalities of the system. Finally, we explain how to execute the application inside a virtualized environment based on \emph{Docker}.
+This project aims to develop a microservices-based web application to collect and exchange gachas. In the second section, a brief description of the architecture and database structure is provided. Later, we present some use cases to describe the functionalities of the system. Finally, we explain how to execute the application inside a virtualized environment based on \emph{Docker}.
 
 \section{Architecture}
 The architecture is based on microservices and each one implements a specific functionality. The overall structure is described in Figure \ref{fig:general_architecture}.
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=12cm]{architecture-v2.drawio.png}
+    \includegraphics[width=12cm]{architecture/architecture-v2.png}
     \caption{General architecture}
     \label{fig:general_architecture}
 \end{figure}
@@ -38,13 +38,13 @@ A player can register himself through the \emph{Account Service}. Then, he can l
 \end{itemize}
 Unlike the other services, \emph{Player Service} and \emph{Transaction Service} are not linked to the outside since they only manage the access to the databases (\emph{Player} and \emph{Transaction} tables). Players and admins can access only the API exposed by a \emph{CaddyServer} web reverse proxy, which allows to map specific services API to the outside. The login functionality is based on jwt tokens and each service can check the token validity to accept/discard an http request.
 
-The \emph{RabbitMQ} message broker allows to send \emph{tasks} to the \emph{Celery Worker}. In order to manage the auction closing operation, \emph{Market Service} sends a new task to the worker, which will wait until auction expires before notify the service to close the auction.
+The \emph{RabbitMQ} message broker allows to send \emph{tasks} to the \emph{Celery Worker}. In order to manage the auction closing operation, \emph{Market Service} sends a new task to the worker, which will wait until auction expires before notify the service to close the auction. Moreover, \emph{RabbitMQ} manages tasks through a queue structure and it can re-schedule a task if the associated worker fails. Thus, using two \emph{Celery Workers}, we can guarantee fault tolerance with respect to auction expiration.
 
 \subsection{Architectural Smells}
 The \emph{MicroFreshener} architecture is described in Figure \ref{fig:microfreshener_architecture}.
 \begin{figure}[ht!]
     \centering
-    \includegraphics[width=12cm]{microFreshenerArchitecture.png}
+    \includegraphics[width=12cm]{microfreshener/microFreshenerArchitecture.png}
     \caption{MicroFreshener architecture}
     \label{fig:microfreshener_architecture}
 \end{figure}
@@ -56,11 +56,11 @@ Using the \emph{MicroFreshener} tool, we searched for architectural smells and w
 Here is an E-R diagram of the previous monolithic database.
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=12cm]{ASE-er-v5.drawio.png}
+    \includegraphics[width=12cm]{db/ASE-er-v6.png}
     \caption{Database structure}
 \end{figure}
 
-The \emph{N-to-N} relationship between \emph{Player} and \emph{Gacha} will be implemented with the table \emph{Player\_Gacha}. The \emph{Bid} table expresses the \emph{N-to-N} relationship between \emph{Player} and \emph{Auction}. Since the architecture is now based on microservices, the database has been splitted as follow.
+The \emph{N-to-N} relationship between \emph{Player} and \emph{Gacha} has been implemented with the table \emph{Player\_Gacha}. The \emph{Bid} table expresses the \emph{N-to-N} relationship between \emph{Player} and \emph{Auction}. Since the architecture is now based on microservices, the database has been splitted as follow.
 \begin{table}[ht!]
     \centering
     \begin{tabular}{|c|c|}
@@ -69,7 +69,7 @@ The \emph{N-to-N} relationship between \emph{Player} and \emph{Gacha} will be im
         \hline
         Player           & Player                       \\
         Authentication   & Admin                        \\
-        Collection       & Gacha, Rarity, Gacha\_Player \\
+        Collection       & Gacha, Rarity, Player\_Gacha \\
         Transaction      & Transaction                  \\
         Market           & Auction, Bid                 \\
         \hline
@@ -77,24 +77,16 @@ The \emph{N-to-N} relationship between \emph{Player} and \emph{Gacha} will be im
     %\caption{Splitted database}
 \end{table}
 
-%\begin{itemize}
-%    \item \emph{Gacha}, \emph{Rarity} and \emph{Gacha\_Player} tables are now controlled by \emph{Gacha Service}.
-%    \item \emph{Player} table is now controlled by \emph{Player Service}.
-%    \item \emph{Transaction} table is now controlled by \emph{Transaction Service}.
-%    \item \emph{Auction} and \emph{Bid} tables are now controlled by \emph{Market Service}.
-%    \item \emph{Admin} table is now controlled by \emph{Authentication Service}.
-%\end{itemize}
-
 \subsection{Services}
-\textbf{Player Service} and \textbf{Transaction Service} act as database managers for \emph{Player} and \emph{Transaction} tables respectively. In particular, they provide basic CRUD APIs to interact with those tables, i.e. GET, POST, PUT and DELETE methods to fetch, insert, modify and delete records.
+\emph{Player Service} and \emph{Transaction Service} act as database managers for \emph{Player} and \emph{Transaction} tables respectively. In particular, they provide basic CRUD APIs to interact with those tables, i.e. GET, POST, PUT and DELETE methods to fetch, insert, modify and delete records.
 
-The \textbf{Authentication Service} allows players and admins to login and logout. It creates a jwt token if credentials are correct. Moreover, the admin token contains a boolean attribute \emph{is\_admin}. Admin authentication is done by \textbf{Admin service}. In particular, when an admin wants to login, he communicates with Admin Service, which sends a request to the Authentication Service. In this way, we can keep admin functionalities separated from the player.
+The \emph{Authentication Service} allows players and admins to login and logout. It creates a jwt token if credentials are correct. Moreover, the admin token contains a boolean attribute \emph{is\_admin}. Admin authentication is done by \emph{Admin Service}. In particular, when an admin wants to login, he communicates with \emph{Admin Service}, which sends a request to the \emph{Authentication Service}. In this way, we can keep admin functionalities separated from the player.
 
-The \textbf{Account Service} allows players to manage their account, see their gacha collection (actually passing by \emph{Gacha Service}) and transaction history. In particular, a player can modify and delete his account.
+The \emph{Account Service} allows players to manage their account, see their gacha collection (actually passing by \emph{Collection Service}) and transaction history. A player can modify and delete his account.
 
-The \textbf{Currency Service} allows player to purchase in-game currency. A player can specify the amount of currency he wants to get and his wallet will be updated accordingly.
+The \emph{Currency Service} allows player to purchase in-game currency. A player can specify the amount of currency he wants to get and his wallet will be updated accordingly.
 
-The \textbf{Collection Service} manages the system gacha collection and the related rarities. Also, it controls the \emph{Player\_gacha} table, which contains the infos about all the player collections. Therefore, the account service must communicate with collection service when the user wants to retrieve his collection. The collection service provides also the \emph{roll} functionality, which returns a gacha according to the following probabilities.
+The \emph{Collection Service} manages the system gacha collection and the related rarities. Also, it controls the \emph{Player\_gacha} table, which contains the infos about all the player's collections. Therefore, the \emph{Account Service} must communicate with \emph{Collection Service} when the user wants to retrieve his collection. The \emph{Collection Service} provides also the \emph{roll} functionality, which returns a gacha according to the following probabilities.
 
 \begin{table}[ht!]
     \centering
@@ -108,15 +100,7 @@ The \textbf{Collection Service} manages the system gacha collection and the rela
     %\caption{Rarity probabilities}
 \end{table}
 
-%\begin{itemize}
-%    \item Common (C): $50\%$
-%    \item Uncommon (UC): $30\%$
-%    \item Rare (R): $10\%$
-%    \item Epic (E): $8\%$
-%    \item Legendary (S): $2\%$
-%\end{itemize}
-
-The \textbf{Market Service} is the most complex component of the architecture. It manages auctions, bids and payments. When a player creates a new auction, the service sends a task to the \emph{Celery Worker} in order to guarantee that the auction ends when expire time comes. In particular, the worker will do a POST request to \emph{/payment} market API and the service will close the auction managing both the payment operations and gacha transfer from seller to buyer. If the payment is successfull, a new transaction record is created.
+The \emph{Market Service} is the most complex component of the architecture. It manages auctions, bids and payments. When a player creates a new auction, the service sends a task to the \emph{Celery Worker} in order to guarantee that the auction ends at a specific expiration time, which is $24$ hours after auction creation. In particular, the worker will do a POST request to \emph{/payment} market API and the service will close the auction managing both the payment operations and gacha transfer from seller to buyer. If the payment is successfull, a new transaction record is created.
 
 \section{Use Cases}
 \subsection{User login}
@@ -127,7 +111,7 @@ The player wants to login into the application.
     \item The microservice checks if the user is already logged. If not, it sends a GET request to the \emph{Player Service} at \emph{/username/\{username\}} to retrieve the player informations.
     \item The \emph{Player Service} retrieves user data from the database and sends them to the \emph{Authentication Service}.
     \item It checks if the password is not wrong and, if so, it generates a JWT session token.
-    \item An http response containing the session token will be sent back to the proxy, which will forward it to the user.
+    \item An HTTP response containing the session token will be sent back to the proxy, which will forward it to the user.
 \end{enumerate}
 
 \subsection{Create auction}
