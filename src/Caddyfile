@@ -36,6 +36,9 @@ ase.localhost {
     handle /admin/market/{http.request.uri.path.2} {
         reverse_proxy admin_service:5000
     }
+    handle /admin/payment/{http.request.uri.path.2} {
+        reverse_proxy admin_service:5000
+    }
     handle /admin/close/{http.request.uri.path.2} {
         reverse_proxy admin_service:5000
     }
@@ -68,9 +71,6 @@ ase.localhost {
     handle /roll {
         reverse_proxy gacha_service:5000
     }
-    handle /collection/user/{http.request.uri.path.2} {
-        reverse_proxy gacha_service:5000
-    }
 
 
     handle /currency/buy {
@@ -93,6 +93,7 @@ ase.localhost {
     handle /market/{http.request.uri.path.1}/payment {
         reverse_proxy market_service:5000
     }
+    
     
     handle {
         header Content-Type application/json
