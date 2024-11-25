@@ -20,7 +20,7 @@ def page_not_found(error):
 
 @app.route('/', methods=['GET'])
 def index():
-    return render_template('buy.html')
+    return render_template('buy.html'), 200
 
 @app.route('/currency/buy', methods=['POST'])
 def buy():
@@ -38,12 +38,12 @@ def buy():
 
         decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
     except jwt.ExpiredSignatureError:
-        return jsonify({'response': 'Expired token'}), 401
+        return jsonify({'response': 'Expired token'}), 403
     except jwt.InvalidTokenError:
-        return jsonify({'response': 'Invalid token'}), 401
+        return jsonify({'response': 'Invalid token'}), 403
 
     if 'uuid' not in decoded_jwt:
-        return jsonify({'response': 'Try later'}), 400
+        return jsonify({'response': 'Try later'}), 403
 
     player_uuid = decoded_jwt['uuid']
     purchase = request.json.get('purchase')
@@ -58,7 +58,7 @@ def buy():
     except Exception as e:
         return jsonify({'response': str(e)}), 500
     
-    return r.text
+    return r.text, r.status_code
 
 
 if __name__ == '__main__':

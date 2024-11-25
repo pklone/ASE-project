@@ -45,9 +45,9 @@ def show_all():
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
 
-    return jsonify({'response': records})
+    return jsonify({'response': records}), 200
 
 @app.route('/', methods=['POST'])
 def create():
@@ -86,9 +86,9 @@ def create():
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'error': str(e)})
+        return jsonify({'error': str(e)}), 500
 
-    return jsonify({'response': record})
+    return jsonify({'response': record}), 201
 
 @app.route('/uuid/<string:transaction_uuid>', methods=['GET'])
 def show_by_uuid(transaction_uuid):
@@ -114,9 +114,9 @@ def show_by_uuid(transaction_uuid):
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
 
-    return jsonify({'response': result})
+    return jsonify({'response': result}), 200
 
 @app.route('/user/<string:player_uuid>', methods=['GET'])
 def show_all_by_user(player_uuid):
@@ -140,7 +140,7 @@ def show_all_by_user(player_uuid):
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
     
     for record in records:
         r = requests.get(url=f"http://market_service:5000/market/{record['uuid_auction']}", headers={'Accept': 'application/json'})
@@ -181,7 +181,7 @@ def show_all_by_user(player_uuid):
                 cursor.close()
                 conn.close()
             except psycopg2.Error as e:
-                return jsonify({'response': str(e)})
+                return jsonify({'response': str(e)}), 500
 
             for record in records:
                 r = requests.get(url=f"http://market_service:5000/market/{record['uuid_auction']}", headers={'Accept': 'application/json'})
@@ -231,9 +231,9 @@ def show_by_user(player_uuid, transaction_uuid):
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
 
-    return jsonify({'response': record})
+    return jsonify({'response': record}), 200
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)

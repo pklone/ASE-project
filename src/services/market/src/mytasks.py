@@ -8,7 +8,7 @@ def add(x, y):
 @app.task
 def req():
     r = requests.get(url="http://gacha_service:5000/collection")
-    return r.text
+    return r.text , r.status_code
 
 @app.task
 def invoke_payment(auction_uuid):
@@ -17,4 +17,4 @@ def invoke_payment(auction_uuid):
     except Exception as e:
         return str(e)
 
-    return r.text
+    return r.text, r.status_code

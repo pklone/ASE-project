@@ -35,9 +35,9 @@ def show_all():
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
 
-    return jsonify({'response': records})
+    return jsonify({'response': records}), 200
 
 @app.route('/id/<int:player_id>', methods=['GET'])
 def show_by_id(player_id):
@@ -63,9 +63,9 @@ def show_by_id(player_id):
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
 
-    return jsonify({'response': result})
+    return jsonify({'response': result}), 200
 
 @app.route('/uuid/<string:player_uuid>', methods=['GET'])
 def show_by_uuid(player_uuid):
@@ -91,9 +91,9 @@ def show_by_uuid(player_uuid):
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
 
-    return jsonify({'response': result})
+    return jsonify({'response': result}), 200
 
 @app.route('/uuid/<string:player_uuid>', methods=['PUT'])
 def modify_by_uuid(player_uuid):
@@ -130,7 +130,7 @@ def modify_by_uuid(player_uuid):
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
 
     return jsonify({'response': "User updated Successfully!"}), 200
 
@@ -158,9 +158,9 @@ def show_by_username(player_username):
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
 
-    return jsonify({'response': result})
+    return jsonify({'response': result}), 200
 
 @app.route('/', methods=['POST'])
 def create():
@@ -171,7 +171,7 @@ def create():
     password = request.json.get('password')
 
     if not username or not password:
-        return jsonify({'message': 'Missing data'}), 400
+        return jsonify({'response': 'Missing data'}), 400
 
     player_uuid = str(uuid.uuid4())
     player_password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
@@ -201,9 +201,9 @@ def create():
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'error': str(e)})
+        return jsonify({'response': str(e)}), 500
 
-    return jsonify({'response': record})
+    return jsonify({'response': record}), 201
 
 @app.route('/id/<int:player_id>', methods=['DELETE'])
 def remove_by_id(player_id):
@@ -223,9 +223,9 @@ def remove_by_id(player_id):
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return str(e)
+        return jsonify({'response': str(e)}), 500
 
-    return jsonify({'response': 'ok!'})
+    return jsonify({'response': 'ok!'}), 200
 
 @app.route('/uuid/<string:player_uuid>', methods=['DELETE'])
 def remove_by_uuid(player_uuid):
@@ -245,9 +245,9 @@ def remove_by_uuid(player_uuid):
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return str(e)
+        return jsonify({'response': str(e)}), 500
 
-    return jsonify({'response': 'ok!'})
+    return jsonify({'response': 'ok!'}), 200
 
 @app.route('/<string:uuid>/wallet', methods=['PUT'])
 def update_wallet(uuid):
@@ -269,7 +269,7 @@ def update_wallet(uuid):
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
 
     return jsonify({'response': "wallet updated Successfully!"}), 200
 
@@ -295,7 +295,7 @@ def currency():
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
 
     return jsonify({'response': "wallet updated Successfully!"}), 200
 

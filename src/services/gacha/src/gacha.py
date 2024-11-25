@@ -55,9 +55,9 @@ def show_all():
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return str(e)
+        return jsonify({'response': str(e)}), 500
 
-    return jsonify(records)
+    return jsonify(records), 200
 
 @app.route('/collection/<string:gacha_uuid>', methods=['GET'])
 def show(gacha_uuid):
@@ -82,9 +82,9 @@ def show(gacha_uuid):
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return str(e)
+        return jsonify({'response': str(e)}), 500
 
-    return jsonify(result)
+    return jsonify(result), 200
 
 @app.route('/collection/user/<string:player_uuid>', methods=['GET'])
 def show_by_player(player_uuid):
@@ -109,9 +109,9 @@ def show_by_player(player_uuid):
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return str(e)
+        return jsonify({'response': str(e)}), 500
 
-    return jsonify(records)
+    return jsonify(records), 200
 
 @app.route('/collection/user/<string:player_uuid>', methods=['PUT'])
 def update_quantity(player_uuid): # q is 1 (buyer) or -1 (owner)
@@ -126,10 +126,7 @@ def update_quantity(player_uuid): # q is 1 (buyer) or -1 (owner)
             host=DB_HOST,
             port=DB_PORT
         )
-    except psycopg2.Error as e:
-        return str(e)
 
-    try: 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute('SELECT * FROM player_gacha WHERE uuid_player = %s AND id_gacha = (SELECT id FROM gacha WHERE uuid = %s)', 
             [player_uuid, uuid_gacha])
@@ -144,16 +141,16 @@ def update_quantity(player_uuid): # q is 1 (buyer) or -1 (owner)
         conn.commit()
         cursor.close()
     except psycopg2.Error as e:
-        return str(e)
+        return jsonify({'response': str(e)}), 500
     
-    return jsonify({'response': 'success'})
+    return jsonify({'response': 'success'}), 200
 
 @app.route('/roll', methods=['GET'])
 def roll():
     encoded_jwt = request.cookies.get('session')
 
     if not encoded_jwt:
-        return jsonify({'response': 'You\'re not logged'})
+        return jsonify({'response': 'You\'re not logged'}), 401
 
     try:
         options = {
@@ -164,12 +161,12 @@ def roll():
 
         decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
     except jwt.ExpiredSignatureError:
-        return jsonify({'response': 'Expired token'})
+        return jsonify({'response': 'Expired token'}), 403
     except jwt.InvalidTokenError:
-        return jsonify({'response': 'Invalid token'})
+        return jsonify({'response': 'Invalid token'}), 403
 
     if 'uuid' not in decoded_jwt:
-        return jsonify({'response': 'Try later'})
+        return jsonify({'response': 'Try later'}), 403
 
     player_uuid = decoded_jwt['uuid']
 
@@ -187,7 +184,7 @@ def roll():
         records = cursor.fetchall()
         cursor.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
 
     percentages = [x['percentage'] for x in records]
     weights = [x['id'] for x in records]
@@ -201,7 +198,7 @@ def roll():
         records = cursor.fetchall()
         cursor.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
 
     gacha_id = random.choice(records)[0]
 
@@ -212,7 +209,7 @@ def roll():
 
     r = requests.post(url='http://player_service:5000/currency/buy', json=data)
     if r.status_code != 200:
-        return jsonify({'response': 'Try later'})
+        return jsonify({'response': 'Try later'}), 500
 
     try:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -237,21 +234,21 @@ def roll():
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
 
-    return jsonify({'response': record})
+    return jsonify({'response': record}), 200
 
 @app.route('/collection', methods=['POST'])
 def add_gacha():
     if 'gacha_image' not in request.files:
-        return {'response': 'gacha image not found'}
+        return {'response': 'gacha image not found'}, 400
 
     file = request.files['gacha_image']
     if file.filename == '':
-        return {'response': 'filename not found'}
+        return {'response': 'filename not found'}, 400
 
     if not file or not allowed_file(file.filename):
-        return {'response': 'invalid image format or empty image'}
+        return {'response': 'invalid image format or empty image'}, 400
     
     try:
         new_name = request.form['name']
@@ -273,12 +270,12 @@ def add_gacha():
         cursor.execute('SELECT id from Rarity where symbol = %s', [new_rarity])
         
         if cursor.rowcount == 0:
-            return {'response': 'invalid rarity'}
+            return {'response': 'invalid rarity'}, 400
 
         record = cursor.fetchone()
         rarity_id = record['id']
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
 
     try:
         filename = secure_filename(file.filename)
@@ -299,9 +296,9 @@ def add_gacha():
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
     
-    return jsonify({'response': 'Gacha added'}), 200
+    return jsonify({'response': 'Gacha added'}), 201
     
 @app.route('/collection/<string:gacha_uuid>', methods=['PUT'])
 def modify_gacha(gacha_uuid):
@@ -323,28 +320,28 @@ def modify_gacha(gacha_uuid):
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
 
     if new_rarity:
         try:
             cursor.execute('SELECT id from Rarity where symbol = %s', [new_rarity])
             
             if cursor.rowcount == 0:
-                return {'response': 'invalid rarity'}
+                return {'response': 'invalid rarity'}, 400
 
             record = cursor.fetchone()
             rarity_id = record['id']
         except psycopg2.Error as e:
-            return jsonify({'response': str(e)})
+            return jsonify({'response': str(e)}), 500
     
     if 'gacha_image' in request.files:
         file = request.files['gacha_image']
 
         if file.filename == '':
-            return {'response': 'gacha image filename not found'}
+            return {'response': 'gacha image filename not found'}, 400
 
         if not file or not allowed_file(file.filename):
-            return {'response': 'invalid image format or empty image'}
+            return {'response': 'invalid image format or empty image'}, 400
         
         try:
             filename = secure_filename(file.filename)
@@ -370,12 +367,12 @@ def modify_gacha(gacha_uuid):
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
     
-    return jsonify({'response': 'Gacha updated'})
+    return jsonify({'response': 'Gacha updated'}), 200
 
 @app.route('/collection/<string:gacha_uuid>', methods=['DELETE'])
-def mdelete_gacha(gacha_uuid):
+def delete_gacha(gacha_uuid):
     try:
         conn = psycopg2.connect(
             dbname=DB_NAME,
@@ -391,9 +388,9 @@ def mdelete_gacha(gacha_uuid):
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
     
-    return jsonify({'response': 'Gacha deleted'})
+    return jsonify({'response': 'Gacha deleted'}), 200
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)

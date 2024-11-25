@@ -67,7 +67,7 @@ def show_all():
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
 
     try:
         r = circuitbreaker.call(requests.get, 'http://gacha_service:5000/collection')
@@ -75,7 +75,7 @@ def show_all():
         return jsonify({'response': str(e)}), 500
 
     if r.status_code != 200:
-        return jsonify({'response': 'Try later - gacha service error'})
+        return jsonify({'response': 'Try later - gacha service error'}), 500
     gacha_data = json.loads(r.text)
 
     gachas = {x['uuid']: x for x in gacha_data}
@@ -86,7 +86,7 @@ def show_all():
         except Exception as e:
             return jsonify({'response': str(e)}), 500
         if r.status_code != 200:   
-            return jsonify({'response': 'Try later - player service error'})
+            return jsonify({'response': 'Try later - player service error'}), 500
         player_username = json.loads(r.text)['response']['username']
 
         if record['gacha_uuid'] in gachas:
@@ -113,8 +113,6 @@ def show_all():
             else:
                 auctions.append(auction)
 
-    return jsonify({'response': auctions}), 200
-    #TODO non fa la return dice not suported
     if 'application/json' in request.headers.get('Accept'):
         return jsonify({'response': auctions}), 200
     elif 'text/html' in request.headers.get('Accept'):
@@ -140,10 +138,7 @@ def show_one(auction_uuid):
             host=DB_HOST,
             port=DB_PORT
         )
-    except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
-    
-    try: 
+
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute('''
             SELECT a.uuid, a.base_price, a.gacha_uuid, a.user_uuid, a.expired_at, a.closed, COALESCE(b.offer, 0) AS offer
@@ -160,20 +155,16 @@ def show_one(auction_uuid):
     
     try:
         r = circuitbreaker.call(requests.get, 'http://gacha_service:5000/collection')
-    except Exception as e:
-        return jsonify({'response': str(e)}), 500
-    if r.status_code != 200:
-        return jsonify({'response': 'Try later - gacha service error'})
-    gacha_data = json.loads(r.text)
 
-    gachas = {x['uuid']: x for x in gacha_data}
+        gacha_data = json.loads(r.text)
+        gachas = {x['uuid']: x for x in gacha_data}
 
-    try:
         r = circuitbreaker.call(requests.get, f'http://player_service:5000/uuid/{record["user_uuid"]}')
     except Exception as e:
         return jsonify({'response': str(e)}), 500
     if r.status_code != 200:
-        return jsonify({'response': 'Try later - player service error'})
+        return jsonify({'response': 'Try later - player service error'}), 500
+    
     player_username = json.loads(r.text)['response']['username']
 
     if record['gacha_uuid'] in gachas:
@@ -206,7 +197,7 @@ def create_auction():
     endoded_jwt = request.cookies.get('session')
 
     if not endoded_jwt:
-        return jsonify({'response': 'You\'re not logged'})
+        return jsonify({'response': 'You\'re not logged'}), 401
     
     try:
         options = {
@@ -217,12 +208,12 @@ def create_auction():
 
         decoded_jwt = jwt.decode(endoded_jwt, SECRET, algorithms=['HS256'], options=options)
     except jwt.ExpiredSignatureError:
-        return jsonify({'response': 'Expired token'})
+        return jsonify({'response': 'Expired token'}), 403
     except jwt.InvalidTokenError:
-        return jsonify({'response': 'Invalid token'})
+        return jsonify({'response': 'Invalid token'}), 403
     
     if 'uuid' not in decoded_jwt:
-        return jsonify({'response': 'Try later'})
+        return jsonify({'response': 'Try later'}), 403
     
     player_uuid = decoded_jwt['uuid']
     auction_uuid = str(uuid.uuid4())
@@ -238,15 +229,15 @@ def create_auction():
             host=DB_HOST,
             port=DB_PORT
         )
-    except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
 
-    try:
         r = circuitbreaker.call(requests.get, f'http://gacha_service:5000/collection/user/{player_uuid}')
+        if r.status_code != 200:
+            return jsonify({'response': 'Try later - gacha service error'}), 500
     except Exception as e:
         return jsonify({'response': str(e)}), 500
-    if r.status_code != 200:
-        return jsonify({'response': 'Try later - gacha service error'})
+    except psycopg2.Error as e:
+        return jsonify({'response': str(e)})
+    
     player_collection = json.loads(r.text)
 
     player_gacha = None
@@ -256,7 +247,7 @@ def create_auction():
             break
     
     if not player_gacha or player_gacha['quantity'] < 1:
-        return jsonify({'response': 'You don\'t have this gacha'})
+        return jsonify({'response': 'You don\'t have this gacha'}), 400
     
     try: 
         cursor = conn.cursor()
@@ -269,7 +260,7 @@ def create_auction():
         return jsonify({'response': str(e)})
     
     if player_gacha['quantity'] <= active_auctions:
-        return jsonify({'response': f'You have only {player_gacha['quantity']} copies of gacha {player_gacha["name"]}'})
+        return jsonify({'response': f'You have only {player_gacha['quantity']} copies of gacha {player_gacha["name"]}'}), 400
     
     try:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -282,18 +273,18 @@ def create_auction():
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
 
     task = invoke_payment.apply_async((auction_uuid,), eta=expired_at)
     
-    return jsonify({'response': record})
+    return jsonify({'response': record}), 201
 
 @app.route('/market/<string:auction_uuid>/bid', methods=['POST'])
 def make_bid(auction_uuid):
     endoded_jwt = request.cookies.get('session')
 
     if not endoded_jwt:
-        return jsonify({'response': 'You\'re not logged'})
+        return jsonify({'response': 'You\'re not logged'}), 401
     
     try:
         options = {
@@ -304,12 +295,12 @@ def make_bid(auction_uuid):
 
         decoded_jwt = jwt.decode(endoded_jwt, SECRET, algorithms=['HS256'], options=options)
     except jwt.ExpiredSignatureError:
-        return jsonify({'response': 'Expired token'})
+        return jsonify({'response': 'Expired token'}), 403
     except jwt.InvalidTokenError:
-        return jsonify({'response': 'Invalid token'})
+        return jsonify({'response': 'Invalid token'}), 403
     
     if 'uuid' not in decoded_jwt:
-        return jsonify({'response': 'Try later'})
+        return jsonify({'response': 'Try later'}), 403
     
     player_uuid = decoded_jwt['uuid']
     offer = request.json.get('offer')
@@ -322,10 +313,7 @@ def make_bid(auction_uuid):
             host=DB_HOST,
             port=DB_PORT
         )
-    except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
     
-    try: 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute('''
             SELECT a.base_price, a.expired_at, a.closed, a.user_uuid, COALESCE(b.offer, 0) AS offer
@@ -338,7 +326,7 @@ def make_bid(auction_uuid):
         conn.commit()
         cursor.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
     
     current_time = int(datetime.now(tz=timezone.utc).timestamp())
     final_time = int(record['expired_at'].timestamp())
@@ -346,16 +334,16 @@ def make_bid(auction_uuid):
     current_price = record['offer']
 
     if player_uuid == record['user_uuid']:
-        return jsonify({'response': 'You\'re the owner of this auction'})
+        return jsonify({'response': 'You\'re the owner of this auction'}), 400
 
     if final_time <= current_time:
-        return jsonify({'response': 'Auction is closed'})
+        return jsonify({'response': 'Auction is closed'}), 400
     
     if offer <= base_price:
-        return jsonify({'response': 'Offer must be higher than base price'})
+        return jsonify({'response': 'Offer must be higher than base price'}), 400
     
     if offer <= current_price:
-        return jsonify({'response': 'Offer must be higher than current price'})
+        return jsonify({'response': 'Offer must be higher than current price'}), 400
     
     try:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -369,9 +357,9 @@ def make_bid(auction_uuid):
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
     
-    return jsonify({'response': {'auction_uuid': auction_uuid, 'player_uuid': player_uuid, 'offer': offer, 'closed': record['closed']}})
+    return jsonify({'response': {'auction_uuid': auction_uuid, 'player_uuid': player_uuid, 'offer': offer, 'closed': record['closed']}}), 200
 
 @app.route('/market/<string:auction_uuid>/close', methods=['PUT'])
 def close_auction(auction_uuid):
@@ -402,19 +390,19 @@ def close_auction(auction_uuid):
         [auction_uuid])
         
         if cursor.rowcount == 0:
-            return {'response': 'Auction not found'}
+            return {'response': 'Auction not found'}, 400
         
         record = cursor.fetchone()
         conn.commit()
         cursor.close()
     except psycopg2.Error as e:
-        return {'response': str(e)}
+        return {'response': str(e)}, 500
     
     if not is_admin:
         endoded_jwt = request.cookies.get('session')
 
         if not endoded_jwt:
-            return jsonify({'response': 'You\'re not logged'})
+            return jsonify({'response': 'You\'re not logged'}), 401
 
         try:
             options = {
@@ -425,22 +413,22 @@ def close_auction(auction_uuid):
 
             decoded_jwt = jwt.decode(endoded_jwt, SECRET, algorithms=['HS256'], options=options)
         except jwt.ExpiredSignatureError:
-            return jsonify({'response': 'Expired token'})
+            return jsonify({'response': 'Expired token'}), 403
         except jwt.InvalidTokenError:
-            return jsonify({'response': 'Invalid token'})
+            return jsonify({'response': 'Invalid token'}), 403
 
         if 'uuid' not in decoded_jwt:
-            return jsonify({'response': 'Try later - jwt error'})
+            return jsonify({'response': 'Try later - jwt error'}), 403
 
         player_uuid = decoded_jwt['uuid']
 
         if record['user_uuid'] != player_uuid:
-            return jsonify({'response': 'You\'re not the owner of this auction'})
+            return jsonify({'response': 'You\'re not the owner of this auction'}), 400
         if record['offer'] != 0:
-            return {'response': 'Not possible to close auction with bids'}
+            return {'response': 'Not possible to close auction with bids'}, 400
 
     if record['closed'] == True:
-        return {'response': 'Auction is already closed'}
+        return {'response': 'Auction is already closed'}, 400
     try: 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute('DELETE FROM bid WHERE auction_uuid = %s',
@@ -451,15 +439,15 @@ def close_auction(auction_uuid):
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return {'response': str(e)}
-    return {'response': 'Auction closed'}
+        return {'response': str(e)}, 500
+    return {'response': 'Auction closed'}, 200
 
 @app.route('/market/<string:auction_uuid>/payment', methods=['POST'])
 def payment(auction_uuid):
     hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]
     
     if 'celery_worker' not in hostname and 'admin_service' not in hostname:
-        return jsonify({'response': 'You\'re not authorized'})
+        return jsonify({'response': 'You\'re not authorized'}), 403
 
     try:
         conn = psycopg2.connect(
@@ -470,7 +458,7 @@ def payment(auction_uuid):
             port=DB_PORT
         )
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
     
     try: 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -507,14 +495,14 @@ def payment(auction_uuid):
         conn.commit()
         cursor.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)}) 
+        return jsonify({'response': str(e)}), 500
 
 
     if len(record) == 0 or (record[0]['offer'] == 0 and record[1]['offer'] == 0 and record[2]['offer'] == 0):
-        return jsonify({'response': 'There are no bids for this auction'})
+        return jsonify({'response': 'There are no bids for this auction'}), 400
     
     if record[0]['closed'] == True:
-        return {'response': 'Auction is already closed'}
+        return {'response': 'Auction is already closed'}, 400
     
     try: 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -526,7 +514,7 @@ def payment(auction_uuid):
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return {'response': str(e)}  
+        return {'response': str(e)}, 500
 
     for i in range(min(3, len(record))):
         buyer_uuid = record[i]['buyer']
@@ -554,8 +542,8 @@ def payment(auction_uuid):
             r = circuitbreaker.call(requests.post, 'http://transaction_service:5000/', json=transaction_data)
         except Exception as e:
             return jsonify({'response': str(e)}), 500
-        if r.status_code != 200:
-            return jsonify({'response': 'Failed to create transaction', 'details': r.json()})
+        if r.status_code != 201:
+            return jsonify({'response': 'Failed to create transaction', 'details': r.json()}), r.status_code
         
         amount_buyer = {
             'amount': -offer
@@ -570,32 +558,32 @@ def payment(auction_uuid):
         except Exception as e:
             return jsonify({'response': str(e)}), 500
         if r.status_code != 200:
-            return jsonify({'response': 'Failed to update buyer wallet', 'details': r.json()})
+            return jsonify({'response': 'Failed to update buyer wallet', 'details': r.json()}), 500
 
         try:
             r = circuitbreaker.call(requests.put, f'http://player_service:5000/{owner_uuid}/wallet', json=amount_owner)
         except Exception as e:
             return jsonify({'response': str(e)}), 500
         if r.status_code != 200:
-            return jsonify({'response': 'Failed to update owner wallet', 'details': r.json()})
+            return jsonify({'response': 'Failed to update owner wallet', 'details': r.json()}), 500
 
         try:
             r = circuitbreaker.call(requests.put, f'http://gacha_service:5000/collection/user/{buyer_uuid}', json={'gacha_uuid': record[i]['gacha_uuid'], 'q' : 1})
         except Exception as e:
             return jsonify({'response': str(e)}), 500
         if r.status_code != 200:
-            return jsonify({'response': 'Failed to update buyer collection', 'details': r.json()})
+            return jsonify({'response': 'Failed to update buyer collection', 'details': r.json()}), 500
 
         try:
             r = circuitbreaker.call(requests.put, f'http://gacha_service:5000/collection/user/{owner_uuid}', json={'gacha_uuid': record[i]['gacha_uuid'], 'q' : -1})
         except Exception as e:
             return jsonify({'response': str(e)}), 500
         if r.status_code != 200:
-            return jsonify({'response': 'Failed to update owner collection', 'details': r.json()})
+            return jsonify({'response': 'Failed to update owner collection', 'details': r.json()}), 500
 
-        return jsonify({'response': 'Transaction completed', 'transaction': transaction_data})
+        return jsonify({'response': 'Transaction completed', 'transaction': transaction_data}), 200
         
-    return jsonify({'response': 'No buyers with sufficient funds'})
+    return jsonify({'response': 'No buyers with sufficient funds'}), 200
 
 @app.route('/market/user/<string:player_uuid>', methods=['GET'])
 def show_user_auctions(player_uuid):
@@ -620,7 +608,7 @@ def show_user_auctions(player_uuid):
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})    
+        return jsonify({'response': str(e)}), 500   
 
     return jsonify({'response': records}), 200 
 

@@ -30,7 +30,7 @@ def page_not_found(error):
 
 @app.route('/login', methods=['GET'])
 def index():
-    return render_template('index.html')
+    return render_template('index.html'), 200
 
 @app.route('/admin_login', methods=['POST'])
 def admin_login():
@@ -59,7 +59,7 @@ def admin_login():
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
     
     admin = result
 
@@ -77,7 +77,7 @@ def admin_login():
     response = make_response(jsonify({'response': 'Logged as admin'}))
     response.set_cookie('session', encoded_jwt, httponly=True, expires=expire)
 
-    return response
+    return response, 200
 
 
 @app.route('/login', methods=['POST'])
@@ -85,7 +85,7 @@ def login():
     encoded_jwt = request.cookies.get('session')
 
     if encoded_jwt:
-        return jsonify({'response': 'Already logged in'})
+        return jsonify({'response': 'Already logged in'}), 200
 
     if request.headers.get('Content-Type') != 'application/json':
         return jsonify({'response': 'Content-type not supported'}), 400
@@ -121,19 +121,19 @@ def login():
     response = make_response(jsonify({'response': 'Login successful'}))
     response.set_cookie('session', encoded_jwt, httponly=True, expires=expire)
 
-    return response
+    return response, 200
 
 @app.route('/logout', methods=['DELETE'])
 def logout():
     encoded_jwt = request.cookies.get('session')
 
     if not encoded_jwt:
-        return jsonify({'response': 'Already logged out'})
+        return jsonify({'response': 'Already logged out'}), 200
 
     response = make_response(jsonify({'response': 'Logout successful'}))
     response.set_cookie('session', '', httponly=True, expires=0)
 
-    return response
+    return response, 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
