@@ -240,17 +240,9 @@ def create_auction():
         )
     except psycopg2.Error as e:
         return jsonify({'response': str(e)})
-    
-    try:
-        r = circuitbreaker.call(requests.get, f'http://player_service:5000/uuid/{player_uuid}')
-    except Exception as e:
-        return jsonify({'response': str(e)}), 500
-    if r.status_code != 200:
-        return jsonify({'response': 'Try later - player service error'})
-    player_id = json.loads(r.text)['response']['id']
 
     try:
-        r = circuitbreaker.call(requests.get, f'http://gacha_service:5000/collection/user/{player_id}')
+        r = circuitbreaker.call(requests.get, f'http://gacha_service:5000/collection/user/{player_uuid}')
     except Exception as e:
         return jsonify({'response': str(e)}), 500
     if r.status_code != 200:
@@ -466,7 +458,7 @@ def close_auction(auction_uuid):
 def payment(auction_uuid):
     hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]
     
-    if 'celery_worker' not in hostname or 'admin_service' not in hostname:
+    if 'celery_worker' not in hostname and 'admin_service' not in hostname:
         return jsonify({'response': 'You\'re not authorized'})
 
     try:
@@ -516,7 +508,8 @@ def payment(auction_uuid):
         cursor.close()
     except psycopg2.Error as e:
         return jsonify({'response': str(e)}) 
-        
+
+
     if len(record) == 0 or (record[0]['offer'] == 0 and record[1]['offer'] == 0 and record[2]['offer'] == 0):
         return jsonify({'response': 'There are no bids for this auction'})
     
@@ -573,14 +566,14 @@ def payment(auction_uuid):
         }
         
         try:
-            r = circuitbreaker.call(requests.put, f'http://player_service:5000/uuid/{buyer_uuid}/wallet', json=amount_buyer)
+            r = circuitbreaker.call(requests.put, f'http://player_service:5000/{buyer_uuid}/wallet', json=amount_buyer)
         except Exception as e:
             return jsonify({'response': str(e)}), 500
         if r.status_code != 200:
             return jsonify({'response': 'Failed to update buyer wallet', 'details': r.json()})
 
         try:
-            r = circuitbreaker.call(requests.put, f'http://player_service:5000/uuid/{owner_uuid}/wallet', json=amount_owner)
+            r = circuitbreaker.call(requests.put, f'http://player_service:5000/{owner_uuid}/wallet', json=amount_owner)
         except Exception as e:
             return jsonify({'response': str(e)}), 500
         if r.status_code != 200:
