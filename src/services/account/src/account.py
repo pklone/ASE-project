@@ -146,10 +146,7 @@ def collection():
     player_uuid = decoded_jwt['uuid']
 
     try:
-        r = circuitbreaker.call(requests.get, f'http://player_service:5000/uuid/{player_uuid}')
-        player = json.loads(r.text)['response']
-
-        r = circuitbreaker.call(requests.get, f'http://gacha_service:5000/collection/user/{player['id']}')
+        r = circuitbreaker.call(requests.get, f'http://gacha_service:5000/collection/user/{player_uuid}')
     except Exception as e:
         return jsonify({'response': str(e)}), 500
 
