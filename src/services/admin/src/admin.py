@@ -208,6 +208,41 @@ def user_delete(user_uuid):
 
     return r.text
 
+@app.route('/admin/collection/<string:user_uuid>', methods=['GET'])
+def collection(user_uuid):
+    encoded_jwt = request.cookies.get('session')
+
+    if not encoded_jwt:
+        return jsonify({'response': 'You\'re not logged'})
+
+    try:
+        options = {
+            'require': ['exp'], 
+            'verify_signature': True, 
+            'verify_exp': True
+        }
+
+        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
+    except jwt.ExpiredSignatureError:
+        return jsonify({'response': 'Expired token'})
+    except jwt.InvalidTokenError:
+        return jsonify({'response': 'Invalid token'})
+
+    if 'admin' not in decoded_jwt:
+        return jsonify({'response': 'You are not autorized'})
+    
+    if decoded_jwt['admin'] == False:
+        return jsonify({'response': 'You are not autorized'})
+    
+    try:
+        r = circuitbreaker.call(requests.get, f'http://gacha_service:5000/collection/user/{user_uuid}')
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
+
+    if r.status_code != 200:
+        return jsonify({'response': 'Try later - transaction service error'})
+    return r.text, 200
+
 @app.route('/admin/collection', methods=['POST'])
 def add_gacha():
     encoded_jwt = request.cookies.get('session')
@@ -494,6 +529,40 @@ def transactions(user_uuid):
         return jsonify({'response': 'Try later - transaction service error'})
     return r.text, 200
     
+@app.route('/admin/payment/<string:auction_uuid>', methods=['POST'])
+def payment(auction_uuid):
+    encoded_jwt = request.cookies.get('session')
+
+    if not encoded_jwt:
+        return jsonify({'response': 'You\'re not logged'})
+
+    try:
+        options = {
+            'require': ['exp'], 
+            'verify_signature': True, 
+            'verify_exp': True
+        }
+
+        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
+    except jwt.ExpiredSignatureError:
+        return jsonify({'response': 'Expired token'})
+    except jwt.InvalidTokenError:
+        return jsonify({'response': 'Invalid token'})
+
+    if 'admin' not in decoded_jwt:
+        return jsonify({'response': 'You are not autorized'})
+    
+    if decoded_jwt['admin'] == False:
+        return jsonify({'response': 'You are not autorized'})
+    
+    try:
+        r = circuitbreaker.call(requests.post, f'http://market_service:5000/market/{auction_uuid}/payment')
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
+
+    if r.status_code != 200:
+        return jsonify({'response': r.text}), r.status_code
+    return r.text, 200
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
