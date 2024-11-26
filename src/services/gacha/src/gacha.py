@@ -212,7 +212,7 @@ def roll():
         'purchase': -10
     }
 
-    r = requests.post(url='http://player_service:5000/currency/buy', json=data)
+    r = requests.post(url='https://player_service:5000/currency/buy', verify=False, json=data)
     if r.status_code != 200:
         return jsonify({'response': 'Try later'}), 500
 
@@ -398,4 +398,4 @@ def delete_gacha(gacha_uuid):
     return jsonify({'response': 'Gacha deleted'}), 200
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=("/run/secrets/certificate", "/run/secrets/key"))
