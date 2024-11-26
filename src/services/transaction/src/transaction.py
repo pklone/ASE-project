@@ -143,7 +143,7 @@ def show_all_by_user(player_uuid):
         return jsonify({'response': str(e)}), 500
     
     for record in records:
-        r = requests.get(url=f"http://market_service:5000/market/{record['uuid_auction']}", headers={'Accept': 'application/json'})
+        r = requests.get(url=f"https://market_service:5000/market/{record['uuid_auction']}", headers={'Accept': 'application/json'}, verify=False)
         response = json.loads(r.text)
         if response.get("response"):
             to_player = response['response']['player_uuid']
@@ -159,7 +159,7 @@ def show_all_by_user(player_uuid):
             }
             transactions_out.append(transaction)
 
-    r = requests.get(url=f"http://market_service:5000/market/user/{player_uuid}") 
+    r = requests.get(url=f"https://market_service:5000/market/user/{player_uuid}", verify=False) 
     response = json.loads(r.text)
     if response.get("response"):
         for r in response['response']:
@@ -184,7 +184,7 @@ def show_all_by_user(player_uuid):
                 return jsonify({'response': str(e)}), 500
 
             for record in records:
-                r = requests.get(url=f"http://market_service:5000/market/{record['uuid_auction']}", headers={'Accept': 'application/json'})
+                r = requests.get(url=f"https://market_service:5000/market/{record['uuid_auction']}", headers={'Accept': 'application/json'}, verify=False)
                 if response.get("response"):
                     response = json.loads(r.text)
                     to_player = response['response']['player_uuid']
@@ -236,4 +236,4 @@ def show_by_user(player_uuid, transaction_uuid):
     return jsonify({'response': record}), 200
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=("/run/secrets/certificate", "/run/secrets/key"))
