@@ -177,7 +177,7 @@ ase.localhost {
             }
         }
     }
-    handle /market/new {
+    handle /market/new_auction {
         reverse_proxy https://market_service:5000 {
              transport http {
                 tls_insecure_skip_verify
