@@ -70,7 +70,7 @@ def show_all():
         return jsonify({'response': str(e)}), 500
 
     try:
-        r = circuitbreaker.call(requests.get, 'http://gacha_service:5000/collection')
+        r = circuitbreaker.call(requests.get, 'http://gacha_service:5000/collection', headers={'Accept': 'application/json'})
     except Exception as e:
         return jsonify({'response': str(e)}), 500
 
@@ -82,7 +82,7 @@ def show_all():
     
     for record in records:
         try:
-            r = circuitbreaker.call(requests.get, f'http://player_service:5000/uuid/{record["user_uuid"]}')
+            r = circuitbreaker.call(requests.get, f'http://player_service:5000/uuid/{record["user_uuid"]}', headers={'Accept': 'application/json'})
         except Exception as e:
             return jsonify({'response': str(e)}), 500
         if r.status_code != 200:   
@@ -154,7 +154,7 @@ def show_one(auction_uuid):
         return jsonify({'response': str(e)})
     
     try:
-        r = circuitbreaker.call(requests.get, 'http://gacha_service:5000/collection')
+        r = circuitbreaker.call(requests.get, 'http://gacha_service:5000/collection' , headers={'Accept': 'application/json'})
 
         gacha_data = json.loads(r.text)
         gachas = {x['uuid']: x for x in gacha_data}
@@ -191,6 +191,10 @@ def show_one(auction_uuid):
         return render_template("auction_details.html", auction=auction), 200
     else:
         return jsonify({'response': 'Not supported'}), 400
+    
+@app.route('/market/new', methods=['GET'])
+def show_create_auction():
+    return render_template("create_auction.html")
 
 @app.route('/market', methods=['POST'])
 def create_auction():
@@ -217,9 +221,19 @@ def create_auction():
     
     player_uuid = decoded_jwt['uuid']
     auction_uuid = str(uuid.uuid4())
-    gacha_uuid = request.json.get('gacha_uuid')
-    starting_price = request.json.get('starting_price')
+    if request.is_json: 
+       gacha_uuid = request.json.get('gacha_uuid')
+       starting_price = request.json.get('starting_price')
+    else:  
+       gacha_uuid = request.form.get('gacha_uuid')
+       starting_price = request.form.get('starting_price')
+
+    if not gacha_uuid or not starting_price:
+        return jsonify({'response': 'Missing gacha_uuid or starting_price'}), 400
     expired_at = datetime.now(tz=timezone.utc) + timedelta(seconds=60*5)
+
+    if int(starting_price) <= 0:
+        return jsonify({'response': 'Starting price must be positive'}), 400
 
     try: 
         conn = psycopg2.connect(
@@ -257,7 +271,7 @@ def create_auction():
         conn.commit()
         cursor.close()
     except psycopg2.Error as e:
-        return jsonify({'response': str(e)})
+        return jsonify({'response': str(e)}), 500
     
     if player_gacha['quantity'] <= active_auctions:
         return jsonify({'response': f'You have only {player_gacha['quantity']} copies of gacha {player_gacha["name"]}'}), 400
@@ -277,7 +291,12 @@ def create_auction():
 
     task = invoke_payment.apply_async((auction_uuid,), eta=expired_at)
     
-    return jsonify({'response': record}), 201
+    if 'application/json' in request.headers.get('Accept'):
+        return jsonify({'response': record}), 201
+    elif 'text/html' in request.headers.get('Accept'):
+        return render_template("create_auction.html", success=True), 201
+    else:
+        return jsonify({'response': 'Not supported'}), 400
 
 @app.route('/market/<string:auction_uuid>/bid', methods=['POST'])
 def make_bid(auction_uuid):
@@ -414,8 +433,6 @@ def close_auction(auction_uuid):
             decoded_jwt = jwt.decode(endoded_jwt, SECRET, algorithms=['HS256'], options=options)
         except jwt.ExpiredSignatureError:
             return jsonify({'response': 'Expired token'}), 403
-        except jwt.InvalidTokenError:
-            return jsonify({'response': 'Invalid token'}), 403
 
         if 'uuid' not in decoded_jwt:
             return jsonify({'response': 'Try later - jwt error'}), 403
