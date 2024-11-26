@@ -192,7 +192,7 @@ def show_one(auction_uuid):
     else:
         return jsonify({'response': 'Not supported'}), 400
     
-@app.route('/market/new', methods=['GET'])
+@app.route('/market/new_auction', methods=['GET'])
 def show_create_auction():
     return render_template("create_auction.html")
 
@@ -322,7 +322,16 @@ def make_bid(auction_uuid):
         return jsonify({'response': 'Try later'}), 403
     
     player_uuid = decoded_jwt['uuid']
-    offer = request.json.get('offer')
+
+    if request.is_json: 
+       offer = request.json.get('offer')
+    else:  
+       offer = request.form.get('offer')
+
+    offer = int(offer)
+    
+    if int(offer) <= 0:
+        return jsonify({'response': 'Bid must be positive'}), 400
 
     try: 
         conn = psycopg2.connect(
