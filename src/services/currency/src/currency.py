@@ -54,7 +54,7 @@ def buy():
     }
 
     try:
-        r = circuitbreaker.call(requests.post, 'http://player_service:5000/currency/buy', json=player_purchasing)
+        r = circuitbreaker.call(requests.post, 'https://player_service:5000/currency/buy', json=player_purchasing, verify=False)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
     
@@ -62,7 +62,7 @@ def buy():
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=("/run/secrets/certificate", "/run/secrets/key"))
 
 
 
