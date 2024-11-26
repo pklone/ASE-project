@@ -45,7 +45,7 @@ def admin_login():
     }
 
     try:
-        r = circuitbreaker.call(requests.post, 'http://authentication_service:5000/admin_login', json=data)
+        r = circuitbreaker.call(requests.post, 'https://authentication_service:5000/admin_login', verify=False, json=data)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
 
@@ -84,7 +84,7 @@ def users():
         return jsonify({'response': 'You are not autorized'}), 401
     
     try:
-        r = circuitbreaker.call(requests.get, 'http://player_service:5000/')
+        r = circuitbreaker.call(requests.get, 'https://player_service:5000/', verify=False)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
     
@@ -117,7 +117,7 @@ def user(user_uuid):
         return jsonify({'response': 'You are not autorized'}), 401
     
     try:
-        r = circuitbreaker.call(requests.get, f'http://player_service:5000/uuid/{user_uuid}')
+        r = circuitbreaker.call(requests.get, f'https://player_service:5000/uuid/{user_uuid}', verify=False)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
     
@@ -158,7 +158,7 @@ def user_modify(user_uuid):
     }
 
     try:
-        r = circuitbreaker.call(requests.put, f'http://player_service:5000/uuid/{user_uuid}', json=new_player)
+        r = circuitbreaker.call(requests.put, f'https://player_service:5000/uuid/{user_uuid}', verify=False, json=new_player)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
 
@@ -191,7 +191,7 @@ def user_delete(user_uuid):
         return jsonify({'response': 'You are not autorized'}), 401
 
     try:
-        r = circuitbreaker.call(requests.delete, f'http://player_service:5000/uuid/{user_uuid}')
+        r = circuitbreaker.call(requests.delete, f'https://player_service:5000/uuid/{user_uuid}', verify=False)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
 
@@ -224,7 +224,7 @@ def collection(user_uuid):
         return jsonify({'response': 'You are not autorized'}), 401
     
     try:
-        r = circuitbreaker.call(requests.get, f'http://gacha_service:5000/collection/user/{user_uuid}')
+        r = circuitbreaker.call(requests.get, f'https://gacha_service:5000/collection/user/{user_uuid}', verify=False)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
 
@@ -286,7 +286,7 @@ def add_gacha():
     }
 
     try:
-        r = circuitbreaker.call(requests.post, 'http://gacha_service:5000/collection', data=data, files=files)
+        r = circuitbreaker.call(requests.post, 'https://gacha_service:5000/collection', verify=False, data=data, files=files)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
 
@@ -336,7 +336,7 @@ def modify_gacha(gacha_uuid):
     }
 
     try:
-        r = circuitbreaker.call(requests.put, f'http://gacha_service:5000/collection/{gacha_uuid}', data=data, files=files)
+        r = circuitbreaker.call(requests.put, f'https://gacha_service:5000/collection/{gacha_uuid}', verify=False, data=data, files=files)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
 
@@ -369,7 +369,7 @@ def remove_gacha(gacha_uuid):
         return jsonify({'response': 'You are not autorized'}), 401
     
     try:
-        r = circuitbreaker.call(requests.delete, f'http://gacha_service:5000/collection/{gacha_uuid}')
+        r = circuitbreaker.call(requests.delete, f'https://gacha_service:5000/collection/{gacha_uuid}', verify=False)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
     
@@ -402,7 +402,7 @@ def show_all():
         return jsonify({'response': 'You are not autorized'}), 401
     
     try:
-        r = circuitbreaker.call(requests.get, 'http://market_service:5000/market')
+        r = circuitbreaker.call(requests.get, 'https://market_service:5000/market', verify=False)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
     
@@ -435,7 +435,7 @@ def show_one(auction_uuid):
         return jsonify({'response': 'You are not autorized'}), 401
     
     try:
-        r = circuitbreaker.call(requests.get, f'http://market_service:5000/market/{auction_uuid}', headers={'Accept': 'application/json'})
+        r = circuitbreaker.call(requests.get, f'https://market_service:5000/market/{auction_uuid}', verify=False, headers={'Accept': 'application/json'})
     except Exception as e:
         return jsonify({'response': str(e)}), 500
     
@@ -468,7 +468,7 @@ def close(auction_uuid):
         return jsonify({'response': 'You are not autorized'}), 401
     
     try:
-        r = circuitbreaker.call(requests.put, f'http://market_service:5000/market/{auction_uuid}/close')
+        r = circuitbreaker.call(requests.put, f'https://market_service:5000/market/{auction_uuid}/close', verify=False)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
     
@@ -501,7 +501,7 @@ def transactions(user_uuid):
         return jsonify({'response': 'You are not autorized'}), 401
     
     try:
-        r = circuitbreaker.call(requests.get, f'http://transaction_service:5000/user/{user_uuid}')
+        r = circuitbreaker.call(requests.get, f'https://transaction_service:5000/user/{user_uuid}', verify=False)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
 
@@ -537,7 +537,7 @@ def payment(auction_uuid):
         return jsonify({'response': 'You are not autorized'}), 401
     
     try:
-        r = circuitbreaker.call(requests.post, f'http://market_service:5000/market/{auction_uuid}/payment')
+        r = circuitbreaker.call(requests.post, f'https://market_service:5000/market/{auction_uuid}/payment', verify=False)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
 
@@ -547,5 +547,5 @@ def payment(auction_uuid):
     return r.text, r.status_code
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=("/run/secrets/certificate", "/run/secrets/key"))
 
