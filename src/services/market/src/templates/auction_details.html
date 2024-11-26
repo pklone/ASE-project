@@ -26,9 +26,67 @@
                 <p><strong>Current Offer:</strong> {{auction.actual_offer}}</p>
                 <p><strong>Owner:</strong> {{auction.player_username}}</p>
                 <p><strong>Expiration:</strong> {{auction.expired_at}}</p>
-                <p><strong>Status:</strong> {{'Closed' if auction.closed else 'Open'}}</p>
+            </div>
+            <div class="box">
+                <h2 class="subtitle">Place Your Bid</h2>
+                <div id="notification" class="notification is-success is-hidden">
+                    Bid placed successfully!
+                </div>
+                <form id="bidForm">
+                    <div class="field">
+                        <label class="label" for="offer">Your Offer</label>
+                        <div class="control">
+                            <input class="input" type="number" name="offer" id="offer" placeholder="Enter your offer" min="1" step="1" required>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="control">
+                            <button type="submit" class="button is-primary">Submit Bid</button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
     </section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.querySelector('#bidForm'); 
+            const notification = document.getElementById('notification');
+            const auctionUuid = "{{ auction.auction_uuid }}";
+        
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault(); 
+                const formData = new FormData(form);
+        
+                const response = await fetch(`/market/${auctionUuid}/bid`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        offer: formData.get('offer'),
+                    }),
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                });
+        
+                const data = await response.json(); 
+                console.log(data); 
+        
+                if (response.ok) {
+                    notification.textContent = 'Bid placed successfully!';
+                    notification.classList.remove('is-hidden'); 
+                    setTimeout(() => {
+                        notification.classList.add('is-hidden');
+                        window.location.reload();
+                    }, 3000);
+                } else {
+                    alert(data.response);
+                }
+            });
+        });
+               
+    </script>
 </body>
 </html>
