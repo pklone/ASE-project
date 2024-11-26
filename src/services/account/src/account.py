@@ -42,7 +42,7 @@ def create():
     }
 
     try:
-        r = circuitbreaker.call(requests.post, 'http://player_service:5000', json=player)
+        r = circuitbreaker.call(requests.post, 'https://player_service:5000', verify=False, json=player)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
@@ -74,7 +74,7 @@ def remove():
     player_uuid = decoded_jwt['uuid']
 
     try:
-        r = circuitbreaker.call(requests.delete, f'http://player_service:5000/uuid/{player_uuid}')
+        r = circuitbreaker.call(requests.delete, f'https://player_service:5000/uuid/{player_uuid}', verify=False)
     except Exception as e:  
         return jsonify({'response': str(e)}), 500
 
@@ -114,7 +114,7 @@ def update():
     }
 
     try:
-        r = circuitbreaker.call(requests.put, f'http://player_service:5000/uuid/{player_uuid}', json=new_player)
+        r = circuitbreaker.call(requests.put, f'https://player_service:5000/uuid/{player_uuid}', verify=False, json=new_player)
     except Exception as e:  
         return jsonify({'response': str(e)}), 500
 
@@ -146,7 +146,7 @@ def collection():
     player_uuid = decoded_jwt['uuid']
 
     try:
-        r = circuitbreaker.call(requests.get, f'http://gacha_service:5000/collection/user/{player_uuid}')
+        r = circuitbreaker.call(requests.get, f'https://gacha_service:5000/collection/user/{player_uuid}', verify=False)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
 
@@ -178,7 +178,7 @@ def currency():
     player_uuid = decoded_jwt['uuid']
 
     try:
-        r = circuitbreaker.call(requests.get, f'http://player_service:5000/uuid/{player_uuid}')
+        r = circuitbreaker.call(requests.get, f'https://player_service:5000/uuid/{player_uuid}', verify=False)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
 
@@ -217,7 +217,7 @@ def transactions_all():
     player_uuid = decoded_jwt['uuid']
 
     try:
-        r = circuitbreaker.call(requests.get, f'http://transaction_service:5000/user/{player_uuid}')
+        r = circuitbreaker.call(requests.get, f'https://transaction_service:5000/user/{player_uuid}', verify=False)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
     transactions = json.loads(r.text)['response']
@@ -250,7 +250,7 @@ def transaction(transaction_uuid):
     player_uuid = decoded_jwt['uuid']
 
     try:
-        r = circuitbreaker.call(requests.get, f'http://transaction_service:5000/user/{player_uuid}/{transaction_uuid}')
+        r = circuitbreaker.call(requests.get, f'https://transaction_service:5000/user/{player_uuid}/{transaction_uuid}', verify=False)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
     
@@ -260,5 +260,5 @@ def transaction(transaction_uuid):
     return jsonify({"response": transaction}), 200
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=("/run/secrets/certificate", "/run/secrets/key"))
 
