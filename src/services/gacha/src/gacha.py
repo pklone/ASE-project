@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, json
+from flask import Flask, request, jsonify, json, render_template
 import psycopg2
 import psycopg2.extras
 import os
@@ -57,7 +57,12 @@ def show_all():
     except psycopg2.Error as e:
         return jsonify({'response': str(e)}), 500
 
-    return jsonify(records), 200
+    if 'application/json' in request.headers['Accept']:
+        return jsonify(records), 200
+    elif 'text/html' in request.headers['Accept']:
+        return render_template('collection.html', records=records), 200
+    else:
+        return jsonify({'response': 'Not supported'}), 400
 
 @app.route('/collection/<string:gacha_uuid>', methods=['GET'])
 def show(gacha_uuid):
