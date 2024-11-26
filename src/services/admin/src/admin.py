@@ -402,7 +402,7 @@ def show_all():
         return jsonify({'response': 'You are not autorized'}), 401
     
     try:
-        r = circuitbreaker.call(requests.get, 'https://market_service:5000/market', verify=False)
+        r = circuitbreaker.call(requests.get, 'https://market_service:5000/market', headers={'Accept': 'application/json'}, verify=False)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
     
