@@ -7,16 +7,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
 </head>
 <body>
-    <!-- Navbar -->
     <nav class="navbar is-light" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
-            <a class="navbar-item" href="/">
+            <a class="navbar-item" href="/market">
                 <strong>Marketplace</strong>
             </a>
         </div>
     </nav>
 
-    <!-- Auctions List -->
     <section class="section">
         <div class="container">
             <h1 class="title">Available Auctions</h1>
@@ -38,6 +36,9 @@
                 </div>
                 {% endfor %}
             </div>
+        <div class="has-text-centered">
+            <a href="/market/new" class="button is-primary is-large">Create New Auction</a>
+        </div>
         </div>
     </section>
 </body>

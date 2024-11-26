@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Auction</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+</head>
+<body>
+    <nav class="navbar is-light" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="/market">
+                <strong>Marketplace</strong>
+            </a>
+        </div>
+    </nav>
+
+    <section class="section">
+        <div class="container">
+            <h1 class="title">Create a New Auction</h1>
+
+            <div id="notification" class="notification is-success is-hidden">
+                Auction created successfully!
+            </div>            
+            <form action="/market" method="POST" id="createAuctionForm">
+                <div class="field">
+                    <label class="label" for="gacha_uuid">Gacha UUID</label>
+                    <div class="control">
+                        <input class="input" type="text" name="gacha_uuid" placeholder="Enter Gacha UUID" required>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="starting_price">Starting Price</label>
+                    <div class="control">
+                        <input class="input" type="number" name="starting_price" placeholder="Enter Starting Price" min="1" step="1" required>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="control">
+                        <button type="submit" class="button is-primary">Create Auction</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </section>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.querySelector('#createAuctionForm'); 
+            const notification = document.getElementById('notification');
+        
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault(); 
+                const formData = new FormData(form);
+        
+                const response = await fetch('/market', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        gacha_uuid: formData.get('gacha_uuid'),
+                        starting_price: formData.get('starting_price'),
+                    }),
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                });
+    
+                const data = await response.json(); 
+                console.log(data); 
+    
+                if (response.ok) {
+                    notification.textContent = 'Auction created successfully!';
+                    notification.classList.remove('is-hidden'); 
+                    setTimeout(() => {
+                        notification.classList.add('is-hidden');
+                    }, 3000);
+                } else {
+                        alert(data.response);
+            }
+            });
+        });        
+    </script>
+</body>
+</html>
