@@ -92,6 +92,9 @@ services:
     networks:
       - player_net
       - internal_net
+    secrets:
+      - certificate
+      - key
     develop:
      watch:
       - action: sync
@@ -112,6 +115,9 @@ services:
     networks:
       - authentication_net
       - internal_net
+    secrets:
+      - certificate
+      - key
     develop:
      watch:
       - action: sync
@@ -132,6 +138,9 @@ services:
     networks:
       - gacha_net
       - internal_net
+    secrets:
+      - certificate
+      - key
     develop:
      watch:
       - action: sync
@@ -149,6 +158,9 @@ services:
       - "127.0.0.1:8083:5000"
     networks:
       - internal_net
+    secrets:
+      - certificate
+      - key
     develop:
      watch:
       - action: sync
@@ -166,6 +178,9 @@ services:
       - "127.0.0.1:8084:5000"
     networks:
       - internal_net
+    secrets:
+      - certificate
+      - key
     develop:
      watch:
       - action: sync
@@ -183,6 +198,9 @@ services:
       - "127.0.0.1:8085:5000"
     networks:
       - internal_net
+    secrets:
+      - certificate
+      - key
     develop:
       watch:
         - action: sync
@@ -204,6 +222,9 @@ services:
     networks:
       - market_net
       - internal_net
+    secrets:
+      - certificate
+      - key
     develop:
       watch:
         - action: sync
@@ -224,6 +245,9 @@ services:
     networks:
       - transaction_net
       - internal_net
+    secrets:
+      - certificate
+      - key
     develop:
      watch:
       - action: sync
@@ -295,6 +319,12 @@ services:
         max_attempts: 3
         window: 60s
     
+secrets:
+  certificate:
+    file: ./cert.pem
+  key:
+    file: ./key.pem
+
 volumes:
  player_db:
  admin_db:
