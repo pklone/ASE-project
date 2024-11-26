@@ -1,109 +1,229 @@
-
 ase.localhost {
     
+    # Authentication Service
     method /admin/logout DELETE
     handle_path /admin/logout {
         rewrite /logout
-        reverse_proxy authentication_service:5000
+        reverse_proxy https://authentication_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     handle /login {
-        reverse_proxy authentication_service:5000
+        reverse_proxy https://authentication_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     handle /logout {
         method /logout DELETE
-        reverse_proxy authentication_service:5000
+        reverse_proxy https://authentication_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
 
 
+
+    # Admin Service
     handle /admin/login {
-        reverse_proxy admin_service:5000
+        reverse_proxy https://admin_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     handle /admin/users/* {
-        reverse_proxy admin_service:5000
+        reverse_proxy https://admin_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     handle /admin/users {
-        reverse_proxy admin_service:5000
+        reverse_proxy https://admin_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     handle /admin/collection {
-        reverse_proxy admin_service:5000
+        reverse_proxy https://admin_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     handle /admin/collection/* {
-        reverse_proxy admin_service:5000
+        reverse_proxy https://admin_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     handle /admin/market {
-        reverse_proxy admin_service:5000
+        reverse_proxy https://admin_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     handle /admin/market/{http.request.uri.path.2} {
-        reverse_proxy admin_service:5000
+        reverse_proxy https://admin_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     handle /admin/payment/{http.request.uri.path.2} {
-        reverse_proxy admin_service:5000
+        reverse_proxy https://admin_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     handle /admin/close/{http.request.uri.path.2} {
-        reverse_proxy admin_service:5000
+        reverse_proxy https://admin_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     handle /admin/transaction/{http.request.uri.path.2} {
-        reverse_proxy admin_service:5000
+        reverse_proxy https://admin_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
 
+    # User Service
     handle /user {
-        reverse_proxy account_service:5000
+        reverse_proxy https://account_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     handle /user/currency {
-        reverse_proxy account_service:5000
+        reverse_proxy https://account_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     handle /user/collection {
-        reverse_proxy account_service:5000
+        reverse_proxy https://account_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     handle /user/transactions {
-        reverse_proxy account_service:5000
+        reverse_proxy https://account_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     handle /user/transactions/* {
-        reverse_proxy account_service:5000
+        reverse_proxy https://account_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
 
+    # Gacha Service
     handle /collection {
-        reverse_proxy gacha_service:5000
+        reverse_proxy https://gacha_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     handle /collection/{http.request.uri.path.1} {
-        reverse_proxy gacha_service:5000
+        reverse_proxy https://gacha_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     handle /roll {
-        reverse_proxy gacha_service:5000
+        reverse_proxy https://gacha_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
 
-
+    # Currency Service
     handle /currency/buy {
-        reverse_proxy currency_service:5000
+        reverse_proxy https://currency_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
 
-
+    # Market Service
     handle /market {
-        reverse_proxy market_service:5000
+        reverse_proxy https://market_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     handle /market/new {
-        reverse_proxy market_service:5000
+        reverse_proxy https://market_service:5000 {
+             transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     handle /market/{http.request.uri.path.1} {
-        reverse_proxy market_service:5000
+        reverse_proxy https://market_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     handle /market/{http.request.uri.path.1}/bid {
-        reverse_proxy market_service:5000
-    }   
+        reverse_proxy https://market_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
+    }
     handle /market/{http.request.uri.path.1}/close {
-        reverse_proxy market_service:5000
+        reverse_proxy https://market_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     handle /market/{http.request.uri.path.1}/payment {
-        reverse_proxy market_service:5000
+        reverse_proxy https://market_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
 
     handle /assets/* {
-        reverse_proxy gacha_service:5000
+        reverse_proxy https://gacha_service:5000 {
+             transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
     
-    
+    # Default 404 Response
     handle {
         header Content-Type application/json
-        respond `{"response": "page not found}` 404
+        respond `{"response": "page not found"}` 404
     }
 }
