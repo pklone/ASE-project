@@ -222,7 +222,12 @@ def transactions_all():
         return jsonify({'response': str(e)}), 500
     transactions = json.loads(r.text)['response']
 
-    return jsonify({"response": transactions}), 200
+    if 'application/json' in request.headers['Accept']:
+        return jsonify({'response': transactions}), 200
+    elif 'text/html' in request.headers['Accept']:
+        return render_template('transactions.html', records=transactions), 200
+    else:
+        return jsonify({'response': 'Not supported'}), 400
 
 @app.route('/user/transactions/<string:transaction_uuid>', methods=['GET'])
 def transaction(transaction_uuid):
