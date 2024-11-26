@@ -18,7 +18,7 @@ SECRET = os.getenv("JWT_SECRET")
 def page_not_found(error):
     return jsonify({'response': "page not found"}), 404
 
-@app.route('/', methods=['GET'])
+@app.route('/currency/buy', methods=['GET'])
 def index():
     return render_template('buy.html'), 200
 
