@@ -97,7 +97,7 @@ def login():
         return jsonify({'response': 'Missing credentials'}), 400
 
     try:
-        r = circuitbreaker.call(requests.get, f'http://player_service:5000/username/{username}')
+        r = circuitbreaker.call(requests.get, f'https://player_service:5000/username/{username}', verify=False)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
     
@@ -136,4 +136,4 @@ def logout():
     return response, 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True, ssl_context=('/run/secrets/certificate', '/run/secrets/key'))
