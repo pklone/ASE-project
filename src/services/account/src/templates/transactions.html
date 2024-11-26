@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Transactions</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+</head>
+<body>
+    <nav class="navbar is-light" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="/market">
+                <strong>Gacha Marketplace</strong>
+            </a>
+        </div>
+    </nav>
+
+    <section class="section">
+        <div class="container">
+            <h1 class="title">Transactions for User</h1>
+
+            <div class="box">
+                <h2 class="subtitle">Outgoing Transactions</h2>
+                <div id="outgoingTransactions" class="columns is-multiline">
+                    {% for transaction in records['outgoing transactions'] %}
+                    <div class="column is-one-third">
+                        <div class="card">
+                            <div class="card-content">
+                                <p><strong>Transaction ID:</strong> {{ transaction.id }}</p>
+                                <p><strong>UUID:</strong> {{ transaction.uuid }}</p>
+                                <p><strong>Price:</strong> ${{ transaction.price }}</p>
+                                <p><strong>Created At:</strong> {{ transaction.created_at }}</p>
+                                <p><strong>Bought By:</strong> {{ transaction.bought }}</p>
+                                <p><strong>Sold By:</strong> You</p>
+                                <p><strong>Auction UUID:</strong> {{ transaction.uuid_auction }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="box">
+                <h2 class="subtitle">Incoming Transactions</h2>
+                <div id="incomingTransactions" class="columns is-multiline">
+                    {% for transaction in records['incoming transactions'] %}
+                    <div class="column is-one-third">
+                        <div class="card">
+                            <div class="card-content">
+                                <p><strong>Transaction ID:</strong> {{ transaction.id }}</p>
+                                <p><strong>UUID:</strong> {{ transaction.uuid }}</p>
+                                <p><strong>Price:</strong> ${{ transaction.price }}</p>
+                                <p><strong>Created At:</strong> {{ transaction.created_at }}</p>
+                                <p><strong>Bought By:</strong> You</p>
+                                <p><strong>Sold By:</strong> {{ transaction.sold }}</p>
+                                <p><strong>Auction UUID:</strong> {{ transaction.uuid_auction }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>
