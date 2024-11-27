@@ -11,6 +11,9 @@ circuitbreaker = pybreaker.CircuitBreaker(
     reset_timeout=60*5
 )
 
+CERT_PATH = os.getenv("CERT_PATH")
+KEY_PATH = os.getenv("KEY_PATH")
+
 # set jwt
 SECRET = os.getenv("JWT_SECRET")
 
@@ -62,7 +65,7 @@ def buy():
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=("/run/secrets/certificate", "/run/secrets/key"))
+    app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=(CERT_PATH, KEY_PATH))
 
 
 

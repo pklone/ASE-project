@@ -26,6 +26,8 @@ DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
+CERT_PATH = os.getenv("CERT_PATH")
+KEY_PATH = os.getenv("KEY_PATH")
 
 # set jwt
 SECRET = os.getenv("JWT_SECRET")
@@ -640,4 +642,4 @@ def show_user_auctions(player_uuid):
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=("/run/secrets/certificate", "/run/secrets/key"))
+    app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=(CERT_PATH, KEY_PATH))

@@ -13,6 +13,8 @@ DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
+CERT_PATH = os.getenv("CERT_PATH")
+KEY_PATH = os.getenv("KEY_PATH")
 
 @app.errorhandler(404)
 def page_not_found(error):
@@ -300,4 +302,4 @@ def currency():
     return jsonify({'response': "wallet updated Successfully!"}), 200
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=("/run/secrets/certificate", "/run/secrets/key"))
+    app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=(CERT_PATH, KEY_PATH))
