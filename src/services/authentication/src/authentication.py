@@ -22,6 +22,7 @@ DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 CERT_PATH = os.getenv("CERT_PATH")
 KEY_PATH = os.getenv("KEY_PATH")
+POSTGRES_SSLMODE = os.getenv("POSTGRES_SSLMODE")
 
 # set jwt
 SECRET = os.getenv("JWT_SECRET")
@@ -47,7 +48,8 @@ def admin_login():
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)

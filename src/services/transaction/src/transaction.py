@@ -17,6 +17,7 @@ DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 CERT_PATH = os.getenv("CERT_PATH")
 KEY_PATH = os.getenv("KEY_PATH")
+POSTGRES_SSLMODE = os.getenv("POSTGRES_SSLMODE")
 
 UUID_REGEX = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
 
@@ -38,7 +39,8 @@ def show_all():
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -75,7 +77,8 @@ def create():
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -102,7 +105,8 @@ def show_by_uuid(transaction_uuid):
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -132,7 +136,8 @@ def show_all_by_user(player_uuid):
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -173,7 +178,8 @@ def show_all_by_user(player_uuid):
                     user=DB_USER,
                     password=DB_PASSWORD,
                     host=DB_HOST,
-                    port=DB_PORT
+                    port=DB_PORT,
+                    sslmode=POSTGRES_SSLMODE
                 )
 
                 cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -219,7 +225,8 @@ def show_by_user(player_uuid, transaction_uuid):
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)

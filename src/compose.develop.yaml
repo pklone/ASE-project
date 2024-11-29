@@ -28,6 +28,9 @@ services:
       - path: ./dbs/player/.env
     volumes:
       - player_db:/var/lib/postgresql/data
+      - ./dbs/player/server.crt:/src/dbs/player/server.crt
+      - ./dbs/player/server.key:/src/dbs/player/server.key
+    command: -c ssl=on -c ssl_cert_file=/src/dbs/player/server.crt -c ssl_key_file=/src/dbs/player/server.key
     networks:
       - player_net
 
@@ -40,6 +43,9 @@ services:
       - path: ./dbs/admin/.env
     volumes:
       - admin_db:/var/lib/postgresql/data
+      - ./dbs/admin/server.crt:/src/dbs/admin/server.crt
+      - ./dbs/admin/server.key:/src/dbs/admin/server.key
+    command: -c ssl=on -c ssl_cert_file=/src/dbs/admin/server.crt -c ssl_key_file=/src/dbs/admin/server.key
     networks:
       - authentication_net
 
@@ -52,6 +58,9 @@ services:
       - path: ./dbs/gacha/.env
     volumes:
       - gacha_db:/var/lib/postgresql/data
+      - ./dbs/gacha/server.crt:/src/dbs/gacha/server.crt
+      - ./dbs/gacha/server.key:/src/dbs/gacha/server.key
+    command: -c ssl=on -c ssl_cert_file=/src/dbs/gacha/server.crt -c ssl_key_file=/src/dbs/gacha/server.key
     networks:
       - gacha_net
 
@@ -64,6 +73,9 @@ services:
       - path: ./dbs/market/.env
     volumes:
       - market_db:/var/lib/postgresql/data
+      - ./dbs/market/server.crt:/src/dbs/market/server.crt
+      - ./dbs/market/server.key:/src/dbs/market/server.key
+    command: -c ssl=on -c ssl_cert_file=/src/dbs/market/server.crt -c ssl_key_file=/src/dbs/market/server.key
     networks:
       - market_net
 
@@ -76,6 +88,9 @@ services:
       - path: ./dbs/transaction/.env
     volumes:
       - transaction_db:/var/lib/postgresql/data
+      - ./dbs/transaction/server.crt:/src/dbs/transaction/server.crt
+      - ./dbs/transaction/server.key:/src/dbs/transaction/server.key
+    command: -c ssl=on -c ssl_cert_file=/src/dbs/transaction/server.crt -c ssl_key_file=/src/dbs/transaction/server.key
     networks:
       - transaction_net
 

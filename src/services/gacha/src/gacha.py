@@ -25,6 +25,7 @@ DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 CERT_PATH = os.getenv("CERT_PATH")
 KEY_PATH = os.getenv("KEY_PATH")
+POSTGRES_SSLMODE = os.getenv("POSTGRES_SSLMODE")
 
 # set jwt
 SECRET = os.getenv("JWT_SECRET")
@@ -45,7 +46,8 @@ def show_all():
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -76,7 +78,8 @@ def show(gacha_uuid):
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
         
         cursor = conn.cursor()
@@ -101,7 +104,8 @@ def show_by_player(player_uuid):
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -131,7 +135,8 @@ def update_quantity(player_uuid): # q is 1 (buyer) or -1 (owner)
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -183,7 +188,8 @@ def roll():
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -270,7 +276,8 @@ def add_gacha():
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -322,7 +329,8 @@ def modify_gacha(gacha_uuid):
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -386,7 +394,8 @@ def delete_gacha(gacha_uuid):
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)

@@ -28,6 +28,7 @@ DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 CERT_PATH = os.getenv("CERT_PATH")
 KEY_PATH = os.getenv("KEY_PATH")
+POSTGRES_SSLMODE = os.getenv("POSTGRES_SSLMODE")
 
 # set jwt
 SECRET = os.getenv("JWT_SECRET")
@@ -58,7 +59,8 @@ def show_all():
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -138,7 +140,9 @@ def show_one(auction_uuid):
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
+
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -243,7 +247,8 @@ def create_auction():
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         r = circuitbreaker.call(requests.get, f'https://gacha_service:5000/collection/user/{player_uuid}', verify=False)
@@ -341,7 +346,8 @@ def make_bid(auction_uuid):
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
     
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -408,7 +414,8 @@ def close_auction(auction_uuid):
                 user=DB_USER,
                 password=DB_PASSWORD,
                 host=DB_HOST,
-                port=DB_PORT
+                port=DB_PORT,
+                sslmode=POSTGRES_SSLMODE
             )
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute('''
@@ -483,7 +490,8 @@ def payment(auction_uuid):
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
     except psycopg2.Error as e:
         return jsonify({'response': str(e)}), 500
@@ -623,7 +631,8 @@ def show_user_auctions(player_uuid):
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)

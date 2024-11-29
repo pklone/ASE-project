@@ -21,6 +21,7 @@ DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 CERT_PATH = os.getenv("CERT_PATH")
 KEY_PATH = os.getenv("KEY_PATH")
+POSTGRES_SSLMODE = os.getenv("POSTGRES_SSLMODE")
 
 # set jwt
 SECRET = os.getenv("JWT_SECRET")

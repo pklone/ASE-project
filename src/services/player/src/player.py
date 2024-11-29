@@ -15,6 +15,7 @@ DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 CERT_PATH = os.getenv("CERT_PATH")
 KEY_PATH = os.getenv("KEY_PATH")
+POSTGRES_SSLMODE = os.getenv("POSTGRES_SSLMODE")
 
 @app.errorhandler(404)
 def page_not_found(error):
@@ -28,7 +29,8 @@ def show_all():
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor()
@@ -51,7 +53,8 @@ def show_by_id(player_id):
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -79,7 +82,8 @@ def show_by_uuid(player_uuid):
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -115,7 +119,8 @@ def modify_by_uuid(player_uuid):
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -146,7 +151,8 @@ def show_by_username(player_username):
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -190,7 +196,8 @@ def create():
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor()
@@ -215,7 +222,8 @@ def remove_by_id(player_id):
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor()
@@ -237,7 +245,8 @@ def remove_by_uuid(player_uuid):
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
 
         cursor = conn.cursor()
@@ -260,7 +269,8 @@ def update_wallet(uuid):
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
         
         cursor = conn.cursor()
@@ -286,7 +296,8 @@ def currency():
             user=DB_USER,
             password=DB_PASSWORD,
             host=DB_HOST,
-            port=DB_PORT
+            port=DB_PORT,
+            sslmode=POSTGRES_SSLMODE
         )
         
         cursor = conn.cursor()
