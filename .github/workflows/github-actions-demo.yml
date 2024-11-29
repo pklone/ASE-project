@@ -16,6 +16,13 @@ jobs:
           up-flags: "--build"
           down-flags: "--volumes"
 
+      - name: run a bash script to generate certificates
+        run: |
+          echo "Generating certificates..."
+          cd ./src
+          ./generate.sh
+          echo "Certificates generated!"
+
       - name: Wait for containers to be healthy
         run: |
           echo "Waiting for containers to become healthy..."
