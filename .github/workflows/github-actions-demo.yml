@@ -9,19 +9,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run docker-compose
-        uses: hoverkraft-tech/compose-action@v2.0.1
-        with:
-          compose-file: "./src/compose.yaml"
-          up-flags: "--build"
-          down-flags: "--volumes"
-
       - name: run a bash script to generate certificates
         run: |
           echo "Generating certificates..."
           cd ./src
           ./generate.sh
           echo "Certificates generated!"
+
+      - name: Run docker-compose
+        uses: hoverkraft-tech/compose-action@v2.0.1
+        with:
+          compose-file: "./src/compose.yaml"
+          up-flags: "--build"
+          down-flags: "--volumes"
 
       - name: Wait for containers to be healthy
         run: |
