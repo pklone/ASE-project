@@ -108,8 +108,8 @@ services:
       - player_net
       - internal_net
     secrets:
-      - certificate
-      - key
+      - player_certificate
+      - player_key
     develop:
      watch:
       - action: sync
@@ -131,8 +131,8 @@ services:
       - authentication_net
       - internal_net
     secrets:
-      - certificate
-      - key
+      - authentication_certificate
+      - authentication_key
     develop:
      watch:
       - action: sync
@@ -154,8 +154,8 @@ services:
       - gacha_net
       - internal_net
     secrets:
-      - certificate
-      - key
+      - collection_certificate
+      - collection_key
     develop:
      watch:
       - action: sync
@@ -174,8 +174,8 @@ services:
     networks:
       - internal_net
     secrets:
-      - certificate
-      - key
+      - account_certificate
+      - account_key
     develop:
      watch:
       - action: sync
@@ -194,8 +194,8 @@ services:
     networks:
       - internal_net
     secrets:
-      - certificate
-      - key
+      - currency_certificate
+      - currency_key
     develop:
      watch:
       - action: sync
@@ -214,8 +214,8 @@ services:
     networks:
       - internal_net
     secrets:
-      - certificate
-      - key
+      - admin_certificate
+      - admin_key
     develop:
       watch:
         - action: sync
@@ -238,8 +238,10 @@ services:
       - market_net
       - internal_net
     secrets:
-      - certificate
-      - key
+      - market_certificate
+      - market_key
+      - celery_certificate
+      - celery_key
     develop:
       watch:
         - action: sync
@@ -261,8 +263,8 @@ services:
       - transaction_net
       - internal_net
     secrets:
-      - certificate
-      - key
+      - transaction_certificate
+      - transaction_key
     develop:
      watch:
       - action: sync
@@ -277,10 +279,13 @@ services:
     build: ./services/rabbitmq
     container_name: rabbitmq_broker
     ports:
-     - "127.0.0.1:5672:5672"
+     - "127.0.0.1:5671:5671"
      - "127.0.0.1:15672:15672"
     networks:
      - internal_net
+    secrets:
+      - rabbit_certificate
+      - rabbit_key
     healthcheck:
       test: curl guest:guest@127.0.0.1:15672/api/overview || exit 1
       interval: 5s
@@ -295,6 +300,9 @@ services:
      - rabbitmq_broker
     networks:
      - internal_net
+    secrets:
+      - celery_certificate
+      - celery_key
     depends_on:
       rabbitmq_broker:
         condition: service_healthy
@@ -318,6 +326,9 @@ services:
      - rabbitmq_broker
     networks:
      - internal_net
+    secrets:
+      - celery_certificate
+      - celery_key
     depends_on:
       rabbitmq_broker:
         condition: service_healthy
@@ -335,10 +346,47 @@ services:
         window: 60s
     
 secrets:
-  certificate:
-    file: ./cert.pem
-  key:
-    file: ./key.pem
+  account_certificate:
+    file: ./cert/account_cert.pem
+  account_key:
+    file: ./cert/account_key.pem
+  admin_certificate:    
+    file: ./cert/admin_cert.pem
+  admin_key:
+    file: ./cert/admin_key.pem
+  collection_certificate:
+    file: ./cert/collection_cert.pem
+  collection_key:
+    file: ./cert/collection_key.pem
+  currency_certificate:
+    file: ./cert/currency_cert.pem
+  currency_key:
+    file: ./cert/currency_key.pem
+  authentication_certificate:
+    file: ./cert/authentication_cert.pem
+  authentication_key: 
+    file: ./cert/authentication_key.pem
+  market_certificate:
+    file: ./cert/market_cert.pem  
+  market_key: 
+    file: ./cert/market_key.pem 
+  player_certificate:
+    file: ./cert/player_cert.pem
+  player_key: 
+    file: ./cert/player_key.pem
+  transaction_certificate:
+    file: ./cert/transaction_cert.pem
+  transaction_key:
+    file: ./cert/transaction_key.pem
+  celery_certificate:
+    file: ./cert/celery_cert.pem
+  celery_key:
+    file: ./cert/celery_key.pem
+  rabbit_certificate:
+    file: ./cert/rabbit_cert.pem
+  rabbit_key:
+    file: ./cert/rabbit_key.pem
+  
 
 volumes:
  player_db:
