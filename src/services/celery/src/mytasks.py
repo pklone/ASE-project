@@ -7,14 +7,14 @@ def add(x, y):
 
 @app.task
 def req():
-    r = requests.get(url="http://gacha_service:5000/collection")
+    r = requests.get(url="https://gacha_service:5000/collection", verify=False)
     return r.text, r.status_code
 
 @app.task
 def invoke_payment(auction_uuid):
     try:
-        r = requests.post(url=f"http://market_service:5000/market/{auction_uuid}/payment")
+        r = requests.post(url=f"https://market_service:5000/market/{auction_uuid}/payment", verify=False)
     except Exception as e:
-        return jsonify({'response': str(e)}), 500
+        return str(e), 500
 
     return r.text, r.status_code
