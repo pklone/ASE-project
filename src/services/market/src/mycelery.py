@@ -1,11 +1,24 @@
 from celery import Celery
+import os
+import ssl
 
-broker_url = 'amqp://guest:guest@rabbitmq_broker:5672'
+CERT_PATH= os.getenv("CERT_PATH_CEL")
+KEY_PATH= os.getenv("KEY_PATH_CEL")
+
+broker_url = 'amqps://rabbitmq_broker:5671'
 
 app = Celery('mycelery',
              broker=broker_url,
              backend='rpc://',
              include=['mytasks'])
+
+app.conf.broker_use_ssl = {
+    'keyfile': KEY_PATH,
+    'certfile': CERT_PATH,
+    'cert_reqs': ssl.CERT_NONE
+}
+
+
 
 # Optional configuration, see the application user guide.
 #app.conf.update(
