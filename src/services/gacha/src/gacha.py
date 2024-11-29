@@ -52,7 +52,7 @@ def show_all():
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute("""
-            SELECT g.id, uuid, g.name, description, image_path, r.name as rarity 
+            SELECT g.id, uuid, g.name, LEFT(g.description, 100) || '...' AS description, image_path, r.name as rarity 
             FROM gacha g 
                 INNER JOIN rarity r on g.id_rarity = r.id""")
         records = cursor.fetchall()
