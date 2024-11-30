@@ -18,6 +18,11 @@ services:
       - caddy_config:/config
     networks:
       - internal_net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
     
   player_db:
     build: ./dbs/player
@@ -33,6 +38,11 @@ services:
     command: -c ssl=on -c ssl_cert_file=/src/dbs/player/server.crt -c ssl_key_file=/src/dbs/player/server.key
     networks:
       - player_net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
 
   admin_db:
     build: ./dbs/admin
@@ -63,6 +73,11 @@ services:
     command: -c ssl=on -c ssl_cert_file=/src/dbs/gacha/server.crt -c ssl_key_file=/src/dbs/gacha/server.key
     networks:
       - gacha_net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
 
   market_db:
     build: ./dbs/market/
@@ -78,6 +93,11 @@ services:
     command: -c ssl=on -c ssl_cert_file=/src/dbs/market/server.crt -c ssl_key_file=/src/dbs/market/server.key
     networks:
       - market_net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
 
   transaction_db:
     build: ./dbs/transaction
@@ -93,6 +113,11 @@ services:
     command: -c ssl=on -c ssl_cert_file=/src/dbs/transaction/server.crt -c ssl_key_file=/src/dbs/transaction/server.key
     networks:
       - transaction_net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
 
  
   player_service:
@@ -117,6 +142,11 @@ services:
         target: /app
       - action: rebuild
         path: ./services/player/requirements.txt
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
 
   authentication_service:
     build: ./services/authentication
@@ -140,6 +170,11 @@ services:
         target: /app
       - action: rebuild
         path: ./services/authentication/requirements.txt
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
 
   gacha_service:
     build: ./services/gacha
@@ -163,6 +198,11 @@ services:
         target: /app
       - action: rebuild
         path: ./services/gacha/requirements.txt
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
 
   account_service:
     build: ./services/account
@@ -183,6 +223,11 @@ services:
         target: /app
       - action: rebuild
         path: ./services/account/requirements.txt
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
 
   currency_service:
     build: ./services/currency
@@ -203,6 +248,11 @@ services:
         target: /app
       - action: rebuild
         path: ./services/currency/requirements.txt
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
 
   admin_service:
     build: ./services/admin
@@ -223,6 +273,11 @@ services:
           target: /app
         - action: rebuild
           path: ./services/admin/requirements.txt
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
 
   market_service:
     build: ./services/market
@@ -249,6 +304,11 @@ services:
           target: /app
         - action: rebuild
           path: ./services/market/requirements.txt
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
 
   transaction_service:
     build: ./services/transaction
@@ -272,6 +332,11 @@ services:
         target: /app
       - action: rebuild
         path: ./services/transaction/requirements.txt
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
     
 
   rabbitmq_broker:
@@ -318,6 +383,10 @@ services:
         delay: 5s
         max_attempts: 3
         window: 60s
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 200M
       
   celery_worker_2:
     hostname: celery_worker_2
@@ -344,8 +413,12 @@ services:
         delay: 5s
         max_attempts: 3
         window: 60s
-    
-secrets:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 200M
+   
+secrets: 
   account_certificate:
     file: ./cert/account_cert.pem
   account_key:
