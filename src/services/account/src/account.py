@@ -124,7 +124,7 @@ def update():
     return r.text, r.status_code
 
 @app.route('/user/collection', methods=['GET'])
-def collection():
+def collection(): 
     encoded_jwt = request.cookies.get('session')
 
     if not encoded_jwt:
@@ -153,7 +153,16 @@ def collection():
     except Exception as e:
         return jsonify({'response': str(e)}), 500
 
-    return r.text, r.status_code
+    if 'application/json' in request.headers.get('Accept'):
+        return r.text, r.status_code
+    elif 'text/html' in request.headers.get('Accept'):
+        try:
+            records = r.json() 
+        except ValueError:
+            return jsonify({'response': 'Invalid response from gacha service'}), 500
+        return render_template("user_collection.html", records=records), 200
+    else:
+        return jsonify({'response': 'Not supported'}), 400
 
 @app.route('/user/currency', methods=['GET'])
 def currency():

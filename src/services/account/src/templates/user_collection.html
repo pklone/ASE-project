@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Gacha Collection</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+</head>
+<body>
+    <nav class="navbar is-light" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="/collection">
+                <strong>System Collection</strong>
+            </a>
+            <a class="navbar-item" href="/roll">
+                <strong>Roll</strong>
+            </a>
+        </div>
+    </nav>
+
+    <section class="section">
+        <div class="container">
+            <h1 class="title">Your Gacha Collection</h1>
+            {% if records %}
+            <div id="gachaList" class="columns is-multiline">
+                {% for gacha in records %}
+                <div class="column is-one-third">
+                    <div class="card">
+                        <div class="card-content">
+                            <p class="title">{{ gacha.name }}</p>
+                            <p class="subtitle">Rarity: {{ gacha.rarity }}</p>
+                            <p>Quantity: {{ gacha.quantity }} </p>
+                            <img src="{{ gacha.image_path }}" alt="Gacha Image" onerror="this.src='/static/default.png';">
+                            <p>{{ gacha.description }}</p>
+                            <a class="navbar-item has-text-centered" href="/market/gacha/{{ gacha.uuid }}">
+                                <strong>Create auction</strong>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="has-text-centered">No gacha items found in your collection.</p>
+            {% endif %}
+        </div>
+    </section>
+</body>
+</html>
