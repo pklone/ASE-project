@@ -7,10 +7,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
 </head>
 <body>
-    <!-- Stylish Navigation Bar with 4 Buttons -->
     <nav class="navbar is-light" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
-            <a class="navbar-item" href="https://ase.localhost/login">
+            <a class="navbar-item" href="/login">
                 <strong>EzGacha</strong>
             </a>
             <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMenu">
@@ -19,32 +18,24 @@
                 <span aria-hidden="true"></span>
             </a>
         </div>
-
-        <div id="navbarMenu" class="navbar-menu">
-            <div class="navbar-end">
-                <div class="navbar-item">
-                    <a href="https://ase.localhost/login" class="button is-info">Login</a>
-                </div>
-                <div class="navbar-item">
-                    <a href="https://ase.localhost/user" class="button is-primary">Sign Up</a>
-                </div>
-                <div class="navbar-item">
-                    <a id="logoutBtn" class="button is-danger">Logout</a>
-                </div>
-                <div class="navbar-item">
-                    <a href="https://ase.localhost/user/currency" class="button is-warning">Currency</a>
-                </div>
-                <div class="navbar-item">
-                    <a href="https://ase.localhost/currency/buy" class="button is-link">Buy Currency</a>
-                </div>
-                <div class="navbar-item">
-                    <a href="https://ase.localhost/user/transactions" class="button is-success">Transactions</a>
-                </div>
-                <div class="navbar-item">
-                    <a href="https://ase.localhost/market" class="button is-dark">Marketplace</a>
-                </div>
-                <div class="navbar-item">
-                    <a href="https://ase.localhost/collection" class="button is-green">Collection</a>
+        <div class="navbar-end px-2">  
+            <div class="navbar-item has-dropdown is-hoverable">
+              <a class="navbar-link">
+                Menu
+              </a>
+          
+              <div class="navbar-dropdown is-right">
+                <a href="/login" class="navbar-item">Login</a>
+                <a href="/user" class="navbar-item">Sign Up</a>
+                <a id="logoutBtn" class="navbar-item">Logout</a>
+                <a href="/user/currency" class="navbar-item">Currency</a>
+                <a href="/currency/buy" class="navbar-item">Buy Currency</a>
+                <a href="/user/transactions" class="navbar-item">Transactions</a>
+                <a href="/market" class="navbar-item">Marketplace</a>
+                <a href="/collection" class="navbar-item">Collection</a>
+                <a href="/roll" class="navbar-item">Roll</a>
+                <a href="/user/collection" class="navbar-item">my collection</a>
+              </div>
             </div>
         </div>
     </nav>
