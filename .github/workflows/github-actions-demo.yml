@@ -9,13 +9,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: run a bash script to generate certificates
-        run: |
-          echo "Generating certificates..."
-          cd ./src
-          ./generate.sh
-          echo "Certificates generated!"
-
       - name: Run docker-compose
         uses: hoverkraft-tech/compose-action@v2.0.1
         with:
@@ -32,9 +25,9 @@ jobs:
       - name: Install Postman CLI
         run: |
           curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
-          
+
       - name: Login to Postman CLI
-        run: postman login --with-api-key ${{ secrets.POSTMAN_LOGIN_KEY }} 
+        run: postman login --with-api-key ${{ secrets.POSTMAN_LOGIN_KEY }}
 
       - name: Run API tests
         run: |

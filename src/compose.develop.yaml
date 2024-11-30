@@ -31,10 +31,10 @@ services:
     env_file:
       - path: ./dbs/player/.env
     volumes:
-      - player_db:/var/lib/postgresql/data
-      - ./dbs/player/server.crt:/src/dbs/player/server.crt
-      - ./dbs/player/server.key:/src/dbs/player/server.key
-    command: -c ssl=on -c ssl_cert_file=/src/dbs/player/server.crt -c ssl_key_file=/src/dbs/player/server.key
+      - player_db:/var/lib/postgresql
+    secrets:
+      - player_db.crt
+      - player_db.key
     networks:
       - player_net
     healthcheck:
@@ -56,10 +56,10 @@ services:
     env_file:
       - path: ./dbs/admin/.env
     volumes:
-      - admin_db:/var/lib/postgresql/data
-      - ./dbs/admin/server.crt:/src/dbs/admin/server.crt
-      - ./dbs/admin/server.key:/src/dbs/admin/server.key
-    command: -c ssl=on -c ssl_cert_file=/src/dbs/admin/server.crt -c ssl_key_file=/src/dbs/admin/server.key
+      - admin_db:/var/lib/postgresql
+    secrets:
+      - admin_db.crt
+      - admin_db.key
     networks:
       - authentication_net
     healthcheck:
@@ -81,10 +81,10 @@ services:
     env_file:
       - path: ./dbs/gacha/.env
     volumes:
-      - gacha_db:/var/lib/postgresql/data
-      - ./dbs/gacha/server.crt:/src/dbs/gacha/server.crt
-      - ./dbs/gacha/server.key:/src/dbs/gacha/server.key
-    command: -c ssl=on -c ssl_cert_file=/src/dbs/gacha/server.crt -c ssl_key_file=/src/dbs/gacha/server.key
+      - gacha_db:/var/lib/postgresql
+    secrets:
+      - gacha_db.crt
+      - gacha_db.key
     networks:
       - gacha_net
     healthcheck:
@@ -106,10 +106,10 @@ services:
     env_file:
       - path: ./dbs/market/.env
     volumes:
-      - market_db:/var/lib/postgresql/data
-      - ./dbs/market/server.crt:/src/dbs/market/server.crt
-      - ./dbs/market/server.key:/src/dbs/market/server.key
-    command: -c ssl=on -c ssl_cert_file=/src/dbs/market/server.crt -c ssl_key_file=/src/dbs/market/server.key
+      - market_db:/var/lib/postgresql
+    secrets:
+      - market_db.crt
+      - market_db.key
     networks:
       - market_net
     healthcheck:
@@ -131,10 +131,10 @@ services:
     env_file:
       - path: ./dbs/transaction/.env
     volumes:
-      - transaction_db:/var/lib/postgresql/data
-      - ./dbs/transaction/server.crt:/src/dbs/transaction/server.crt
-      - ./dbs/transaction/server.key:/src/dbs/transaction/server.key
-    command: -c ssl=on -c ssl_cert_file=/src/dbs/transaction/server.crt -c ssl_key_file=/src/dbs/transaction/server.key
+      - transaction_db:/var/lib/postgresql
+    secrets:
+      - transaction_db.crt
+      - transaction_db.key
     networks:
       - transaction_net
     healthcheck:
@@ -465,6 +465,26 @@ services:
     network_mode: "host"  
      
 secrets: 
+  player_db.crt:
+    file: ./dbs/player/server.crt
+  player_db.key:
+    file: ./dbs/player/server.key
+  admin_db.crt:
+    file: ./dbs/admin/server.crt
+  admin_db.key:
+    file: ./dbs/admin/server.key
+  gacha_db.crt:
+    file: ./dbs/gacha/server.crt
+  gacha_db.key:
+    file: ./dbs/gacha/server.key
+  market_db.crt:
+    file: ./dbs/market/server.crt
+  market_db.key:
+    file: ./dbs/market/server.key
+  transaction_db.crt:
+    file: ./dbs/transaction/server.crt
+  transaction_db.key:
+    file: ./dbs/transaction/server.key
   account_certificate:
     file: ./cert/account_cert.pem
   account_key:
@@ -505,7 +525,6 @@ secrets:
     file: ./cert/rabbit_cert.pem
   rabbit_key:
     file: ./cert/rabbit_key.pem
-  
 
 volumes:
  player_db:
