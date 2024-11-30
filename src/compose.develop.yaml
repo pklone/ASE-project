@@ -204,7 +204,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.4'
+          cpus: '0.9'
           memory: 100M
 
   gacha_service:
