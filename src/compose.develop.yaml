@@ -212,6 +212,8 @@ services:
     container_name: gacha_service
     env_file:
       - path: ./services/gacha/.env
+    volumes:
+      - gacha_service:/app/static/images/gachas
     ports:
       - "127.0.0.1:8082:5000"
     depends_on:
@@ -511,6 +513,7 @@ volumes:
  gacha_db:
  market_db:
  transaction_db:
+ gacha_service:
  caddy_data:
  caddy_config:
 
