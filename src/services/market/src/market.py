@@ -198,9 +198,9 @@ def show_one(auction_uuid):
     else:
         return jsonify({'response': 'Not supported'}), 400
     
-@app.route('/market/new_auction', methods=['GET'])
-def show_create_auction():
-    return render_template("create_auction.html")
+@app.route('/market/gacha/<string:gacha_uuid>', methods=['GET'])
+def show_create_auction(gacha_uuid):
+    return render_template("create_auction.html", gacha_uuid=gacha_uuid), 200
 
 @app.route('/market', methods=['POST'])
 def create_auction():
