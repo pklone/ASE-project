@@ -215,14 +215,13 @@ def roll():
 
     gacha_id = random.choice(records)[0]
 
-    data = {
-        'player_uuid': player_uuid,
-        'purchase': -10
+    purchase = {
+        'amount': -10
     }
 
-    r = requests.post(url='https://player_service:5000/currency/buy', verify=False, json=data)
+    r = requests.put(url=f'https://player_service:5000/{player_uuid}/wallet', verify=False, json=purchase)
     if r.status_code != 200:
-        return jsonify({'response': 'Try later'}), 500
+        return jsonify({'response': 'No money available'}), 500
 
     try:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -249,7 +248,12 @@ def roll():
     except psycopg2.Error as e:
         return jsonify({'response': str(e)}), 500
 
-    return jsonify({'response': record}), 200
+    if 'application/json' in request.headers.get('Accept'):
+        return jsonify({'response': record}), 200
+    elif 'text/html' in request.headers.get('Accept'):
+        return render_template("roll.html"), 200
+    else:
+        return jsonify({'response': 'Not supported'}), 400
 
 @app.route('/collection', methods=['POST'])
 def add_gacha():
