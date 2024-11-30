@@ -5,3 +5,4 @@ docs/first-prototype-delivery/first-prototype-delivery.*
 !docs/first-prototype-delivery/first-prototype-delivery.pdf
 src/dbs/*/server.crt
 src/dbs/*/server.key
+src/locust/__pycache__/

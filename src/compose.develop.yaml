@@ -417,7 +417,16 @@ services:
         limits:
           cpus: '0.4'
           memory: 200M
-   
+
+  locust_master:
+    build: ./locust
+    develop:
+      watch:
+        - action: rebuild
+          path: ./locust/locustfile.py
+          target: /mnt/locust/
+    network_mode: "host"  
+     
 secrets: 
   account_certificate:
     file: ./cert/account_cert.pem
