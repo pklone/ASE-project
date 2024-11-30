@@ -153,6 +153,7 @@ restart *args='':
 
 	just down ${down_args} && just up ${up_args}
 
+# resync container files automatically when they are updated
 @watch:
 	docker compose -f {{devel_compose}} watch --no-up
 
@@ -204,6 +205,44 @@ ps *args='':
 		echo "Docker deamon is stopped."
 	fi
 
+# print service logs
+logs: 
+	#!/bin/bash
+	if ! command -v jq &>/dev/null; then
+	    echo "Error: jq not found"
+		exit 0
+	fi
+
+	# NOTE: docker exec wants 'container name', whereas docker compose wants 'service name' 
+	containers=$(docker compose -f {{devel_compose}} ps -a --format json \
+		| jq -rs 'map(.Service) | @sh // empty' \
+		| tr -d \')
+	
+	if [ -z "$containers" ]; then
+		echo "Error: no container available"
+		exit 1
+	fi
+
+	if [ -z "${EXEC_RECIPE_CHOOSER}" ]; then
+		select container_name in $containers;
+		do
+			if [ $REPLY -ge 1 ] && [ $REPLY -le $(echo $containers | wc -w) ]; then
+				break
+			fi
+		done
+	else
+		container_name=$(echo -n "$containers" \
+			| tr ' ' '\n' \
+			| bash -c "${EXEC_RECIPE_CHOOSER}")
+	fi
+	
+	if [ -z "${container_name}" ]; then
+		echo "Error: no container selected"
+		exit 1
+	fi
+
+	docker compose -f {{devel_compose}} logs "${container_name}" | less
+
 # run a command inside a container
 [positional-arguments]
 exec *args='': up
@@ -214,6 +253,7 @@ exec *args='': up
 		exit 0
 	fi
 
+	# NOTE: docker exec wants 'container name', whereas docker compose wants 'service name' 
 	containers=$(docker compose -f {{devel_compose}} ps --format json \
 		| jq -rs 'map(.Name) | @sh // empty' \
 		| tr -d \')
