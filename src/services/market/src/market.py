@@ -80,7 +80,7 @@ def show_all():
 
     if r.status_code != 200:
         return jsonify({'response': 'Try later - gacha service error'}), 500
-    gacha_data = json.loads(r.text)
+    gacha_data = json.loads(r.text)['response']
 
     gachas = {x['uuid']: x for x in gacha_data}
     
@@ -162,7 +162,7 @@ def show_one(auction_uuid):
     try:
         r = circuitbreaker.call(requests.get, 'https://gacha_service:5000/collection', verify=False , headers={'Accept': 'application/json'})
 
-        gacha_data = json.loads(r.text)
+        gacha_data = json.loads(r.text)['response']
         gachas = {x['uuid']: x for x in gacha_data}
 
         r = circuitbreaker.call(requests.get, f'https://player_service:5000/uuid/{record["user_uuid"]}', verify=False)
@@ -259,7 +259,7 @@ def create_auction():
     except psycopg2.Error as e:
         return jsonify({'response': str(e)})
     
-    player_collection = json.loads(r.text)
+    player_collection = json.loads(r.text)['response']
 
     player_gacha = None
     for gacha in player_collection:
@@ -608,14 +608,14 @@ def payment(auction_uuid):
         except Exception as e:
             return jsonify({'response': str(e)}), 500
         if r.status_code != 200:
-            return jsonify({'response': 'Failed to update buyer collection', 'details': r.json()}), 500
+            return jsonify({'response': 'Failed to update buyer collection', 'details': r.json()['response']}), 500
 
         try:
             r = circuitbreaker.call(requests.put, f'https://gacha_service:5000/collection/user/{owner_uuid}', verify=False, json={'gacha_uuid': record[i]['gacha_uuid'], 'q' : -1})
         except Exception as e:
             return jsonify({'response': str(e)}), 500
         if r.status_code != 200:
-            return jsonify({'response': 'Failed to update owner collection', 'details': r.json()}), 500
+            return jsonify({'response': 'Failed to update owner collection', 'details': r.json()['response']}), 500
 
         return jsonify({'response': 'Transaction completed', 'transaction': transaction_data}), 200
         

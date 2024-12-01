@@ -274,14 +274,14 @@ def add_gacha():
     try:
         new_name = request.form['name']
         new_description = request.form['description']
-        new_rarity = request.form['new_rarity']
+        new_rarity = request.form['rarity']
     except KeyError:
         return {'response': 'Missing data'}, 400
 
     data = {
         'name': new_name,
         'description': new_description,
-        'new_rarity': new_rarity
+        'rarity': new_rarity
     }
 
     files = {
@@ -335,7 +335,7 @@ def modify_gacha(gacha_uuid):
     data = {
         'name': request.form.get('name'),
         'description': request.form.get('description'),
-        'new_rarity': request.form.get('new_rarity')
+        'rarity': request.form.get('rarity')
     }
 
     try:

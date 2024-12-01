@@ -7,6 +7,8 @@ import pybreaker
 
 app = Flask(__name__)
 
+# testing
+#   curl -X GET -H 'Accept: application/json' -b cookie.jar -k https://127.0.0.1:8083/user/collection
 
 circuitbreaker = pybreaker.CircuitBreaker(
     fail_max=5, 
@@ -157,7 +159,7 @@ def collection():
         return r.text, r.status_code
     elif 'text/html' in request.headers.get('Accept'):
         try:
-            records = r.json() 
+            records = r.json()['response']
         except ValueError:
             return jsonify({'response': 'Invalid response from gacha service'}), 500
         return render_template("user_collection.html", records=records), 200

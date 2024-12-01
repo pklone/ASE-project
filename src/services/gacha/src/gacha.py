@@ -1,416 +1,321 @@
-from flask import Flask, request, jsonify, json, render_template
-import psycopg2
-import psycopg2.extras
+from flask import Flask, request, json, render_template
 import os
 import jwt
 import random
-import requests
 import uuid
 from werkzeug.utils import secure_filename
+import werkzeug.exceptions
+from functools import wraps
+from connectors.connector_db import CollectionConnectorDB
+from connectors.connector_db_mock import CollectionConnectorDBMock
+from connectors.connector_http import CollectionConnectorHTTP
+from connectors.connector_http_mock import CollectionConnectorHTTPMock
 
-UPLOAD_FOLDER = './static/images/gachas'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
-STATIC_DIR_PATH = '/assets'
-GACHAS_DIR_PATH = STATIC_DIR_PATH + '/images/gachas'
+# testing
+#   curl -X GET -H 'Accept: application/json' -k https://127.0.0.1:8082/collection
+#   curl -X GET -k https://127.0.0.1:8082/collection/dde21dde-5513-46d2-8d03-686fc620394c
+#   curl -X GET -k https://127.0.0.1:8082/collection/user/71520f05-80c5-4cb1-b05a-a9642f9ae44d
+#   curl -X PUT -H 'Content-type: application/json' -d '{"gacha_uuid": "dde21dde-5513-46d2-8d03-686fc620394c", "q": 1}' -k https://127.0.0.1:8082/collection/user/71520f05-80c5-4cb1-b05a-a9642f9ae44d
+#   curl -X POST -H 'Content-Type: application/json' -d '{"username": "test", "password": "test"}' -c cookie.jar -k https://127.0.0.1:8081/login
+#       curl -X GET -H 'Accept: application/json' -k -b cookie.jar https://127.0.0.1:8082/roll
+#   cp ~/Documenti/media/immagini/meme/batkek.jpg . 
+#       curl -X POST -F 'gacha_image=@batkek.jpg' -F 'name=placeholder' -F 'description=placeholder' -F 'rarity=S' -k https://127.0.0.1:8082/collection
+#   cp ~/Documenti/media/immagini/meme/9b5.png . 
+#       curl -X PUT -F 'gacha_image=@9b5.png' -F 'name=placeholder2' -F 'description=placeholder2' -F 'rarity=S' -k https://127.0.0.1:8082/collection/069fa2c5-a6a0-487d-b533-96acc3a6e538
+#   curl -X DELETE -k https://127.0.0.1:8082/collection/9743e615-42ba-46f3-8ec4-155cb6ef86f7
 
-app = Flask(__name__, static_url_path=STATIC_DIR_PATH)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1000 * 1000  # 16 MB
+class CollectionService:
+    UPLOAD_FOLDER = './static/images/gachas'
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+    STATIC_DIR_PATH = '/assets'
+    GACHAS_DIR_PATH = STATIC_DIR_PATH + '/images/gachas'
 
+    def __init__(self, connectorHTTP, connectorDB, jwt_secret):
+        self.app = Flask(__name__, static_url_path=self.STATIC_DIR_PATH)
+        self.app.config['UPLOAD_FOLDER'] = self.UPLOAD_FOLDER
+        self.app.config['MAX_CONTENT_LENGTH'] = 16 * 1000 * 1000  # 16 MB
 
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-CERT_PATH = os.getenv("CERT_PATH")
-KEY_PATH = os.getenv("KEY_PATH")
-POSTGRES_SSLMODE = os.getenv("POSTGRES_SSLMODE")
+        self.__init_routes()
+        self.connectorHTTP = connectorHTTP
+        self.connectorDB = connectorDB
+        self.jwt_secret = jwt_secret
 
-# set jwt
-SECRET = os.getenv("JWT_SECRET")
+    # routes
+    def __init_routes(self):
+        self.app.add_url_rule('/collection',                           endpoint='show_all',        view_func=self.show_all,        methods=['GET'])
+        self.app.add_url_rule('/collection/<string:gacha_uuid>',       endpoint='show',            view_func=self.show,            methods=['GET'])
+        self.app.add_url_rule('/collection/user/<string:player_uuid>', endpoint='show_by_player',  view_func=self.show_by_player,  methods=['GET'])
+        self.app.add_url_rule('/collection/user/<string:player_uuid>', endpoint='update_quantity', view_func=self.update_quantity, methods=['PUT'])
+        self.app.add_url_rule('/roll',                                 endpoint='roll',            view_func=self.roll,            methods=['GET'])
+        self.app.add_url_rule('/collection',                           endpoint='add_gacha',       view_func=self.add_gacha,       methods=['POST'])
+        self.app.add_url_rule('/collection/<string:gacha_uuid>',       endpoint='modify_gacha',    view_func=self.modify_gacha,    methods=['PUT'])
+        self.app.add_url_rule('/collection/<string:gacha_uuid>',       endpoint='delete_gacha',    view_func=self.delete_gacha,    methods=['DELETE'])
+        self.app.register_error_handler(werkzeug.exceptions.NotFound, self.page_not_found)
 
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    # util functions
+    def page_not_found(self, error):
+        return {'response': "page not found"}, 404
 
-@app.errorhandler(404)
-def page_not_found(error):
-    return jsonify({'response': "page not found"}), 404
+    def allowed_file(self, filename):
+        return '.' in filename and \
+            filename.rsplit('.', 1)[1].lower() in self.ALLOWED_EXTENSIONS
 
-@app.route('/collection', methods=['GET'])
-def show_all():
-    try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT,
-            sslmode=POSTGRES_SSLMODE
-        )
+    # decorators
+    def login_required(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            encoded_jwt = request.cookies.get('session')
 
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute("""
-            SELECT g.id, uuid, g.name, LEFT(g.description, 100) || '...' AS description, image_path, r.name as rarity 
-            FROM gacha g 
-                INNER JOIN rarity r on g.id_rarity = r.id""")
-        records = cursor.fetchall()
-        cursor.close()
-        conn.close()
-    except psycopg2.Error as e:
-        return jsonify({'response': str(e)}), 500
+            if not encoded_jwt:
+                return {'response': 'You\'re not logged'}, 401
 
-    if 'application/json' in request.headers['Accept']:
-        return jsonify(records), 200
-    elif 'text/html' in request.headers['Accept']:
-        return render_template('collection.html', records=records), 200
-    else:
-        return jsonify({'response': 'Not supported'}), 400
+            try:
+                options = {
+                    'require': ['exp'], 
+                    'verify_signature': True, 
+                    'verify_exp': True
+                }
 
-@app.route('/collection/<string:gacha_uuid>', methods=['GET'])
-def show(gacha_uuid):
-    result = {}
+                decoded_jwt = jwt.decode(encoded_jwt, args[0].jwt_secret, algorithms=['HS256'], options=options)
+            except jwt.ExpiredSignatureError:
+                return {'response': 'Expired token'}, 403
+            except jwt.InvalidTokenError:
+                return {'response': 'Invalid token'}, 403
 
-    try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT,
-            sslmode=POSTGRES_SSLMODE
-        )
-        
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM gacha WHERE uuid = %s", [gacha_uuid])
-        record = cursor.fetchone()
+            if 'uuid' not in decoded_jwt:
+                return {'response': 'Try later'}, 403
 
-        if record:
-            result = record
+            additional = {'auth_uuid': decoded_jwt['uuid']}
 
-        cursor.close()
-        conn.close()
-    except psycopg2.Error as e:
-        return jsonify({'response': str(e)}), 500
+            return f(*args, **kwargs, **additional)
 
-    return jsonify(result), 200
+        return decorated_function
 
-@app.route('/collection/user/<string:player_uuid>', methods=['GET'])
-def show_by_player(player_uuid):
-    try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT,
-            sslmode=POSTGRES_SSLMODE
-        )
-
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute("""
-            SELECT g.id, uuid, g.name, description, image_path, quantity, r.name as rarity 
-            FROM gacha g 
-                INNER JOIN rarity r on g.id_rarity = r.id 
-                INNER JOIN player_gacha pg on g.id = pg.id_gacha 
-            WHERE pg.uuid_player = %s""", 
-        [player_uuid])
-        records = cursor.fetchall()
-        cursor.close()
-        conn.close()
-    except psycopg2.Error as e:
-        return jsonify({'response': str(e)}), 500
-
-    return jsonify(records), 200
-
-@app.route('/collection/user/<string:player_uuid>', methods=['PUT'])
-def update_quantity(player_uuid): # q is 1 (buyer) or -1 (owner)
-    q = request.json.get('q')
-    uuid_gacha = request.json.get('gacha_uuid')
-
-    try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT,
-            sslmode=POSTGRES_SSLMODE
-        )
-
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute('SELECT * FROM player_gacha WHERE uuid_player = %s AND id_gacha = (SELECT id FROM gacha WHERE uuid = %s)', 
-            [player_uuid, uuid_gacha])
-
-        if cursor.rowcount == 0:
-            cursor.execute('INSERT INTO player_gacha (uuid_player, id_gacha) VALUES (%s, (SELECT id FROM gacha WHERE uuid = %s))',
-                [player_uuid, uuid_gacha])
-        else:
-            cursor.execute('UPDATE player_gacha SET quantity = quantity + (%s) WHERE uuid_player = %s AND id_gacha = (SELECT id FROM gacha WHERE uuid = %s)', 
-                [q, player_uuid, uuid_gacha])
-        
-        conn.commit()
-        cursor.close()
-    except psycopg2.Error as e:
-        return jsonify({'response': str(e)}), 500
-    
-    return jsonify({'response': 'success'}), 200
-
-@app.route('/roll', methods=['GET'])
-def roll():
-    encoded_jwt = request.cookies.get('session')
-
-    if not encoded_jwt:
-        return jsonify({'response': 'You\'re not logged'}), 401
-
-    try:
-        options = {
-            'require': ['exp'], 
-            'verify_signature': True, 
-            'verify_exp': True
-        }
-
-        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
-    except jwt.ExpiredSignatureError:
-        return jsonify({'response': 'Expired token'}), 403
-    except jwt.InvalidTokenError:
-        return jsonify({'response': 'Invalid token'}), 403
-
-    if 'uuid' not in decoded_jwt:
-        return jsonify({'response': 'Try later'}), 403
-
-    player_uuid = decoded_jwt['uuid']
-
-    try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT,
-            sslmode=POSTGRES_SSLMODE
-        )
-
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute('SELECT id, percentage FROM rarity')
-        records = cursor.fetchall()
-        cursor.close()
-    except psycopg2.Error as e:
-        return jsonify({'response': str(e)}), 500
-
-    percentages = [x['percentage'] for x in records]
-    weights = [x['id'] for x in records]
-
-    rarity_id = random.choices(weights, percentages)[0]
-
-    try:
-        cursor = conn.cursor()
-        cursor.execute('SELECT id FROM gacha WHERE id_rarity = %s',
-            [rarity_id])
-        records = cursor.fetchall()
-        cursor.close()
-    except psycopg2.Error as e:
-        return jsonify({'response': str(e)}), 500
-
-    gacha_id = random.choice(records)[0]
-
-    purchase = {
-        'amount': -10
-    }
-
-    r = requests.put(url=f'https://player_service:5000/{player_uuid}/wallet', verify=False, json=purchase)
-    if r.status_code != 200:
-        return jsonify({'response': 'No money available'}), 500
-
-    try:
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute("SELECT * FROM player_gacha WHERE uuid_player = %s AND id_gacha = %s",
-            [player_uuid, gacha_id])
-
-        if cursor.rowcount == 0:
-            cursor.execute("INSERT INTO player_gacha (uuid_player, id_gacha) VALUES (%s, %s)", 
-                [player_uuid, gacha_id])
-        else:
-            cursor.execute("UPDATE player_gacha SET quantity = quantity + 1 WHERE uuid_player = %s AND id_gacha = %s", 
-                [player_uuid, gacha_id])
-            
-        cursor.execute("""
-            SELECT uuid, g.name, description, image_path, r.name as rarity 
-            FROM gacha g 
-                INNER JOIN rarity r ON g.id_rarity = r.id 
-            WHERE g.id = %s""", 
-                [gacha_id])
-        record = cursor.fetchone()
-        conn.commit()
-        cursor.close()
-        conn.close()
-    except psycopg2.Error as e:
-        return jsonify({'response': str(e)}), 500
-
-    if 'application/json' in request.headers.get('Accept'):
-        return jsonify({'response': record}), 200
-    elif 'text/html' in request.headers.get('Accept'):
-        return render_template("roll.html"), 200
-    else:
-        return jsonify({'response': 'Not supported'}), 400
-
-@app.route('/collection', methods=['POST'])
-def add_gacha():
-    if 'gacha_image' not in request.files:
-        return {'response': 'gacha image not found'}, 400
-
-    file = request.files['gacha_image']
-    if file.filename == '':
-        return {'response': 'filename not found'}, 400
-
-    if not file or not allowed_file(file.filename):
-        return {'response': 'invalid image format or empty image'}, 400
-    
-    try:
-        new_name = request.form['name']
-        new_description = request.form['description']
-        new_rarity = request.form['new_rarity']
-    except KeyError:
-        return {'response': 'Missing data'}, 400
-
-    try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT,
-            sslmode=POSTGRES_SSLMODE
-        )
-
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute('SELECT id from Rarity where symbol = %s', [new_rarity])
-        
-        if cursor.rowcount == 0:
-            return {'response': 'invalid rarity'}, 400
-
-        record = cursor.fetchone()
-        rarity_id = record['id']
-    except psycopg2.Error as e:
-        return jsonify({'response': str(e)}), 500
-
-    try:
-        filename = secure_filename(file.filename)
-        destination_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(destination_path)
-    except FileNotFoundError:
-        return {'response': 'Internal error'}, 500
-
-    new_uuid = str(uuid.uuid4())
-    new_image_path = os.path.join(GACHAS_DIR_PATH, filename)
-
-    try:
-        cursor.execute("""
-            INSERT INTO gacha (id, uuid, name, description, image_path, id_rarity) 
-            VALUES (DEFAULT, %s, %s, %s, %s, %s)""", 
-            (new_uuid, new_name, new_description, new_image_path, rarity_id))
-        conn.commit()
-        cursor.close()
-        conn.close()
-    except psycopg2.Error as e:
-        return jsonify({'response': str(e)}), 500
-    
-    return jsonify({'response': 'Gacha added'}), 201
-    
-@app.route('/collection/<string:gacha_uuid>', methods=['PUT'])
-def modify_gacha(gacha_uuid):
-    new_name = request.form.get('name')
-    new_description = request.form.get('description')
-    new_rarity = request.form.get('new_rarity')
-    
-    new_image_path = None
-    rarity_id = None
-
-    try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT,
-            sslmode=POSTGRES_SSLMODE
-        )
-
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    except psycopg2.Error as e:
-        return jsonify({'response': str(e)}), 500
-
-    if new_rarity:
+    # APIs
+    def show_all(self):
         try:
-            cursor.execute('SELECT id from Rarity where symbol = %s', [new_rarity])
-            
-            if cursor.rowcount == 0:
+            records = self.connectorDB.getAll()
+        except Exception as e:
+            return {'response': str(e)}, 500
+
+        if 'application/json' in request.headers['Accept']:
+            return {'response': records}, 200
+        elif 'text/html' in request.headers['Accept']:
+            return render_template('collection.html', records=records), 200
+        else:
+            return {'response': 'Not supported'}, 400
+
+    def show(self, gacha_uuid):
+        try:
+            record = self.connectorDB.getByUuid(gacha_uuid)
+        except Exception as e:
+            return {'response': str(e)}, 500
+
+        return {'response': record}, 200
+
+    def show_by_player(self, player_uuid):
+        try:
+            records = self.connectorDB.getByPlayer(player_uuid)
+        except Exception as e:
+            return {'response': str(e)}, 500
+
+        return {'response': records}, 200
+
+    def update_quantity(self, player_uuid):
+        try:
+            q = request.json['q'] # q is 1 (buyer) or -1 (owner)
+            gacha_uuid = request.json['gacha_uuid']
+
+            self.connectorDB.updateQuantity(gacha_uuid, player_uuid, q)
+        except KeyError:
+            return {'message': 'Missing data'}
+        except Exception as e:
+            return {'response': str(e)}, 500
+        
+        return {'response': 'success'}, 200
+
+    @login_required
+    def roll(self, auth_uuid):
+        try:
+            records = self.connectorDB.getAllRarity()
+        except Exception as e:
+            return {'response': str(e)}, 500
+
+        percentages = [x['percentage'] for x in records]
+        weights = [x['uuid'] for x in records]
+
+        rarity_uuid = random.choices(weights, percentages)[0]
+
+        try:
+            records = self.connectorDB.getAllByRarity(rarity_uuid)
+        except Exception as e:
+            return {'response': str(e)}, 500
+
+        gacha_uuid = random.choice([x['uuid'] for x in records])
+
+        try:
+            r = self.connectorHTTP.updatePlayerWallet(auth_uuid, -10)
+            if r['http_code'] != 200:
+                return {'response': 'No money available'}, 500
+
+            self.connectorDB.updateQuantity(gacha_uuid, auth_uuid, 1)
+            record = self.connectorDB.getByUuid(gacha_uuid)
+        except Exception as e:
+            return {'response': str(e)}, 500
+
+        if 'application/json' in request.headers.get('Accept'):
+            return {'response': record}, 200
+        elif 'text/html' in request.headers.get('Accept'):
+            return render_template("roll.html"), 200
+        else:
+            return {'response': 'Not supported'}, 400
+
+    def add_gacha(self):
+        if 'gacha_image' not in request.files:
+            return {'response': 'gacha image not found'}, 400
+
+        file = request.files['gacha_image']
+        if file.filename == '':
+            return {'response': 'filename not found'}, 400
+
+        if not file or not self.allowed_file(file.filename):
+            return {'response': 'invalid image format or empty image'}, 400
+
+        try:
+            name = request.form['name']
+            description = request.form['description']
+            rarity = request.form['rarity']
+
+            record = self.connectorDB.getRarityBySymbol(rarity)
+            if not record:
                 return {'response': 'invalid rarity'}, 400
 
-            record = cursor.fetchone()
-            rarity_id = record['id']
-        except psycopg2.Error as e:
-            return jsonify({'response': str(e)}), 500
-    
-    if 'gacha_image' in request.files:
-        file = request.files['gacha_image']
-
-        if file.filename == '':
-            return {'response': 'gacha image filename not found'}, 400
-
-        if not file or not allowed_file(file.filename):
-            return {'response': 'invalid image format or empty image'}, 400
-        
-        try:
             filename = secure_filename(file.filename)
-            destination_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            destination_path = os.path.join(self.UPLOAD_FOLDER, filename)
             file.save(destination_path)
-            new_image_path = os.path.join(GACHAS_DIR_PATH, filename)
+
+            gacha_uuid = str(uuid.uuid4())
+            rarity_uuid = record['uuid']
+            image_path = os.path.join(self.GACHAS_DIR_PATH, filename)
+
+            record = self.connectorDB.add(gacha_uuid, name, description, image_path, rarity_uuid)
+        except KeyError:
+            return {'response': 'Missing data'}, 400
         except FileNotFoundError:
             return {'response': 'Internal error'}, 500
+        except Exception as e:
+            return {'response': str(e)}, 500
+        
+        return {'response': record}, 201
+        
+    def modify_gacha(self, gacha_uuid):
+        new_name = request.form.get('name')
+        new_description = request.form.get('description')
+        new_rarity = request.form.get('rarity')
+        
+        new_image_path = None
+        new_rarity_uuid = None
 
-    try:
-        cursor.execute("""
-            UPDATE gacha SET
-                name = COALESCE(%s, name),
-                description = COALESCE(%s, description),
-                image_path = COALESCE(%s, image_path),
-                id_rarity = COALESCE(%s, id_rarity)
-            WHERE uuid = %s""", [new_name, new_description, new_image_path, rarity_id, gacha_uuid])
+        if new_rarity:
+            try:
+                record = self.connectorDB.getRarityBySymbol(new_rarity)
+                if not record:
+                    return {'response': 'invalid rarity'}, 400
 
-        if cursor.rowcount == 0:
-            return jsonify({'response': 'Query as not updated nothing'}), 404
+                new_rarity_uuid = record['uuid']
+            except Exception as e:
+                return {'response': str(e)}, 500
+        
+        if 'gacha_image' in request.files:
+            file = request.files['gacha_image']
 
-        conn.commit()
-        cursor.close()
-        conn.close()
-    except psycopg2.Error as e:
-        return jsonify({'response': str(e)}), 500
-    
-    return jsonify({'response': 'Gacha updated'}), 200
+            if file.filename == '':
+                return {'response': 'gacha image filename not found'}, 400
 
-@app.route('/collection/<string:gacha_uuid>', methods=['DELETE'])
-def delete_gacha(gacha_uuid):
-    try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT,
-            sslmode=POSTGRES_SSLMODE
+            if not file or not self.allowed_file(file.filename):
+                return {'response': 'invalid image format or empty image'}, 400
+            
+            try:
+                filename = secure_filename(file.filename)
+                destination_path = os.path.join(self.UPLOAD_FOLDER, filename)
+                file.save(destination_path)
+
+                new_image_path = os.path.join(self.GACHAS_DIR_PATH, filename)
+            except FileNotFoundError:
+                return {'response': 'Internal error'}, 500
+
+        try:
+            record = self.connectorDB.update(new_name, new_description, new_image_path, new_rarity_uuid, gacha_uuid)
+        except Exception as e:
+            return {'response': str(e)}, 500
+        
+        return {'response': record}, 200
+
+    def delete_gacha(self, gacha_uuid):
+        try:
+            self.connectorDB.remove(gacha_uuid)
+        except Exception as e:
+            return {'response': str(e)}, 500
+        
+        return {'response': 'Gacha deleted'}, 200
+
+    # static factory methods
+    def development(db_name, db_user, db_password, db_host, db_port, db_sslmode, cert_path, key_path, jwt_secret):
+        db = CollectionConnectorDB(db_name, db_user, db_password, db_host, db_port, db_sslmode)
+        http = CollectionConnectorHTTP()
+
+        CollectionService(http, db, jwt_secret).app.run(
+            host="0.0.0.0", 
+            port=5000, 
+            debug=True, 
+            ssl_context=(cert_path, key_path)
         )
 
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute("DELETE FROM gacha WHERE uuid = %s", [gacha_uuid])
-        conn.commit()
-        cursor.close()
-        conn.close()
-    except psycopg2.Error as e:
-        return jsonify({'response': str(e)}), 500
-    
-    return jsonify({'response': 'Gacha deleted'}), 200
+    def testing(cert_path, key_path, jwt_secret):
+        db = CollectionConnectorDBMock()
+        http = CollectionConnectorHTTPMock()
+        
+        CollectionService(http, db, jwt_secret).app.run(
+            host="0.0.0.0", 
+            port=5000, 
+            debug=True, 
+            ssl_context=(cert_path, key_path)
+        )
+
+    def production(db_name, db_user, db_password, db_host, db_port, db_sslmode, cert_path, key_path, jwt_secret):
+        db = CollectionConnectorDB(db_name, db_user, db_password, db_host, db_port, db_sslmode)
+        http = CollectionConnectorHTTP()
+        
+        CollectionService(http, db, jwt_secret).app.run(
+            host="0.0.0.0", 
+            port=5000, 
+            ssl_context=(cert_path, key_path)
+        )
+        ssl_context=(CERT_PATH, KEY_PATH)
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=(CERT_PATH, KEY_PATH))
+    # set db connection
+    DB_NAME = os.getenv("DB_NAME")
+    DB_USER = os.getenv("DB_USER")
+    DB_PASSWORD = os.getenv("DB_PASSWORD")
+    DB_HOST = os.getenv("DB_HOST")
+    DB_PORT = os.getenv("DB_PORT")
+    POSTGRES_SSLMODE = os.getenv("POSTGRES_SSLMODE")
+
+    # set https certs
+    CERT_PATH = os.getenv("CERT_PATH")
+    KEY_PATH = os.getenv("KEY_PATH")
+
+    # set jwt
+    JWT_SECRET = os.getenv("JWT_SECRET")
+
+    # deployment mode
+    DEPLOYMENT_MODE = os.getenv("DEPLOYMENT_MODE")
+
+    match DEPLOYMENT_MODE:
+        case 'production':
+            CollectionService.production(DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, POSTGRES_SSLMODE, CERT_PATH, KEY_PATH, JWT_SECRET)
+        case 'testing':
+            CollectionService.testing(CERT_PATH, KEY_PATH, JWT_SECRET)
+        case 'development':
+            CollectionService.development(DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, POSTGRES_SSLMODE, CERT_PATH, KEY_PATH, JWT_SECRET)

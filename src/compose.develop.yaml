@@ -212,6 +212,8 @@ services:
     container_name: gacha_service
     env_file:
       - path: ./services/gacha/.env
+    environment:
+      DEPLOYMENT_MODE: development
     volumes:
       - gacha_service:/app/static/images/gachas
     ports:
@@ -227,7 +229,7 @@ services:
       - collection_key
     develop:
      watch:
-      - action: sync
+      - action: rebuild
         path: ./services/gacha/src
         target: /app
       - action: rebuild
