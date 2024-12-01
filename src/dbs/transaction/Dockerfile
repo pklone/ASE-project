@@ -35,7 +35,7 @@ if [ ! -d "${POSTGRES_SSL_PATH}" ]; then
 
     echo -n 'Setting permissions... '
     chown -R postgres:postgres "${POSTGRES_SSL_PATH}" && \
-        chmod 700 "${POSTGRES_SSL_PATH}"
+        chmod -R 700 "${POSTGRES_SSL_PATH}"
     echo -e 'Done!\n'
 fi
 
