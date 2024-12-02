@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, abort, json, render_template
+from functools import wraps
 import psycopg2
 import os
 import requests
@@ -28,6 +29,38 @@ POSTGRES_SSLMODE = os.getenv("POSTGRES_SSLMODE")
 # set jwt
 SECRET = os.getenv("JWT_SECRET")
 
+def login_required(f):
+  @wraps(f)
+  def decorated_function(*args, **kwargs):
+      encoded_jwt = request.headers.get('Authorization')
+  
+      if not encoded_jwt:
+          return jsonify({'response': 'You\'re not logged'}), 401
+      
+      encoded_jwt = encoded_jwt.split(' ')[1]
+  
+      try:
+          options = {
+              'require': ['exp'], 
+              'verify_signature': True, 
+              'verify_exp': True
+          }
+  
+          decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
+      except jwt.ExpiredSignatureError:
+          return jsonify({'response': 'Expired token'}), 403
+      except jwt.InvalidTokenError:
+          return jsonify({'response': 'Invalid token'}), 403
+  
+      if 'sub' not in decoded_jwt:
+          return jsonify({'response': 'Try later'}), 403
+  
+      additional = {'auth_uuid': decoded_jwt['sub']}
+  
+      return f(*args, **kwargs, **additional)
+  
+  return decorated_function
+
 @app.errorhandler(404)
 def page_not_found(error):
     return jsonify({'response': "page not found"}), 404
@@ -54,62 +87,18 @@ def create():
     return r.text, r.status_code
 
 @app.route('/user', methods=['DELETE'])
-def remove():
-    encoded_jwt = request.cookies.get('session')
-
-    if not encoded_jwt:
-        return jsonify({'response': 'You\'re not logged'}), 401
-
+@login_required
+def remove_my_user(auth_uuid):
     try:
-        options = {
-            'require': ['exp'], 
-            'verify_signature': True, 
-            'verify_exp': True
-        }
-
-        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
-    except jwt.ExpiredSignatureError:
-        return jsonify({'response': 'Expired token'}), 403
-    except jwt.InvalidTokenError:
-        return jsonify({'response': 'Invalid token'}), 403
-
-    if 'uuid' not in decoded_jwt:
-        return jsonify({'response': 'Try later'}), 403
-
-    player_uuid = decoded_jwt['uuid']
-
-    try:
-        r = circuitbreaker.call(requests.delete, f'https://player_service:5000/uuid/{player_uuid}', verify=False)
+        r = circuitbreaker.call(requests.delete, f'https://player_service:5000/uuid/{auth_uuid}', verify=False)
     except Exception as e:  
         return jsonify({'response': str(e)}), 500
 
     return r.text, r.status_code
 
 @app.route('/user', methods=['PUT'])
-def update():
-    encoded_jwt = request.cookies.get('session')
-
-    if not encoded_jwt:
-        return jsonify({'response': 'You\'re not logged'}), 401
-
-    try:
-        options = {
-            'require': ['exp'], 
-            'verify_signature': True, 
-            'verify_exp': True
-        }
-
-        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
-    except jwt.ExpiredSignatureError:
-        return jsonify({'response': 'Expired token'}), 403
-    except jwt.InvalidTokenError:
-        return jsonify({'response': 'Invalid token'}), 403
-
-    if 'uuid' not in decoded_jwt:
-        return jsonify({'response': 'Try later'}), 403
-
-    player_uuid = decoded_jwt['uuid']
-
+@login_required
+def update_my_user(auth_uuid):
     new_username = request.json.get('username')
     new_wallet = request.json.get('wallet')
 
@@ -119,39 +108,17 @@ def update():
     }
 
     try:
-        r = circuitbreaker.call(requests.put, f'https://player_service:5000/uuid/{player_uuid}', verify=False, json=new_player)
+        r = circuitbreaker.call(requests.put, f'https://player_service:5000/uuid/{auth_uuid}', verify=False, json=new_player)
     except Exception as e:  
         return jsonify({'response': str(e)}), 500
 
     return r.text, r.status_code
 
 @app.route('/user/collection', methods=['GET'])
-def collection(): 
-    encoded_jwt = request.cookies.get('session')
-
-    if not encoded_jwt:
-        return jsonify({'response': 'You\'re not logged'}), 401
-
+@login_required
+def collection(auth_uuid):
     try:
-        options = {
-            'require': ['exp'], 
-            'verify_signature': True, 
-            'verify_exp': True
-        }
-
-        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
-    except jwt.ExpiredSignatureError:
-        return jsonify({'response': 'Expired token'}), 403
-    except jwt.InvalidTokenError as e:
-        return jsonify({'response': "Invalid token"}), 403
-
-    if 'uuid' not in decoded_jwt:
-        return jsonify({'response': 'Try later'}), 403
-
-    player_uuid = decoded_jwt['uuid']
-
-    try:
-        r = circuitbreaker.call(requests.get, f'https://gacha_service:5000/collection/user/{player_uuid}', verify=False)
+        r = circuitbreaker.call(requests.get, f'https://gacha_service:5000/collection/user/{auth_uuid}', verify=False)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
 
@@ -167,32 +134,10 @@ def collection():
         return jsonify({'response': 'Not supported'}), 400
 
 @app.route('/user/currency', methods=['GET'])
-def currency():
-    encoded_jwt = request.cookies.get('session')
-
-    if not encoded_jwt:
-        return jsonify({'response': 'You\'re not logged'}), 401
-
+@login_required
+def currency(auth_uuid):
     try:
-        options = {
-            'require': ['exp'], 
-            'verify_signature': True, 
-            'verify_exp': True
-        }
-
-        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
-    except jwt.ExpiredSignatureError:
-        return jsonify({'response': 'Expired token'}), 403
-    except jwt.InvalidTokenError:
-        return jsonify({'response': 'Invalid token'}), 403
-
-    if 'uuid' not in decoded_jwt:
-        return jsonify({'response': 'Try later'}), 403
-
-    player_uuid = decoded_jwt['uuid']
-
-    try:
-        r = circuitbreaker.call(requests.get, f'https://player_service:5000/uuid/{player_uuid}', verify=False)
+        r = circuitbreaker.call(requests.get, f'https://player_service:5000/uuid/{auth_uuid}', verify=False)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
 
@@ -206,32 +151,10 @@ def currency():
         return jsonify({'response': 'Not supported'}), 406
 
 @app.route('/user/transactions', methods=['GET'])
-def transactions_all():
-    encoded_jwt = request.cookies.get('session')
-
-    if not encoded_jwt:
-        return jsonify({'response': 'You\'re not logged'}), 401
-
+@login_required
+def transactions_all(auth_uuid):
     try:
-        options = {
-            'require': ['exp'], 
-            'verify_signature': True, 
-            'verify_exp': True
-        }
-
-        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
-    except jwt.ExpiredSignatureError:
-        return jsonify({'response': 'Expired token'}), 403
-    except jwt.InvalidTokenError:
-        return jsonify({'response': 'Invalid token'}), 403
-
-    if 'uuid' not in decoded_jwt:
-        return jsonify({'response': 'Try later'}), 403
-
-    player_uuid = decoded_jwt['uuid']
-
-    try:
-        r = circuitbreaker.call(requests.get, f'https://transaction_service:5000/user/{player_uuid}', verify=False)
+        r = circuitbreaker.call(requests.get, f'https://transaction_service:5000/user/{auth_uuid}', verify=False)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
     transactions = json.loads(r.text)['response']
@@ -244,32 +167,10 @@ def transactions_all():
         return jsonify({'response': 'Not supported'}), 400
 
 @app.route('/user/transactions/<string:transaction_uuid>', methods=['GET'])
-def transaction(transaction_uuid):
-    encoded_jwt = request.cookies.get('session')
-
-    if not encoded_jwt:
-        return jsonify({'response': 'You\'re not logged'}), 401
-
+@login_required
+def transaction(transaction_uuid, auth_uuid):
     try:
-        options = {
-            'require': ['exp'], 
-            'verify_signature': True, 
-            'verify_exp': True
-        }
-
-        decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
-    except jwt.ExpiredSignatureError:
-        return jsonify({'response': 'Expired token'}), 403
-    except jwt.InvalidTokenError:
-        return jsonify({'response': 'Invalid token'}), 403
-
-    if 'uuid' not in decoded_jwt:
-        return jsonify({'response': 'Try later'}), 403
-
-    player_uuid = decoded_jwt['uuid']
-
-    try:
-        r = circuitbreaker.call(requests.get, f'https://transaction_service:5000/user/{player_uuid}/{transaction_uuid}', verify=False)
+        r = circuitbreaker.call(requests.get, f'https://transaction_service:5000/user/{auth_uuid}/{transaction_uuid}', verify=False)
     except Exception as e:
         return jsonify({'response': str(e)}), 500
     
