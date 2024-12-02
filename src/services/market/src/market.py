@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, json, render_template
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
+from functools import wraps
 import socket
 import psycopg2
 import psycopg2.extras
@@ -32,6 +33,38 @@ POSTGRES_SSLMODE = os.getenv("POSTGRES_SSLMODE")
 
 # set jwt
 SECRET = os.getenv("JWT_SECRET")
+
+def login_required(f):
+  @wraps(f)
+  def decorated_function(*args, **kwargs):
+      encoded_jwt = request.headers.get('Authorization')
+  
+      if not encoded_jwt:
+          return jsonify({'response': 'You\'re not logged'}), 401
+      
+      encoded_jwt = encoded_jwt.split(' ')[1]
+  
+      try:
+          options = {
+              'require': ['exp'], 
+              'verify_signature': True, 
+              'verify_exp': True
+          }
+  
+          decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
+      except jwt.ExpiredSignatureError:
+          return jsonify({'response': 'Expired token'}), 403
+      except jwt.InvalidTokenError:
+          return jsonify({'response': 'Invalid token'}), 403
+  
+      if 'sub' not in decoded_jwt:
+          return jsonify({'response': 'Try later'}), 403
+  
+      additional = {'auth_uuid': decoded_jwt['sub']}
+  
+      return f(*args, **kwargs, **additional)
+  
+  return decorated_function
 
 @app.errorhandler(404)
 def page_not_found(error):
@@ -131,7 +164,7 @@ def show_one(auction_uuid):
 
     is_admin = False
     hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]
-    if hostname == 'admin_service' or hostname == 'transaction_service':
+    if hostname == 'admin_service' or hostname == 'transaction_service': #TODO controllare se transaction service funge
         is_admin = True
 
     try:
@@ -203,29 +236,8 @@ def show_create_auction(gacha_uuid):
     return render_template("create_auction.html", gacha_uuid=gacha_uuid), 200
 
 @app.route('/market', methods=['POST'])
-def create_auction():
-    endoded_jwt = request.cookies.get('session')
-
-    if not endoded_jwt:
-        return jsonify({'response': 'You\'re not logged'}), 401
-    
-    try:
-        options = {
-            'require': ['exp'],
-            'verify_signature': True,
-            'verify_exp': True
-        }
-
-        decoded_jwt = jwt.decode(endoded_jwt, SECRET, algorithms=['HS256'], options=options)
-    except jwt.ExpiredSignatureError:
-        return jsonify({'response': 'Expired token'}), 403
-    except jwt.InvalidTokenError:
-        return jsonify({'response': 'Invalid token'}), 403
-    
-    if 'uuid' not in decoded_jwt:
-        return jsonify({'response': 'Try later'}), 403
-    
-    player_uuid = decoded_jwt['uuid']
+@login_required
+def create_auction(auth_uuid):
     auction_uuid = str(uuid.uuid4())
     if request.is_json: 
        gacha_uuid = request.json.get('gacha_uuid')
@@ -251,7 +263,7 @@ def create_auction():
             sslmode=POSTGRES_SSLMODE
         )
 
-        r = circuitbreaker.call(requests.get, f'https://gacha_service:5000/collection/user/{player_uuid}', verify=False)
+        r = circuitbreaker.call(requests.get, f'https://gacha_service:5000/collection/user/{auth_uuid}', verify=False)
         if r.status_code != 200:
             return jsonify({'response': 'Try later - gacha service error'}), 500
     except Exception as e:
@@ -273,7 +285,7 @@ def create_auction():
     try: 
         cursor = conn.cursor()
         cursor.execute('SELECT count(id) as active_auctions FROM auction WHERE user_uuid = %s AND gacha_uuid = %s', 
-            [player_uuid, gacha_uuid])
+            [auth_uuid, gacha_uuid])
         active_auctions = cursor.fetchone()[0]
         conn.commit()
         cursor.close()
@@ -286,7 +298,7 @@ def create_auction():
     try:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute('INSERT INTO auction (id, uuid, base_price, gacha_uuid, user_uuid, expired_at) VALUES (DEFAULT, %s, %s, %s, %s, %s)', 
-            [auction_uuid, starting_price, gacha_uuid, player_uuid, expired_at])
+            [auction_uuid, starting_price, gacha_uuid, auth_uuid, expired_at])
         cursor.execute('SELECT id, uuid, base_price, gacha_uuid, user_uuid, expired_at FROM auction WHERE uuid = %s', 
             [auction_uuid])
         record = cursor.fetchone()
@@ -306,30 +318,8 @@ def create_auction():
         return jsonify({'response': 'Not supported'}), 400
 
 @app.route('/market/<string:auction_uuid>/bid', methods=['POST'])
-def make_bid(auction_uuid):
-    endoded_jwt = request.cookies.get('session')
-
-    if not endoded_jwt:
-        return jsonify({'response': 'You\'re not logged'}), 401
-    
-    try:
-        options = {
-            'require': ['exp'],
-            'verify_signature': True,
-            'verify_exp': True
-        }
-
-        decoded_jwt = jwt.decode(endoded_jwt, SECRET, algorithms=['HS256'], options=options)
-    except jwt.ExpiredSignatureError:
-        return jsonify({'response': 'Expired token'}), 403
-    except jwt.InvalidTokenError:
-        return jsonify({'response': 'Invalid token'}), 403
-    
-    if 'uuid' not in decoded_jwt:
-        return jsonify({'response': 'Try later'}), 403
-    
-    player_uuid = decoded_jwt['uuid']
-
+@login_required
+def make_bid(auction_uuid, auth_uuid):
     if request.is_json: 
        offer = request.json.get('offer')
     else:  
@@ -369,7 +359,7 @@ def make_bid(auction_uuid):
     base_price = record['base_price']
     current_price = record['offer']
 
-    if player_uuid == record['user_uuid']:
+    if auth_uuid == record['user_uuid']:
         return jsonify({'response': 'You\'re the owner of this auction'}), 400
 
     if final_time <= current_time:
@@ -388,14 +378,14 @@ def make_bid(auction_uuid):
         if cursor.rowcount == 0:
             return jsonify({'response': 'Auction not found'})
         cursor.execute('INSERT INTO bid (id, auction_uuid, user_uuid, offer) VALUES (DEFAULT, %s, %s, %s)', 
-            [auction_uuid, player_uuid, offer])
+            [auction_uuid, auth_uuid, offer])
         conn.commit()
         cursor.close()
         conn.close()
     except psycopg2.Error as e:
         return jsonify({'response': str(e)}), 500
     
-    return jsonify({'response': {'auction_uuid': auction_uuid, 'player_uuid': player_uuid, 'offer': offer, 'closed': record['closed']}}), 200
+    return jsonify({'response': {'auction_uuid': auction_uuid, 'player_uuid': auth_uuid, 'offer': offer, 'closed': record['closed']}}), 200
 
 @app.route('/market/<string:auction_uuid>/close', methods=['PUT'])
 def close_auction(auction_uuid):
@@ -436,7 +426,7 @@ def close_auction(auction_uuid):
         return {'response': str(e)}, 500
     
     if not is_admin:
-        endoded_jwt = request.cookies.get('session')
+        endoded_jwt = request.headers.get('Authorization')
 
         if not endoded_jwt:
             return jsonify({'response': 'You\'re not logged'}), 401
@@ -452,10 +442,10 @@ def close_auction(auction_uuid):
         except jwt.ExpiredSignatureError:
             return jsonify({'response': 'Expired token'}), 403
 
-        if 'uuid' not in decoded_jwt:
+        if 'sub' not in decoded_jwt:
             return jsonify({'response': 'Try later - jwt error'}), 403
 
-        player_uuid = decoded_jwt['uuid']
+        player_uuid = decoded_jwt['sub']
 
         if record['user_uuid'] != player_uuid:
             return jsonify({'response': 'You\'re not the owner of this auction'}), 400
