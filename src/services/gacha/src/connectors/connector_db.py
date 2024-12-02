@@ -177,9 +177,9 @@ class CollectionConnectorDB:
         try:
             self.cursor.execute("""
                 INSERT INTO gacha 
-                    (id, uuid, name, description, image_path, uuid_rarity) 
+                    (uuid, name, description, image_path, uuid_rarity) 
                 VALUES
-                    (DEFAULT, %s, %s, %s, %s, %s)""", 
+                    (%s, %s, %s, %s, %s)""", 
             (gacha_uuid, name, description, image_path, rarity_uuid))
 
             self.cursor.execute("""
