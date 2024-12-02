@@ -117,11 +117,6 @@ services:
       interval: 10s
       timeout: 3s
       retries: 3
-    deploy:
-      resources:
-        limits:
-          cpus: '0.4'
-          memory: 100M
 
   transaction_db:
     build: ./dbs/transaction
@@ -175,7 +170,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.4'
+          cpus: '0.5'
           memory: 100M
 
   authentication_service:
@@ -234,11 +229,6 @@ services:
         target: /app
       - action: rebuild
         path: ./services/gacha/requirements.txt
-    deploy:
-      resources:
-        limits:
-          cpus: '0.4'
-          memory: 100M
 
   account_service:
     build: ./services/account
@@ -263,7 +253,7 @@ services:
       resources:
         limits:
           cpus: '0.4'
-          memory: 100M
+          memory: 250M
 
   currency_service:
     build: ./services/currency
@@ -346,7 +336,7 @@ services:
       resources:
         limits:
           cpus: '0.4'
-          memory: 100M
+          memory: 150M
 
   transaction_service:
     build: ./services/transaction
@@ -375,7 +365,7 @@ services:
       resources:
         limits:
           cpus: '0.4'
-          memory: 100M
+          memory: 150M
     
 
   rabbitmq_broker:
@@ -456,15 +446,6 @@ services:
         limits:
           cpus: '0.4'
           memory: 200M
-
-  locust_master:
-    build: ./locust
-    develop:
-      watch:
-        - action: rebuild
-          path: ./locust/locustfile.py
-          target: /mnt/locust/
-    network_mode: "host"  
      
 secrets: 
   player_db.crt:

@@ -150,6 +150,12 @@ just exec /bin/bash
 ```
 will run a shell no matter the container you choose
 
+## Locust 
+```
+cd ASE-project/src
+docker run --rm --network host -v "$PWD"/locust:/mnt/locust locustio/locust -f /mnt/locust/locustfile.py --host https://ase.localhost
+```
+
 ## TODO
 - ~~update `justfile` with `docker compose watch` and `docker compose down -v`~~
 - use `<uuid:entity_uuid>` instead of `<string:entity_uuid>`
@@ -216,3 +222,6 @@ will run a shell no matter the container you choose
 - change `doc` in `docs`
 - add http status codes to openAPI and to the python code
 - change roll random technique (?)
+- change deploy to limit docker container 
+- add locust on docker compose for deploy
+- fix roll workflow on locust
