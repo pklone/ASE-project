@@ -64,10 +64,12 @@ class CollectionService:
     def login_required(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            encoded_jwt = request.cookies.get('session')
+            encoded_jwt = request.headers.get('Authorization')
 
             if not encoded_jwt:
                 return {'response': 'You\'re not logged'}, 401
+            
+            encoded_jwt = encoded_jwt.split(' ')[1]
 
             try:
                 options = {
@@ -82,10 +84,10 @@ class CollectionService:
             except jwt.InvalidTokenError:
                 return {'response': 'Invalid token'}, 403
 
-            if 'uuid' not in decoded_jwt:
+            if 'sub' not in decoded_jwt:
                 return {'response': 'Try later'}, 403
 
-            additional = {'auth_uuid': decoded_jwt['uuid']}
+            additional = {'auth_uuid': decoded_jwt['sub']}
 
             return f(*args, **kwargs, **additional)
 
@@ -156,7 +158,7 @@ class CollectionService:
         try:
             r = self.connectorHTTP.updatePlayerWallet(auth_uuid, -10)
             if r['http_code'] != 200:
-                return {'response': 'No money available'}, 500
+                return {'response': 'No money available'}, 400
 
             self.connectorDB.updateQuantity(gacha_uuid, auth_uuid, 1)
             record = self.connectorDB.getByUuid(gacha_uuid)
