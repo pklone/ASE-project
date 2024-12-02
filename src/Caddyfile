@@ -100,6 +100,8 @@ ase.localhost {
         }
     }
 
+
+
     # User Service
     handle /user {
         reverse_proxy https://account_service:5000 {
@@ -137,6 +139,8 @@ ase.localhost {
         }
     }
 
+
+
     # Gacha Service
     handle /collection {
         reverse_proxy https://gacha_service:5000 {
@@ -159,6 +163,16 @@ ase.localhost {
             }
         }
     }
+    handle /assets/* {
+        reverse_proxy https://gacha_service:5000 {
+             transport http {
+                tls_insecure_skip_verify
+            }
+        }
+    }
+
+
+
 
     # Currency Service
     handle /currency/buy {
@@ -168,6 +182,9 @@ ase.localhost {
             }
         }
     }
+
+
+
 
     # Market Service
     handle /market {
@@ -212,15 +229,9 @@ ase.localhost {
             }
         }
     }
-
-    handle /assets/* {
-        reverse_proxy https://gacha_service:5000 {
-             transport http {
-                tls_insecure_skip_verify
-            }
-        }
-    }
     
+
+
     # Default 404 Response
     handle {
         header Content-Type application/json
