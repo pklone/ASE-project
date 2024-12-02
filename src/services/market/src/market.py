@@ -131,7 +131,7 @@ def show_one(auction_uuid):
 
     is_admin = False
     hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]
-    if hostname == 'admin_service' or hostname == 'transaction_service': #TODO controllare se transaction service funge
+    if hostname == 'admin_service' or hostname == 'transaction_service':
         is_admin = True
 
     try:
