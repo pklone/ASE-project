@@ -138,6 +138,13 @@ ase.localhost {
             }
         }
     }
+    handle /userinfo {
+        reverse_proxy https://account_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
+    }
 
 
 

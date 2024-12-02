@@ -179,6 +179,16 @@ def transaction(transaction_uuid, auth_uuid):
 
     return jsonify({"response": transaction}), 200
 
+@app.route('/userinfo', methods=['GET'])
+@login_required
+def userinfo(auth_uuid):
+    try:
+        r = circuitbreaker.call(requests.get, f'https://player_service:5000/uuid/{auth_uuid}', verify=False)
+    except Exception as e:
+        return jsonify({'response': str(e)}), 500
+
+    return r.text, r.status_code
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=(CERT_PATH, KEY_PATH))
 
