@@ -14,6 +14,8 @@ circuitbreaker = pybreaker.CircuitBreaker(
     reset_timeout=60*5
 )
 
+blacklist = []
+
 #set db connection
 DB_NAME = os.getenv("DB_NAME")
 DB_USER = os.getenv("DB_USER")
@@ -71,25 +73,50 @@ def admin_login():
         return jsonify({'response': 'Invalid credentials'}), 401
     
     expire = datetime.now(tz=timezone.utc) + timedelta(seconds=3600)
-    payload = {
-        'id': admin['id'], 
-        'admin': True,
-        'exp': expire
+    time = datetime.now(tz=timezone.utc)
+
+    payload_access = {
+        'iss': 'https://ase.localhost',
+        'sub': admin['uuid'], 
+        'exp': expire,
+        'scope': 'admin'
     }
-    
-    encoded_jwt = jwt.encode(payload, SECRET, algorithm='HS256')
-    response = make_response(jsonify({'response': 'Logged as admin'}))
-    response.set_cookie('session', encoded_jwt, httponly=True, expires=expire)
+
+    payload_id = {
+        'iss': 'https://ase.localhost',
+        'aud': 'https://ase.localhost/login',
+        'sub': admin['uuid'], 
+        'exp': expire,
+        'iat': time,
+        'nbf': time,
+        'scope': 'admin'
+    }
+
+    access_token = jwt.encode(payload_access, SECRET, algorithm='HS256')
+    id_token = jwt.encode(payload_id, SECRET, algorithm='HS256')
+
+    response = {
+        'access_token': access_token,
+        'token_type': 'Bearer',
+        'expires_in': 3600,
+        'id_token': id_token
+    }
+
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+    }
+
+    response = make_response(jsonify(response))
+    response.headers = headers
 
     return response, 200
 
-
 @app.route('/login', methods=['POST'])
 def login():
-    encoded_jwt = request.cookies.get('session')
+    encoded_jwt = request.headers.get('Authorization')
 
     if encoded_jwt:
-        return jsonify({'response': 'Already logged in'}), 200
+        return jsonify({'response': 'Already logged in'}), 401
 
     if request.headers.get('Content-Type') != 'application/json':
         return jsonify({'response': 'Content-type not supported'}), 400
@@ -116,26 +143,60 @@ def login():
         return jsonify({'response': 'Invalid credentials'}), 401
 
     expire = datetime.now(tz=timezone.utc) + timedelta(seconds=3600)
-    payload = {
-        'uuid': player['uuid'], 
-        'exp': expire
+    time = datetime.now(tz=timezone.utc)
+
+    payload_access = {
+        'iss': 'https://ase.localhost',
+        'sub': player['uuid'], 
+        'exp': expire,
+        'scope': 'player'
     }
 
-    encoded_jwt = jwt.encode(payload, SECRET, algorithm='HS256')
-    response = make_response(jsonify({'response': 'Login successful'}))
-    response.set_cookie('session', encoded_jwt, httponly=True, expires=expire)
+    payload_id = {
+        'iss': 'https://ase.localhost',
+        'aud': 'https://ase.localhost/login',
+        'sub': player['uuid'], 
+        'scope': 'player',
+        'exp': expire,
+        'iat': time,
+        'nbf': time
+    }
+
+    access_token = jwt.encode(payload_access, SECRET, algorithm='HS256')
+    id_token = jwt.encode(payload_id, SECRET, algorithm='HS256')
+
+
+    response = {
+        'access_token': access_token,
+        'token_type': 'Bearer',
+        'expires_in': 3600,
+        'id_token': id_token
+    }
+
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+    }
+
+    response = make_response(jsonify(response))
+    response.headers = headers
 
     return response, 200
 
 @app.route('/logout', methods=['DELETE'])
 def logout():
-    encoded_jwt = request.cookies.get('session')
+    encoded_jwt = request.headers.get('Authorization')
 
     if not encoded_jwt:
-        return jsonify({'response': 'Already logged out'}), 200
+        return jsonify({'response': 'You are not logged'}), 401
+    
+    encoded_jwt = encoded_jwt.split(' ')[1]
+
+    if encoded_jwt in blacklist:
+        return jsonify({'response': 'Already logged out'}), 401
+    
+    blacklist.append(encoded_jwt)
 
     response = make_response(jsonify({'response': 'Logout successful'}))
-    response.set_cookie('session', '', httponly=True, expires=0)
 
     return response, 200
 

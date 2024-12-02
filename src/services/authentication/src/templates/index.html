@@ -28,7 +28,7 @@
                 <a href="/login" class="navbar-item">Login</a>
                 <a href="/user" class="navbar-item">Sign Up</a>
                 <a id="logoutBtn" class="navbar-item">Logout</a>
-                <a href="/user/currency" class="navbar-item">Currency</a>
+                <a id="currencyBtn" class="navbar-item">Currency</a>
                 <a href="/currency/buy" class="navbar-item">Buy Currency</a>
                 <a href="/user/transactions" class="navbar-item">Transactions</a>
                 <a href="/market" class="navbar-item">Marketplace</a>
@@ -67,7 +67,26 @@
     </section>
 
     <script>
+        document.getElementById('currencyBtn').addEventListener('click', function(event) {
+            event.preventDefault();  
 
+            var request = new Request('/user/currency', {
+                method: 'GET', 
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': localStorage.getItem('authorization'),
+                    'Accept': 'text/html'    
+                }
+            })
+            fetch(request)
+                .then(response => response.text())
+                .then(html => {
+                    document.open();
+                    document.write(html);
+                    document.close();
+                });
+        });
+        
         // Login form submission
         document.getElementById('loginForm').onsubmit = async function (e) {
             e.preventDefault();
@@ -82,6 +101,8 @@
             });
 
             const result = await response.json();
+            const authorizationHeader = response.headers.get('authorization');
+            localStorage.setItem('authorization', authorizationHeader);
             const responseDiv = document.getElementById('response');
             responseDiv.classList.remove('is-hidden');
             responseDiv.textContent = result.response;
@@ -94,6 +115,7 @@
                 headers: { 'Content-Type': 'application/json' }
             });
 
+            localStorage.removeItem('authorization');
             const result = await response.json();
             alert(result.response); 
 
