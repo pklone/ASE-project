@@ -3,6 +3,7 @@ import os
 import jwt
 import random
 import uuid
+import requests
 from werkzeug.utils import secure_filename
 import werkzeug.exceptions
 from functools import wraps
@@ -70,6 +71,10 @@ class CollectionService:
                 return {'response': 'You\'re not logged'}, 401
             
             encoded_jwt = encoded_jwt.split(' ')[1]
+
+            r = requests.get('https://authentication_service:5000/tokenchecks', headers={'Authorization': f'Bearer {encoded_jwt}'}, verify=False)
+            if r.status_code != 200:
+                return {'response': 'Invalid token'}, 403
 
             try:
                 options = {

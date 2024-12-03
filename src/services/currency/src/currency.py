@@ -27,6 +27,10 @@ def login_required(f):
           return jsonify({'response': 'You\'re not logged'}), 401
       
       encoded_jwt = encoded_jwt.split(' ')[1]
+
+      r = circuitbreaker.call(requests.get, 'https://authentication_service:5000/tokenchecks', headers={'Authorization': f'Bearer {encoded_jwt}'}, verify=False)
+      if r.status_code != 200:
+           return jsonify({'response': 'Invalid token'}), 403
   
       try:
           options = {

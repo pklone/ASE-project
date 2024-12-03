@@ -14,7 +14,7 @@ circuitbreaker = pybreaker.CircuitBreaker(
     reset_timeout=60*5
 )
 
-blacklist = []
+whitelist = []
 
 #set db connection
 DB_NAME = os.getenv("DB_NAME")
@@ -95,6 +95,8 @@ def admin_login():
     access_token = jwt.encode(payload_access, SECRET, algorithm='HS256')
     id_token = jwt.encode(payload_id, SECRET, algorithm='HS256')
 
+    whitelist.append(access_token)
+
     response = {
         'access_token': access_token,
         'token_type': 'Bearer',
@@ -165,6 +167,7 @@ def login():
     access_token = jwt.encode(payload_access, SECRET, algorithm='HS256')
     id_token = jwt.encode(payload_id, SECRET, algorithm='HS256')
 
+    whitelist.append(access_token)
 
     response = {
         'access_token': access_token,
@@ -182,6 +185,17 @@ def login():
 
     return response, 200
 
+@app.route('/tokenchecks', methods=['GET'])
+def token_check():
+    
+    encoded_jwt = request.headers.get('Authorization')
+    encoded_jwt = encoded_jwt.split(' ')[1]
+
+    if encoded_jwt in whitelist:
+        return jsonify({'response': 'Valid token'}), 200
+    else:
+        return jsonify({'response': encoded_jwt}), 403
+
 @app.route('/logout', methods=['DELETE'])
 def logout():
     encoded_jwt = request.headers.get('Authorization')
@@ -190,11 +204,8 @@ def logout():
         return jsonify({'response': 'You are not logged'}), 401
     
     encoded_jwt = encoded_jwt.split(' ')[1]
-
-    if encoded_jwt in blacklist:
-        return jsonify({'response': 'Already logged out'}), 401
     
-    blacklist.append(encoded_jwt)
+    whitelist.remove(encoded_jwt)
 
     response = make_response(jsonify({'response': 'Logout successful'}))
 
