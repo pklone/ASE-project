@@ -69,14 +69,18 @@
     <script>
         document.getElementById('currencyBtn').addEventListener('click', function(event) {
             event.preventDefault();  
+            const token = localStorage.getItem('authorization')
+            let headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'text/html'    
+            }
+            if (token) {
+                headers['Authorization'] = token;
+            }
 
             var request = new Request('/user/currency', {
                 method: 'GET', 
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': localStorage.getItem('authorization'),
-                    'Accept': 'text/html'    
-                }
+                headers: headers
             })
             fetch(request)
                 .then(response => response.text())
