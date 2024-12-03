@@ -22,9 +22,8 @@ def post_sign_up(workflow):
     else:
         with response:
             if response.status_code != 201:
-                if response.status_code == 400:
-                    pass
-                logging.info(f"post_sign_up: error - {response.text}")
+                if response.status_code != 400:
+                    logging.info(f"post_sign_up: error - {response.text}")
 
 def post_login(workflow):
     payload = {
@@ -44,18 +43,137 @@ def post_login(workflow):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code == 400:
-                    pass
-                logging.info(f"post_login: error - {response.text}")
+                if response.status_code != 400:
+                    logging.info(f"post_login: error - {response.text}")
             else:
                 workflow.is_logged_in = True
                 workflow.is_logged_out = False
+                return response.headers
+            
+def post_admin_login(workflow):
+    payload = {
+        "username": "admin",
+        "password": "admin"
+    }
+    try:
+        response = workflow.client.post(
+            "/admin/login",
+            data=json.dumps(payload),
+            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            verify=False,
+            catch_response=True
+        )
+    except Exception as e:
+        logging.info(f"post_admin_login: error - {str(e)}")
+    else:
+        with response:
+            if response.status_code != 200:
+                if response.status_code != 400:
+                    logging.info(f"post_admin_login: error - {response.text}")
+            else:
+                workflow.admin_logged_in = True
+                workflow.admin_logged_out = False
+                return response.headers
+            
+def get_admin_users(workflow):
+    try:
+        response = workflow.client.get(
+            "/admin/users",
+            headers={"Content-Type": "application/json", "Accept": "application/json", "Authorization": workflow.admin_headers["Authorization"]},
+            verify=False,
+            catch_response=True
+        )
+    except Exception as e:
+        logging.info(f"get_admin_users: error - {str(e)}")
+    else:
+        with response:
+            if response.status_code != 200:
+                if response.status_code != 400:
+                    logging.info(f"get_admin_users: error - {response.text}")
+            else:
+                users = response.json()["response"]
+                return users
+
+def get_admin_user_collection(workflow, user_uuid):
+    try:
+        response = workflow.client.get(
+            f"/admin/users/{user_uuid}",
+            headers={"Content-Type": "application/json", "Accept": "application/json", "Authorization": workflow.admin_headers["Authorization"]},
+            verify=False,
+            catch_response=True
+        )
+    except Exception as e:
+        logging.info(f"get_user_collection: error - {str(e)}")
+    else:
+        with response:
+            if response.status_code != 200:
+                if response.status_code != 400:
+                    logging.info(f"get_user_collection: error - {response.text}")
+            else:
+                user_collection = response.json()["response"]
+                return user_collection
+            
+def post_admin_payment(workflow, auction_uuid):
+    try:
+        response = workflow.client.post(
+            f"/admin/payment/{auction_uuid}",
+            headers={"Content-Type": "application/json", "Accept": "application/json", "Authorization": workflow.admin_headers["Authorization"]},
+            verify=False,
+            catch_response=True
+        )
+    except Exception as e:
+        logging.info(f"post_admin_payment: error - {str(e)}")
+    else:
+        with response:
+            if response.status_code != 200:
+                if response.status_code != 400:
+                    logging.info(f"post_admin_payment: error - {response.text}")
+            else:
+                logging.info(f"post_admin_payment: Successfully paid for auction {auction_uuid}")
+
+def get_admin_auction(workflow):
+    try:
+        response = workflow.client.get(
+            "/admin/market",
+            headers={"Content-Type": "application/json", "Accept": "application/json", "Authorization": workflow.admin_headers["Authorization"]},
+            verify=False,
+            catch_response=True
+        )
+    except Exception as e:
+        logging.info(f"get_admin_auction: error - {str(e)}")
+    else:
+        with response:
+            if response.status_code != 200:
+                if response.status_code != 400:
+                    logging.info(f"get_admin_auction: error - {response.text}")
+            else:
+                auctions = response.json()["response"]
+                return auctions
+
+def get_user_transactions(workflow):
+    try:
+        response = workflow.client.get(
+            f"/user/transactions",
+            headers={"Content-Type": "application/json", "Accept": "application/json", "Authorization": workflow.headers["Authorization"]},
+            verify=False,
+            catch_response=True
+        )
+    except Exception as e:
+        logging.info(f"get_user_transactions: error - {str(e)}")
+    else:
+        with response:
+            if response.status_code != 200:
+                if response.status_code != 400:
+                    logging.info(f"get_user_transactions: error - {response.text}")
+            else:
+                transactions = response.json()["response"]
+                return transactions
 
 def get_user_collection(workflow):
     try:
         response = workflow.client.get(
             "/user/collection",
-            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            headers={"Content-Type": "application/json", "Accept": "application/json", "Authorization": workflow.headers["Authorization"]},
             verify=False,
             catch_response=True  
         )   
@@ -64,15 +182,14 @@ def get_user_collection(workflow):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code == 400:
-                    pass
-                logging.info(f"get_user_collection: error - {response.text}")
+                if response.status_code != 400:
+                    logging.info(f"get_user_collection: error - {response.text}")
 
 def delete_logout(workflow):
     try:
         response = workflow.client.delete(
             "/logout",
-            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            headers={"Content-Type": "application/json", "Accept": "application/json", "Authorization": workflow.headers["Authorization"]},
             verify=False,
             catch_response=True 
         )   
@@ -81,9 +198,8 @@ def delete_logout(workflow):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code == 400:
-                    pass
-                logging.info(f"delete_logout: error - {response.text}")
+                if response.status_code != 400:
+                    logging.info(f"delete_logout: error - {response.text}")
             else:
                 workflow.is_logged_in = False
                 workflow.is_logged_out = True
@@ -93,10 +209,10 @@ def post_buy_currency(workflow):
         "purchase": 10000
     }
     try:
-        response = workflow.client.post(
+        response = workflow.client.put(
             "/currency/buy",
             data=json.dumps(payload),
-            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            headers={"Content-Type": "application/json", "Accept": "application/json", "Authorization": workflow.headers["Authorization"]},
             verify=False,
             catch_response=True  
         )   
@@ -105,15 +221,14 @@ def post_buy_currency(workflow):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code == 400:
-                    pass
-                logging.info(f"post_buy_currency: error - {response.text}")
+                if response.status_code != 400:
+                    logging.info(f"post_buy_currency: error - {response.text}")
 
 def get_currency(workflow):
     try:
         response = workflow.client.get(
             "/user/currency",
-            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            headers={"Content-Type": "application/json", "Accept": "application/json", "Authorization": workflow.headers["Authorization"]},
             verify=False,
             catch_response=True  
         )   
@@ -122,9 +237,8 @@ def get_currency(workflow):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code == 400:
-                    pass
-                logging.info(f"get_currency: error - {response.text}")
+                if response.status_code != 400:
+                    logging.info(f"get_currency: error - {response.text}")
             else:
                 workflow.currency = response.json()["response"]
 
@@ -132,7 +246,7 @@ def get_roll(workflow):
     try:
         response = workflow.client.get(
             "/roll",
-            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            headers={"Content-Type": "application/json", "Accept": "application/json", "Authorization": workflow.headers["Authorization"]},
             verify=False,
             catch_response=True  
         )   
@@ -141,9 +255,8 @@ def get_roll(workflow):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code == 400:
-                    pass
-                logging.info(f"get_roll: error - {response.text}")
+                if response.status_code != 400:
+                    logging.info(f"get_roll: error - {response.text}")
             else:
                 #workflow.gacha_uuid = response.json()["response"]["uuid"]
                 #logging.info(f"get_roll: ok!")
@@ -163,7 +276,7 @@ def post_create_auction(workflow, gacha_uuid):
         response = workflow.client.post(
             "/market",
             data=json.dumps(payload),
-            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            headers={"Content-Type": "application/json", "Accept": "application/json", "Authorization": workflow.headers["Authorization"]},
             verify=False,
             catch_response=True  
         )   
@@ -172,18 +285,14 @@ def post_create_auction(workflow, gacha_uuid):
     else:
         with response:
             if response.status_code != 201:
-                if response.status_code == 500:
+                if response.status_code != 400:
                     logging.info(f"post_create_auction: error - {response.text}")
-                else:
-                    pass
-            else:
-                 pass
 
 def get_auction(workflow):
     try:
         response = workflow.client.get(
             "/market",
-            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            headers={"Content-Type": "application/json", "Accept": "application/json", "Authorization": workflow.headers["Authorization"]},
             verify=False,
             catch_response=True  
         )   
@@ -192,9 +301,8 @@ def get_auction(workflow):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code == 400:
-                    pass
-                logging.info(f"get_auction: error - {response.text}")
+                if response.status_code != 400:
+                    logging.info(f"get_auction: error - {response.text}")
             else:
                 auction = response.json()["response"]
                 return auction
@@ -203,7 +311,7 @@ def get_auction_by_uuid(workflow, auction_uuid):
     try:
         response = workflow.client.get(
             f"/market/{auction_uuid}",
-            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            headers={"Content-Type": "application/json", "Accept": "application/json", "Authorization": workflow.headers["Authorization"]},
             verify=False,
             catch_response=True  
         )   
@@ -212,9 +320,8 @@ def get_auction_by_uuid(workflow, auction_uuid):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code == 400:
-                    pass
-                logging.info(f"get_auction_by_uuid: error - {response.text}")
+                if response.status_code != 400:
+                    logging.info(f"get_auction_by_uuid: error - {response.text}")
             else:
                 auction = response.json()["response"]
                 return auction
@@ -227,7 +334,7 @@ def post_bid(workflow, auction_uuid, offer):
         response = workflow.client.post(
             f"/market/{auction_uuid}/bid",
             data=json.dumps(payload),
-            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            headers={"Content-Type": "application/json", "Accept": "application/json", "Authorization": workflow.headers["Authorization"]}, 
             verify=False,
             catch_response=True
         )
@@ -236,9 +343,8 @@ def post_bid(workflow, auction_uuid, offer):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code == 400:
-                    pass
-                logging.info(f"post_bid: error - {response.text}")
+                if response.status_code != 400:
+                    logging.info(f"post_bid: error - {response.text}")
             else:
                 logging.info(f"post_bid: Successfully placed bid on auction {auction_uuid}")
 
@@ -252,7 +358,7 @@ class UserCollectionWorkflow(HttpUser):
         self.is_logged_out = True
         self.random = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
         post_sign_up(self)
-        post_login(self)
+        self.headers = post_login(self)
 
     @task(3)
     def user_collection(self):
@@ -278,7 +384,7 @@ class UserGachaWorkflow(HttpUser):
         self.currency = 0
         self.random = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
         post_sign_up(self)
-        post_login(self)
+        self.headers = post_login(self)
         post_buy_currency(self)
         get_currency(self)
 
@@ -294,8 +400,6 @@ class UserGachaWorkflow(HttpUser):
     def on_end(self):
         if self.is_logged_in:
             delete_logout(self)
-        else:
-            pass
     
 class UserMarketWorkflow(HttpUser):
 
@@ -306,7 +410,7 @@ class UserMarketWorkflow(HttpUser):
         self.is_logged_out = True
         self.random = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
         post_sign_up(self)
-        post_login(self)
+        self.headers = post_login(self)
     
     @task(1)
     def bid(self):
@@ -336,3 +440,51 @@ class UserMarketWorkflow(HttpUser):
         else:
             logging.info("User not logged in.")
             pass
+
+    def on_end(self):
+        if self.is_logged_in:
+            delete_logout(self)
+
+class AdminWorkflow(HttpUser):
+
+    wait_time = between(1, 5)
+
+    def on_start(self):
+        self.is_logged_in = False
+        self.is_logged_out = True
+        self.admin_logged_in = False
+        self.admin_logged_out = True
+        self.random = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+        post_sign_up(self)
+        self.headers = post_login(self)
+        self.admin_headers = post_admin_login(self)
+    
+    @task(3)
+    def admin_users(self):
+        if self.admin_logged_in:
+            users = get_admin_users(self)
+            if users:
+                user = random.choice(users)
+                user_uuid = user[2]
+                user_collection = get_admin_user_collection(self, user_uuid)
+
+    @task(3)
+    def transaction(self):
+        if self.is_logged_in:
+            transactions = get_user_transactions(self)
+
+    @task(1)
+    def admin_payment(self):
+        if self.admin_logged_in:
+            auctions = get_admin_auction(self)
+
+    task(1)
+    def admin_logout(self):
+        if self.admin_logged_in:
+            delete_logout(self)
+    
+    def on_end(self):
+        if self.is_logged_in:
+            delete_logout(self)
+        if self.admin_logged_in:
+            delete_logout(self)
