@@ -34,7 +34,7 @@ class MarketService:
         self.app.add_url_rule('/market/<string:auction_uuid>',         endpoint='show_one',            view_func=self.show_one,            methods=['GET'])
         self.app.add_url_rule('/market/gacha/<string:gacha_uuid>',     endpoint='show_create_auction', view_func=self.show_create_auction, methods=['GET'])
         self.app.add_url_rule('/market',                               endpoint='create_auction',      view_func=self.create_auction,      methods=['POST'])
-        self.app.add_url_rule('/market/<string:auction_uuid>/bid',     endpoint='make_bid',            view_func=self.make_bid,            methods=['GET'])
+        self.app.add_url_rule('/market/<string:auction_uuid>/bid',     endpoint='make_bid',            view_func=self.make_bid,            methods=['POST'])
         self.app.add_url_rule('/market/<string:auction_uuid>/close',   endpoint='close_auction',       view_func=self.close_auction,       methods=['PUT'])
         self.app.add_url_rule('/market/<string:auction_uuid>/payment', endpoint='payment',             view_func=self.payment,             methods=['POST'])
         self.app.add_url_rule('/market/user/<string:player_uuid>',     endpoint='show_user_auctions',  view_func=self.show_user_auctions,  methods=['GET'])
