@@ -20,21 +20,24 @@ gacha = [
         "image_path": "/path",
         "name": "name",
         "rarity": rarity[0],
-        "uuid": "a0f0f673-595d-445f-bbf5-be68217f5dab"
+        "uuid": "a0f0f673-595d-445f-bbf5-be68217f5dab",
+        "active": True
     },
     {
         "description": "descr1",
         "image_path": "/path1",
         "name": "name1",
         "rarity":  rarity[1],
-        "uuid": "c685eae6-a473-4bca-a5c8-b710bb495ca6"
+        "uuid": "c685eae6-a473-4bca-a5c8-b710bb495ca6",
+        "active": True
     },
     {
         "description": "descr2",
         "image_path": "/path2",
         "name": "name1",
         "rarity":  rarity[1],
-        "uuid": "5721633c-0d52-4742-8aeb-7f0375be39fb"
+        "uuid": "5721633c-0d52-4742-8aeb-7f0375be39fb",
+        "active": True
     }
 ]
 
@@ -123,7 +126,7 @@ class CollectionConnectorDBMock:
 
     def getAllByRarity(self, rarity_uuid):
         
-        gachas = [g for g in gacha if g["rarity"]["uuid"] == rarity_uuid]
+        gachas = [g for g in gacha if g["rarity"]["uuid"] == rarity_uuid and g["active"] == True]
 
         gacha_item=[g["uuid"] for g in gachas]
 
@@ -177,6 +180,6 @@ class CollectionConnectorDBMock:
         if not gacha_item:
             raise Exception(f'Error: gacha not found')
         
-        gacha.remove(gacha_item)
+        gacha_item["active"] = False
 
         return 

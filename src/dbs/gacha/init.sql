@@ -4,6 +4,7 @@ CREATE TABLE gacha (
     description      VARCHAR,
     image_path       VARCHAR,
     uuid_rarity      VARCHAR NOT NULL,
+    active           BOOLEAN DEFAULT TRUE,
 
     UNIQUE(name)
 );
@@ -53,4 +54,5 @@ INSERT INTO gacha (uuid, name, description, image_path, uuid_rarity) VALUES
 INSERT INTO player_gacha (uuid_player, uuid_gacha, quantity) VALUES 
     ('71520f05-80c5-4cb1-b05a-a9642f9ae44d', '09907f76-9b0f-4270-84a3-e9780b164ac4', 5),
     ('71520f05-80c5-4cb1-b05a-a9642f9ae44d', '23255124-b509-41fd-b607-5f5da9f60447', 1),
-    ('71520f05-80c5-4cb1-b05a-a9642f9ae44d', 'c6cc4f1f-f5f8-4e76-a446-b01b48b10575', 2);
+    ('71520f05-80c5-4cb1-b05a-a9642f9ae44d', 'c6cc4f1f-f5f8-4e76-a446-b01b48b10575', 2),
+    ('71520f05-80c5-4cb1-b05a-a9642f9ae44d', '0b75b774-9783-4bdc-b54a-4b8e9806399e', 1);

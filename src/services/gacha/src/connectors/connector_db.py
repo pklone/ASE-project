@@ -54,7 +54,7 @@ class CollectionConnectorDB:
             self.cursor.execute("""
                 SELECT g.uuid, g.name, LEFT(g.description, 100) || '...' AS description, image_path, r.name as rarity 
                 FROM gacha g 
-                    INNER JOIN rarity r on g.uuid_rarity = r.uuid
+                    INNER JOIN rarity r on g.uuid_rarity = r.uuid WHERE g.active = true
             """)
 
             records = self.cursor.fetchall()
@@ -105,7 +105,7 @@ class CollectionConnectorDB:
             if self.cursor.rowcount == 0:
                 raise Exception("Error: gacha not found")
 
-            self.cursor.execute("DELETE FROM gacha WHERE uuid = %s", 
+            self.cursor.execute("UPDATE gacha SET active = false WHERE uuid = %s", 
                 [gacha_uuid])
             self.conn.commit()
         except psycopg2.Error as e:
@@ -150,7 +150,7 @@ class CollectionConnectorDB:
             if self.cursor.rowcount == 0:
                 raise Exception(f'Error: rarity not found')
 
-            self.cursor.execute('SELECT uuid FROM gacha WHERE uuid_rarity = %s',
+            self.cursor.execute('SELECT uuid FROM gacha WHERE uuid_rarity = %s and active = true',
                 [rarity_uuid])
 
             records = self.cursor.fetchall()
