@@ -405,8 +405,7 @@ class MarketService:
         except Exception as e:
             return {'response': str(e)}, 500
 
-    @login_required
-    def show_user_auctions(self, player_uuid, auth_uuid):
+    def show_user_auctions(self, player_uuid):
         try:
             hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]  
 

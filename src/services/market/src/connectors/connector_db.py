@@ -138,7 +138,7 @@ class MarketConnectorDB:
                     (id, auction_uuid, user_uuid, offer) 
                 VALUES 
                     (DEFAULT, %s, %s, %s)''', 
-            [auction_uuid, auth_uuid, offer])
+            [auction_uuid, player_uuid, offer])
 
             self.conn.commit()
             cursor.close()
