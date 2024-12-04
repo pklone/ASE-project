@@ -1,4 +1,4 @@
-admin.ase.localhost {
+localhost {
     
     # Admin Service
     handle /admin/login {
@@ -70,5 +70,13 @@ admin.ase.localhost {
                 tls_insecure_skip_verify
             }
         }
+    }
+
+
+
+    # Default 404 Response
+    handle {
+        header Content-Type application/json
+        respond `{"response": "page not found"}` 404
     }
 }

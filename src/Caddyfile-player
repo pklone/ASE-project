@@ -1,4 +1,4 @@
-ase.localhost {
+localhost {
     
     # Authentication Service
     method /admin/logout DELETE
@@ -25,7 +25,6 @@ ase.localhost {
             }
         }
     }
-
 
 
     # User Service
