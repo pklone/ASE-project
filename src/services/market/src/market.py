@@ -161,8 +161,8 @@ class MarketService:
         if hostname == 'admin_service' or hostname == 'transaction_service':
             is_admin = True
 
-        if MarketService.check_uuid(auction_uuid=auction_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := MarketService.check_uuid(auction_uuid=auction_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         try:
             record = self.connectorDB.getAuctionWithMaxOffer(auction_uuid)
@@ -199,8 +199,8 @@ class MarketService:
     
     @login_required
     def show_create_auction(self, gacha_uuid, auth_uuid):
-        if MarketService.check_uuid(gacha_uuid=gacha_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := MarketService.check_uuid(gacha_uuid=gacha_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         return render_template("create_auction.html", gacha_uuid=gacha_uuid), 200
 
@@ -250,8 +250,8 @@ class MarketService:
 
     @login_required
     def make_bid(self, auction_uuid, auth_uuid):
-        if MarketService.check_uuid(auction_uuid=auction_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := MarketService.check_uuid(auction_uuid=auction_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         try:
             offer = int(request.json['offer'])
@@ -308,8 +308,8 @@ class MarketService:
         if hostname == 'admin_service':
             is_admin = True
 
-        if MarketService.check_uuid(auction_uuid=auction_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := MarketService.check_uuid(auction_uuid=auction_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         try:
             record = self.connectorDB.getAuctionWithMaxOffer(auction_uuid)
@@ -341,8 +341,8 @@ class MarketService:
         if 'celery_worker' not in hostname and 'admin_service' not in hostname:
             return {'response': 'You\'re not authorized'}, 403
         
-        if MarketService.check_uuid(auction_uuid=auction_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := MarketService.check_uuid(auction_uuid=auction_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         try:
             record = self.connectorDB.getAuction(auction_uuid)
@@ -415,8 +415,8 @@ class MarketService:
         except socket.herror:
             return {'response': 'unknown host'}, 500
 
-        if MarketService.check_uuid(player_uuid=player_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := MarketService.check_uuid(player_uuid=player_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         try:
             records = self.connectorDB.getAllAuctionsByPlayer(player_uuid)
