@@ -104,8 +104,8 @@ class TransactionService:
         return {'response': record}, 201
 
     def show_by_uuid(self, transaction_uuid):
-        if TransactionService.check_uuid(transaction_uuid=transaction_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := TransactionService.check_uuid(transaction_uuid=transaction_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
         
         try:
             record = self.connectorDB.getByUuid(transaction_uuid)
@@ -123,8 +123,8 @@ class TransactionService:
 
         auth_header = request.headers.get('Authorization')
 
-        if TransactionService.check_uuid(player_uuid=player_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := TransactionService.check_uuid(player_uuid=player_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         # get all the transactions by player_uuid (i.e. the player bought a gacha)
         try:
@@ -204,6 +204,9 @@ class TransactionService:
         return {'response': transactions}, 200
 
     def show_by_user(self, player_uuid, transaction_uuid):
+        if (res := TransactionService.check_uuid(player_uuid=player_uuid, transaction_uuid=transaction_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
+
         try:
             record = self.connectorDB.getByUuidAndPlayer(player_uuid, transaction_uuid)
         except ValueError as e:
