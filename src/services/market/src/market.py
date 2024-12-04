@@ -259,7 +259,7 @@ class MarketService:
             if offer <= 0:
                 return {'response': 'Bid must be positive'}, 400
 
-            record = self.connectorHTTP.getAuctionWithMaxOffer(auction_uuid)
+            record = self.connectorDB.getAuctionWithMaxOffer(auction_uuid)
 
             current_time = int(datetime.now(tz=timezone.utc).timestamp())
             final_time = int(record['expired_at'].timestamp())
