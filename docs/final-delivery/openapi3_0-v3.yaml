@@ -643,7 +643,7 @@ paths:
  /market:
    post: 
     summary: Insert a new auction
-    operationId: insert_auction
+    operationId: create_auction
     tags:
       - Market
     requestBody:
@@ -660,14 +660,14 @@ paths:
        '200':
          description: Gacha auctioned succesfully 
          content:
-            application/json:
+           application/json:
               schema:
-                type: object
-                properties:
-                  response:
-                    type: string
+               type: object
+               properties:
+                response:
+                   $ref: '#/components/schemas/Gacha'
        '400':
-          description: Invalid data
+          description: Bad Request
           content:
             application/json:
               schema:
@@ -675,29 +675,67 @@ paths:
                 properties:
                   response:
                     type: string
+              examples:
+                Starting price invalid:
+                  value:
+                    response: "Missing gacha uuid or starting price"
+                Gacha uuid or not starting price:
+                  value:
+                    response: "Starting price must be positive"
+                Gacha not owned:
+                  value:
+                    response: "You don't have this gacha"
+                Gacha not available:
+                  value:
+                    response: "You have only {tot} copies of gacha {name}"
        '401':
-          description: Unauthorized access
+         description: Unauthorized
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 response:
+                   type: string
+             examples:
+               not_logged:
+                 value:
+                   response: "You are not logged"
+       '403':
+           description: Forbidden
+           content:
+             application/json:
+               schema:
+                 type: object
+                 properties:
+                   response:
+                     type: string
+               examples:
+                 invalid_token:
+                   value:
+                     response: "Invalid Token"
+                 expired_token:
+                   value:
+                     response: "Expired Token"
    get:
      summary: View the all the active auction market
-     operationId: view_auction_market
+     operationId: show_all_auction
      tags:
        - Market
      responses:
        '200':
-         description: Auction market retrieved successfully
+         description: Auctions market retrieved successfully
          content:
             application/json:
                schema:
                 type: array
                 items:
                  $ref: '#/components/schemas/Auction'
-       '401':
-          description: Unauthorized access
 
  /market/{auction_uuid}:
    get:
-     summary: View an active specific auction market
-     operationId: view_specific_auction_market
+     summary: View a specific active auction market
+     operationId: show_one_auction
      tags:
        - Market
      parameters:
@@ -714,9 +752,18 @@ paths:
                schema:
                  $ref: '#/components/schemas/Auction'
        '400':
-         description: Invalid data
-       '401':
-         description: Unauthorized access
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                Invalid auction uuid:
+                  value:
+                    response: "Invalid auction uuid"
 
  /market/{auction_uuid}/bid:
    post:
@@ -737,16 +784,75 @@ paths:
            schema:
              type: object
              properties:
-               bidAmount:
+               offer:
                  type: integer
      responses:
        '200':
          description: Bid placed successfully
+         content:
+           application/json:
+              schema:
+               type: object
+               properties:
+                response:
+                   $ref: '#/components/schemas/Bid'
        '400':
-         description: Invalid bid (< 0 or < current_bid)
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                Auction expired:
+                  value:
+                    response: "Auction is closed"
+                Owner of the auction:
+                  value:
+                    response: "You're the owner of this auction"
+                Lower bid base price:
+                  value:
+                    response: "Offer must be higher than base price"
+                Lower bid cur rent price:
+                  value:
+                    response: "Offer must be higher than current price"
+                Negative bid:
+                  value:
+                    response: "Bid must be positive"
+       '401':
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    response:
+                      type: string
+                examples:
+                  Not logged:
+                    value:
+                      response: "You are not logged"
+       '403':
+             description: Forbidden
+             content:
+               application/json:
+                 schema:
+                   type: object
+                   properties:
+                     response:
+                       type: string
+                 examples:
+                   Invalid token:
+                     value:
+                       response: "Invalid Token"
+                   Expired token:
+                     value:
+                       response: "Expired Token"
 
  /market/{auction_uuid}/close:
-   post:
+  post:
      summary: Player can close an auction if no one is already placed a bid
      operationId: close_auction
      tags:
@@ -759,18 +865,77 @@ paths:
            type: string
      responses:
        '200':
-         description: Auction closed successfully
+         description: Auction closed
+         content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              example:
+                response: "Auction closed"
        '400':
-         description: That auction does not exists
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                Auction not found:
+                  value:
+                    response: "Auction not found"
+                Not Owner of the auction:
+                  value:
+                    response: "You're not the owner of this auction"
+                Presence of bid:
+                  value:
+                    response: "Not possible to close auction with bids"
+                Auction closed:
+                  value:
+                    response: "Auction is already closed"
+       '401':
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    response:
+                      type: string
+                examples:
+                  Not logged:
+                    value:
+                      response: "You are not logged"
+       '403':
+             description: Forbidden
+             content:
+               application/json:
+                 schema:
+                   type: object
+                   properties:
+                     response:
+                       type: string
+                 examples:
+                   Invalid token:
+                     value:
+                       response: "Invalid Token"
+                   Expired token:
+                     value:
+                       response: "Expired Token"
+        
  
  /admin/login:
    post:
+     summary: Login to the game system
+     operationId: admin_login
      tags:
        - Admin
-     summary: Login as admin
-     operationId: admin_login
      requestBody:
-       required: true
+       description: Login credentials
        content:
          application/json:
            schema:
@@ -780,24 +945,78 @@ paths:
                  type: string
                password:
                  type: string
-             required:
-               - username
-               - password
      responses:
-       200:
-         description: Successful login
-       401:
-         description: Invalid credentials
+       '200':
+         description: Login Successful
+         content:
+            application/json:
+              schema:
+               type: object
+               properties:
+                response:
+                   $ref: '#/components/schemas/TokenResponse'
+       '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              example:
+                response: "Missing Credentials"
+       '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                already_logged_in:
+                  value:
+                    response: "Already logged in"
+                invalid_credentials:
+                  value:
+                    response: "Invalid credentials"
 
  /admin/logout:
-   post:
+   delete:
+     summary: Logout from the system
+     operationId: admin_logout
      tags:
        - Admin
-     summary: Logout as admin
-     operationId: admin_logout
      responses:
-       200:
-         description: Successful logout
+       '200':
+          description: Logout Successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              example:
+                response: "Logout Successful"
+       '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                already_logged_out:
+                  value:
+                    response: "Already logged out"
+                not_logged:
+                  value:
+                    response: "You are not logged"
 
  /admin/users:
    get:
@@ -806,7 +1025,7 @@ paths:
      summary: Get all users' accounts
      operationId: users_account
      responses:
-       200:
+       '200':
          description: List of users
          content:
            application/json:
@@ -814,13 +1033,42 @@ paths:
                type: array
                items:
                  $ref: '#/components/schemas/UserProfile'
+       '401':
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    response:
+                      type: string
+                examples:
+                  Not logged:
+                    value:
+                      response: "You are not logged"
+       '403':
+             description: Forbidden
+             content:
+               application/json:
+                 schema:
+                   type: object
+                   properties:
+                     response:
+                       type: string
+                 examples:
+                   Invalid token:
+                     value:
+                       response: "Invalid Token"
+                   Expired token:
+                     value:
+                       response: "Expired Token"
 
  /admin/users/{user_uuid}:
    get:
      tags:
        - Admin
      summary: Get details of a specific user
-     operationId: get_specific_user_account
+     operationId: user
      parameters:
        - name: user_uuid
          in: path
@@ -828,19 +1076,59 @@ paths:
          schema:
            type: string
      responses:
-       200:
+       '200':
          description: User profile details
          content:
            application/json:
              schema:
                $ref: '#/components/schemas/UserProfile'
-       404:
-         description: User not found
+       '400':
+         description: Bad Request
+         content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                User not found:
+                  value:
+                    response: "Auction not found"
+       '401':
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    response:
+                      type: string
+                examples:
+                  Not logged:
+                    value:
+                      response: "You are not logged"
+       '403':
+             description: Forbidden
+             content:
+               application/json:
+                 schema:
+                   type: object
+                   properties:
+                     response:
+                       type: string
+                 examples:
+                   Invalid token:
+                     value:
+                       response: "Invalid Token"
+                   Expired token:
+                     value:
+                       response: "Expired Token"
    put:
      tags:
        - Admin
      summary: Modify a specific user account
-     operationId: modify_specific_user_account
+     operationId: user_modify
      parameters:
        - name: user_uuid
          in: path
@@ -854,15 +1142,51 @@ paths:
            schema:
              $ref: '#/components/schemas/UserProfile'
      responses:
-       200:
+       '200':
          description: User profile updated
-       404:
-         description: User not found
+         content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              example:
+                response: "User updated Successfully!"
+       '401':
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    response:
+                      type: string
+                examples:
+                  Not logged:
+                    value:
+                      response: "You are not logged"
+       '403':
+             description: Forbidden
+             content:
+               application/json:
+                 schema:
+                   type: object
+                   properties:
+                     response:
+                       type: string
+                 examples:
+                   Invalid token:
+                     value:
+                       response: "Invalid Token"
+                   Expired token:
+                     value:
+                       response: "Expired Token"
    delete:
      tags:
        - Admin
-     summary: delete a specific user account
-     operationId: delete_user
+     summary: Modify a specific user account
+     operationId: user_delete_admin
      parameters:
        - name: user_uuid
          in: path
@@ -870,17 +1194,53 @@ paths:
          schema:
            type: string
      responses:
-       200:
-         description: User profile deleted
-       404:
-         description: User not found
+       '200':
+         description: User profile updated
+         content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              example:
+                response: "User eliminated succesfully!"
+       '401':
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    response:
+                      type: string
+                examples:
+                  Not logged:
+                    value:
+                      response: "You are not logged"
+       '403':
+             description: Forbidden
+             content:
+               application/json:
+                 schema:
+                   type: object
+                   properties:
+                     response:
+                       type: string
+                 examples:
+                   Invalid token:
+                     value:
+                       response: "Invalid Token"
+                   Expired token:
+                     value:
+                       response: "Expired Token"
 
- /admin/users/transactions/{user_uuid}:
+ /admin/transactions/{user_uuid}:
    get:
      tags:
        - Admin
      summary: Get transaction history of a specific user (incoming and outgoing)
-     operationId: user_transaction_history
+     operationId: transaction_all_admin
      parameters:
        - name: user_uuid
          in: path
@@ -888,14 +1248,46 @@ paths:
          schema:
            type: string
      responses:
-       200:
-         description: Transaction history of the user 
+       '200':
+          description: Success 
+          content:
+             application/json:
+               schema:
+                type: object
+                properties:
+                 response:
+                   type: array
+                   items:
+                    $ref: '#/components/schemas/Transaction'
+       '401':
+         description: Unauthorized
          content:
            application/json:
-             schema: 
-                 type: array
-                 items:
-                   $ref: '#/components/schemas/Transaction'
+             schema:
+               type: object
+               properties:
+                 response:
+                   type: string
+             examples:
+               not_logged:
+                 value:
+                   response: "You are not logged"
+       '403':
+         description: Forbidden
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 response:
+                   type: string
+             examples:
+               invalid_token:
+                 value:
+                   response: "Invalid Token"
+               expired_token:
+                 value:
+                   response: "Expired Token"
 
  /admin/collection:
    post:
@@ -910,15 +1302,70 @@ paths:
            schema:
              $ref: '#/components/schemas/Gacha'
      responses:
-       200:
-         description: Gacha added successfully
+       '200':
+         description: Gacha added 
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/Gacha'
+       '400':
+         description: Bad Request
+         content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                Image not found:
+                  value:
+                    response: "gacha image not found"
+                Filename not found:
+                  value:
+                    response: "filename not found"
+                invalid image:
+                  value:
+                    response: "invalid image"
+                name, description or rarity missing:
+                  value:
+                    response: "Missing data"
+       '401':
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    response:
+                      type: string
+                examples:
+                  Not logged:
+                    value:
+                      response: "You are not logged"
+       '403':
+             description: Forbidden
+             content:
+               application/json:
+                 schema:
+                   type: object
+                   properties:
+                     response:
+                       type: string
+                 examples:
+                   Invalid token:
+                     value:
+                       response: "Invalid Token"
+                   Expired token:
+                     value:
+                       response: "Expired Token"
 
  /admin/collection/{gacha_uuid}:
    put:
      tags:
        - Admin
-     summary: Modify a specific gacha
-     operationId: modify_gacha_spec
+     summary: modify a gacha from the collection
+     operationId: modify_gacha
      parameters:
        - name: gacha_uuid
          in: path
@@ -932,15 +1379,59 @@ paths:
            schema:
              $ref: '#/components/schemas/Gacha'
      responses:
-       200:
-         description: Gacha updated
-       404:
-         description: Gacha not found
+       '200':
+         description: Gacha modified 
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/Gacha'
+       '400':
+         description: Bad Request
+         content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                Filename not found:
+                  value:
+                    response: "filename not found"
+       '401':
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    response:
+                      type: string
+                examples:
+                  Not logged:
+                    value:
+                      response: "You are not logged"
+       '403':
+             description: Forbidden
+             content:
+               application/json:
+                 schema:
+                   type: object
+                   properties:
+                     response:
+                       type: string
+                 examples:
+                   Invalid token:
+                     value:
+                       response: "Invalid Token"
+                   Expired token:
+                     value:
+                       response: "Expired Token"
    delete:
      tags:
        - Admin
-     summary: delete a gacha from the collection
-     operationId: remove_gacha
+     summary: Delete a gacha from the collection
+     operationId: delete_gacha
      parameters:
        - name: gacha_uuid
          in: path
@@ -948,38 +1439,105 @@ paths:
          schema:
            type: string
      responses:
-       200:
+       '200':
          description: Gacha deleted
-       404:
-         description: Gacha not found
+         content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              example:
+                response: "Gacha deleted"
+       '400':
+         description: Bad Request
+         content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                gacha not found:
+                  value:
+                    response: "gacha uuid not found"
+       '401':
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    response:
+                      type: string
+                examples:
+                  Not logged:
+                    value:
+                      response: "You are not logged"
+       '403':
+             description: Forbidden
+             content:
+               application/json:
+                 schema:
+                   type: object
+                   properties:
+                     response:
+                       type: string
+                 examples:
+                   Invalid token:
+                     value:
+                       response: "Invalid Token"
+                   Expired token:
+                     value:
+                       response: "Expired Token"
  /admin/market:
   get:
+     summary: View the all the active and close auctions
+     operationId: show_all_auction_admin
      tags:
        - Admin
-     summary: Get all active and closed auctions
      responses:
-       200:
-         description: List of auctions
+       '200':
+         description: Auctions market retrieved successfully
          content:
-           application/json:
-             schema:
-               type: array
-               items:
+            application/json:
+               schema:
+                type: array
+                items:
                  $ref: '#/components/schemas/Auction'
+       '401':
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    response:
+                      type: string
+                examples:
+                  Not logged:
+                    value:
+                      response: "You are not logged"
+       '403':
+             description: Forbidden
+             content:
+               application/json:
+                 schema:
+                   type: object
+                   properties:
+                     response:
+                       type: string
+                 examples:
+                   Invalid token:
+                     value:
+                       response: "Invalid Token"
+                   Expired token:
+                     value:
+                       response: "Expired Token"
+
  /admin/market/{auction_uuid}:
-  put:
-     tags:
-       - Admin
-     summary: Modify a new auction
-     requestBody:
-       required: true
-       content:
-         application/json:
-           schema:
-             $ref: '#/components/schemas/Auction'
-     responses:
-       200:
-         description: Auction added successfully
   get:
      tags:
        - Admin
@@ -991,17 +1549,48 @@ paths:
          schema:
            type: string
      responses:
-       200:
+       '200':
          description: auction
          content:
            application/json:
              schema:
                  $ref: '#/components/schemas/Auction'
- /admin/close/{auction_uuid}:
+       '401':
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    response:
+                      type: string
+                examples:
+                  Not logged:
+                    value:
+                      response: "You are not logged"
+       '403':
+             description: Forbidden
+             content:
+               application/json:
+                 schema:
+                   type: object
+                   properties:
+                     response:
+                       type: string
+                 examples:
+                   Invalid token:
+                     value:
+                       response: "Invalid Token"
+                   Expired token:
+                     value:
+                       response: "Expired Token"
+
+ /admin/{auction_uuid}/close:
   put:
+     summary: Admin can close an auction 
+     operationId: close_auction_admin
      tags:
        - Admin
-     summary: set the false flag to the closed parameter of an auction (close the auction)
      parameters:
        - name: auction_uuid
          in: path
@@ -1009,13 +1598,146 @@ paths:
          schema:
            type: string
      responses:
-       200:
-         description: Auction closed successfully
+       '200':
+         description: Auction closed
+         content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              example:
+                response: "Auction closed"
+       '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                Auction not found:
+                  value:
+                    response: "Auction not found"
+                Auction closed:
+                  value:
+                    response: "Auction is already closed"
+       '401':
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    response:
+                      type: string
+                examples:
+                  Not logged:
+                    value:
+                      response: "You are not logged"
+       '403':
+             description: Forbidden
+             content:
+               application/json:
+                 schema:
+                   type: object
+                   properties:
+                     response:
+                       type: string
+                 examples:
+                   Invalid token:
+                     value:
+                       response: "Invalid Token"
+                   Expired token:
+                     value:
+                       response: "Expired Token"
+
+ /admin/payment/{auction_uuid}:
+   post:
+    summary: Admin can force a payment for an auction 
+    operationId: payment_auction_admin
+    tags:
+      - Admin
+    parameters:
+      - name: auction_uuid
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Auction payed
+        content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 response:
+                   type: object
+      '400':
+         description: Bad Request
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 response:
+                   type: string
+             examples:
+               Auction not found:
+                 value:
+                   response: "Auction not found"
+               Auction closed:
+                 value:
+                   response: "Auction is already closed"
+               No buyers with money:
+                 value:
+                   response: "No buyers with sufficient funds"
+               No bids: 
+                 value:
+                   response: "There are no bids for this auction"
+      '401':
+           description: Unauthorized
+           content:
+             application/json:
+               schema:
+                 type: object
+                 properties:
+                   response:
+                     type: string
+               examples:
+                 Not logged:
+                   value:
+                     response: "You are not logged"
+      '403':
+            description: Forbidden
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    response:
+                      type: string
+                examples:
+                  Invalid token:
+                    value:
+                      response: "Invalid Token"
+                  Expired token:
+                    value:
+                      response: "Expired Token"
+                  Cannot be call:
+                    value:
+                      response: "You're not authorized"
+                
 
 components:
  schemas:
    UserProfile:
      type: object
+     description: Player of the game
      properties:
        user_uuid:
          type: string
@@ -1028,56 +1750,67 @@ components:
          description: In game currency of the User (default 0) 
    Transaction:
      type: object
+     description: A report about the trades for gachas
      properties:
        transaction_uuid:
          type: string
+         description: Unique identifier of the transaction
        price:
          type: number
+         description: Amount of currency payd for the transaction
        created_at:
          type: string
+         description: Date/Time of the creation of the transaction
        uuid_player:
          type: string
+         description: Identifier of the player that won the auction
        uuid_auction:
          type: string
+         description: Identifier of the auction associated to that transaction
    Gacha:
      type: object
+     description: Collectionables of the game
      properties:
        gacha_uuid:
          type: string
+         description: Unique identifier of the gacha
        name:
          type: string
+         description: Common name of the gacha
        rarity:
-         type: object
-         properties:
-           uuid:
-            type: string
-           name:
-            type: string
-           symbol:
-            type: string
-           percentage:
-            type: string
-       description:
          type: string
+         description: Rarity of the gacha
+       descriptions:
+         type: string
+         description: Description of the gacha
        image_path:
          type: string
+         description: Path of the gacha image
    Auction:
      type: object
+     description: A method to exchange gacha in game
      properties:
        auction_uuid:
         type: string
+        description: Unique identifier of the auction
        base_price:
         type: number
-       Gacha:
-        $ref: '#/components/schemas/Gacha'
+        description: Starting price of the auction
+       gacha_uuid:
+        type: string
+        description: Identifier of the Gacha subject of the auction
        user_uuid:
         type: string
+        description: Identifier of the player that created the auction
        expired_at:
         type: string
+        description: Expiration of the auction in Date/Time format
        closed:
         type: string
+        description: Status of the auction
    TokenResponse:
        type: object
+       description: Oauth2 response token endpoint
        properties:
          access_token:
            type: string
@@ -1091,4 +1824,36 @@ components:
          token_type:
            type: string
            description: The type of token, typically "Bearer"
-    
+   Rarity:
+      type: object
+      description: Rarity of the gacha
+      properties:
+        uuid:
+         type: string
+         description: Unique identifier of the rarity
+        name:
+         type: string
+         description: Common name of the rarity
+        symbol:
+         type: string
+         description: Symbol of the rarity
+        percentage:
+         type: string
+         description: Percentual applied by the roll to that rarity
+   Bid:
+      type: object
+      description: Response of a bid
+      properties:
+        auction__uuid:
+         type: string
+         description: Identifier of the auction bidded
+        closed:
+         type: string
+         description: Status of the auction bidded
+        offer:
+         type: string
+         description: Current offer of the auction (current bid made)
+        player_uuid:
+         type: string
+         description: Identifier of the player who made the bid
+ 
