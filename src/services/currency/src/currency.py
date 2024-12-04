@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, abort, render_template
+from flask import Flask, request, jsonify, abort, render_template, make_response
 from functools import wraps
 import requests
 import jwt
@@ -65,8 +65,8 @@ def index():
 @login_required
 def buy(auth_uuid):
     amount = request.json.get('purchase')
-
-    if amount <= 0:
+    
+    if not amount or amount <= 0:
         return jsonify({'response': 'Invalid purchase'}), 400
     
     amount = {'amount': amount}
@@ -76,7 +76,10 @@ def buy(auth_uuid):
     except Exception as e:
         return jsonify({'response': str(e)}), 500
     
-    return r.text, r.status_code
+    response = make_response(r.text, r.status_code)
+    response.headers['Content-Type'] = 'application/json'
+    
+    return response
 
 
 if __name__ == '__main__':
