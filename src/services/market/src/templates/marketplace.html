@@ -12,6 +12,19 @@
             <a class="navbar-item" href="https://ase.localhost/login">
                 <strong>Home</strong>
             </a>
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMenu">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+        </div>
+
+        <div id="navbarMenu" class="navbar-menu">
+            <div class="navbar-end">
+                <div class="navbar-item">
+                    <a href="https://ase.localhost/login" class="button is-light">Login</a>
+                </div>
+            </div>
         </div>
     </nav>
 
@@ -30,16 +43,45 @@
                             <p>Owner: {{auction.player_username}}</p>
                         </div>
                         <footer class="card-footer">
-                            <a href="https://ase.localhost/market/{{auction.auction_uuid}}" class="card-footer-item">View Details</a>
+                            <a id="viewDetailsBtn" data-gachaurl="https://ase.localhost/market/{{auction.auction_uuid}}" class="card-footer-item">View Details</a>
                         </footer>
                     </div>
                 </div>
                 {% endfor %}
             </div>
-        <div class="has-text-centered">
-            <a href="/market/new_auction" class="button is-primary is-large">Create New Auction</a>
-        </div>
         </div>
     </section>
+    <script>
+            (document.querySelectorAll('a#viewDetailsBtn.card-footer-item') || []).forEach(a_tag => {
+                a_tag.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    let url = event.target.dataset.gachaurl;
+                    const token = localStorage.getItem('authorization');
+                    const headers = {
+                        'Content-Type': 'application/json',
+                        'Accept': 'text/html'
+                    };
+                    if (token) {
+                        headers['Authorization'] = token;
+                    }
+                
+                    const options = {
+                        method: 'GET',
+                        headers: headers
+                    };
+                
+                    const request = new Request(url, options);
+                
+                    fetch(request)
+                        .then(response => response.text())
+                        .then(html => {
+                            document.open();
+                            document.write(html);
+                            document.close();
+                        })
+                        .catch(error => console.error('Error loading page:', error));
+                    });
+            });
+    </script>
 </body>
 </html>
