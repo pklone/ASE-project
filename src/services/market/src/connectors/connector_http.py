@@ -50,6 +50,9 @@ class MarketConnectorHTTP:
 
     def getPlayerCollection(self, player_uuid):
         url = MarketConnectorHTTP.URL_PLAYER_COLLECTION.format(player_uuid=player_uuid)
+        headers = {
+            'Accept': 'application/json'
+        }
 
         return self.__req(requests.get, url, headers=headers)
 

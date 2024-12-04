@@ -119,7 +119,7 @@ class AuthenticationService:
 
             r = self.connectorHTTP.getPlayerWithPasswordHashByUsername(username)
             if r['http_code'] != 200:
-                return {'response': r['http_body']['response']}, 500
+                return {'response': 'Invalid credentials'}, 401
 
             player = r['http_body']['response']
 

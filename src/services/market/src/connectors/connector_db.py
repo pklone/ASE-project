@@ -101,7 +101,7 @@ class MarketConnectorDB:
                     (id, uuid, base_price, gacha_uuid, user_uuid, expired_at) 
                 VALUES 
                     (DEFAULT, %s, %s, %s, %s, %s)''', 
-            [auction_uuid, starting_price, gacha_uuid, auth_uuid, expired_at])
+            [auction_uuid, starting_price, gacha_uuid, player_uuid, expired_at])
 
             cursor.execute('''
                 SELECT id, uuid, base_price, gacha_uuid, user_uuid, expired_at 
@@ -260,7 +260,7 @@ class MarketConnectorDB:
             self.conn.rollback()
             raise Exception('Error: failed query')
 
-        return record
+        return 
             
 
 
