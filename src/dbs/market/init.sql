@@ -17,13 +17,13 @@ CREATE TABLE bid (
     offer            INTEGER NOT NULL
 );
  
-INSERT INTO auction (id, uuid, base_price, gacha_uuid, user_uuid, expired_at) VALUES 
-    (1, '71520f05-80c5-4cb1-b05a-a9642f9aaaaa', 200, '09907f76-9b0f-4270-84a3-e9780b164ac4', '71520f05-80c5-4cb1-b05a-a9642f9ae44d', CURRENT_TIMESTAMP + INTERVAL '1 day'),
-    (2, '71520f05-80c5-4cb1-b05a-a9642f9bbbbb', 250, 'c6cc4f1f-f5f8-4e76-a446-b01b48b10575', '71520f05-80c5-4cb1-b05a-a9642f9ae44d', CURRENT_TIMESTAMP + INTERVAL '1 day');
+INSERT INTO auction (id, uuid, base_price, gacha_uuid, user_uuid, expired_at, closed) VALUES 
+    (1, '71520f05-80c5-4cb1-b05a-a9642f9aaaaa', 200, '09907f76-9b0f-4270-84a3-e9780b164ac4', '71520f05-80c5-4cb1-b05a-a9642f9ae44d', CURRENT_TIMESTAMP + INTERVAL '1 day', FALSE),
+    (2, '71520f05-80c5-4cb1-b05a-a9642f9bbbbb', 250, 'c6cc4f1f-f5f8-4e76-a446-b01b48b10575', '71520f05-80c5-4cb1-b05a-a9642f9ae44d', CURRENT_TIMESTAMP + INTERVAL '1 day', TRUE),
+    (3, '71520f05-80c5-4cb1-b05a-a9642f9ccccc', 300, 'c6cc4f1f-f5f8-4e76-a446-b01b48b10575', '71520f05-80c5-4cb1-b05a-a9642f9ae222', CURRENT_TIMESTAMP + INTERVAL '1 day', FALSE);
 
 INSERT INTO bid (id, auction_uuid, user_uuid, offer) VALUES
-    (1, '71520f05-80c5-4cb1-b05a-a9642f9aaaaa', '71520f05-80c5-4cb1-b05a-a9642f9ae44d', 300),
-    (2, '71520f05-80c5-4cb1-b05a-a9642f9bbbbb', '71520f05-80c5-4cb1-b05a-a9642f9ae44d', 350);
+    (1, '71520f05-80c5-4cb1-b05a-a9642f9aaaaa', '71520f05-80c5-4cb1-b05a-a9642f9ae44d', 300);
 
 SELECT setval('auction_id_seq', (SELECT max(id) FROM auction));
 SELECT setval('bid_id_seq', (SELECT max(id) FROM bid));

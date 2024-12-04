@@ -26,3 +26,6 @@ CREATE TRIGGER negative_price
     EXECUTE FUNCTION check_negative_price();
 
 SELECT setval('transaction_id_seq', (SELECT max(id) FROM transaction));
+
+INSERT INTO transaction (id, uuid, price, created_at, uuid_player, uuid_auction) VALUES 
+    (1, '71420g16-80c5-4ca3-b50a-a9642f9btegs', 700, 11112011, '71520f05-80c5-4cb1-b05a-a9642f9ae222', '71520f05-80c5-4cb1-b05a-a9642f9bbbbb');
