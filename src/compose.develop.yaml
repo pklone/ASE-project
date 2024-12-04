@@ -160,7 +160,7 @@ services:
     env_file:
       - path: ./services/player/.env
     environment:
-      DEPLOYMENT_MODE: development
+      DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:?undefined development mode}
     ports:
       - "127.0.0.1:8080:5000"
     depends_on:
@@ -192,7 +192,7 @@ services:
     env_file:
       - path: ./services/authentication/.env
     environment:
-      DEPLOYMENT_MODE: development
+      DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:?undefined development mode}
     ports:
       - "127.0.0.1:8081:5000"
     depends_on:
@@ -253,7 +253,7 @@ services:
     env_file:
       - path: ./services/account/.env
     environment:
-      DEPLOYMENT_MODE: development
+      DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:?undefined development mode}
     ports:
       - "127.0.0.1:8083:5000"
     networks:
@@ -281,7 +281,7 @@ services:
     env_file:
       - path: ./services/currency/.env
     environment:
-      DEPLOYMENT_MODE: development
+      DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:?undefined development mode}
     ports:
       - "127.0.0.1:8088:5000"
     networks:
@@ -309,7 +309,7 @@ services:
     env_file:
       - path: ./services/admin/.env
     environment:
-      DEPLOYMENT_MODE: development
+      DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:?undefined development mode}
     ports:
       - "127.0.0.1:8085:5000"
     networks:
@@ -337,7 +337,7 @@ services:
     env_file:
       - path: ./services/market/.env
     environment:
-      DEPLOYMENT_MODE: development
+      DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:?undefined development mode}
     ports:
       - "127.0.0.1:8086:5000"
     depends_on:
@@ -373,7 +373,7 @@ services:
     env_file:
       - path: ./services/transaction/.env
     environment:
-      DEPLOYMENT_MODE: development
+      DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:?undefined development mode}
     ports:
       - "127.0.0.1:8087:5000"
     depends_on:
