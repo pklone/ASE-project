@@ -29,41 +29,13 @@ class AuthenticationService:
     def __init_routes(self):
         self.app.add_url_rule('/login',       endpoint='index',       view_func=self.index,       methods=['GET'])
         self.app.add_url_rule('/admin_login', endpoint='admin_login', view_func=self.admin_login, methods=['POST'])
-        self.app.add_url_rule('/',            endpoint='login',       view_func=self.login,       methods=['POST'])
+        self.app.add_url_rule('/login',       endpoint='login',       view_func=self.login,       methods=['POST'])
         self.app.add_url_rule('/logout',      endpoint='logout',      view_func=self.logout,      methods=['DELETE'])
         self.app.register_error_handler(werkzeug.exceptions.NotFound, AuthenticationService.page_not_found)
 
     # util functions
     def page_not_found(error):
         return {'response': "page not found"}, 404
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            encoded_jwt = request.cookies.get('session')
-
-            if not encoded_jwt:
-                return {'response': 'You\'re not logged'}, 401
-
-            try:
-                options = {
-                    'require': ['exp'], 
-                    'verify_signature': True, 
-                    'verify_exp': True
-                }
-
-                decoded_jwt = jwt.decode(encoded_jwt, args[0].jwt_secret, algorithms=['HS256'], options=options)
-            except jwt.ExpiredSignatureError:
-                return {'response': 'Expired token'}, 403
-            except jwt.InvalidTokenError:
-                return {'response': 'Invalid token'}, 403
-
-            if 'uuid' not in decoded_jwt:
-                return {'response': 'Try later'}, 403
-
-            additional = {'auth_uuid': decoded_jwt['uuid']}
-
-            return f(*args, **kwargs, **additional)
-
-        return decorated_function
 
     # APIs
     def index(self):
@@ -208,12 +180,8 @@ class AuthenticationService:
 
         if not encoded_jwt:
             return {'response': 'You are not logged'}, 401
-        
-        encoded_jwt = encoded_jwt.split(' ')[1]
 
-        response = make_response(jsonify({'response': 'Logout successful'}))
-
-        return response, 200
+        return {'response': 'Logout successful'}, 200
 
     # static factory methods
     def development(db_name, db_user, db_password, db_host, db_port, db_sslmode, cert_path, key_path, jwt_secret):
