@@ -9,8 +9,8 @@
 <body>
     <nav class="navbar is-light" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
-            <a class="navbar-item" href="/market">
-                <strong>Marketplace</strong>
+            <a class="navbar-item" href="https://ase.localhost/login">
+                <strong>Home</strong>
             </a>
         </div>
     </nav>
@@ -23,7 +23,7 @@
                 <p><strong>Rarity:</strong> {{auction.Gacha.rarity}}</p>
                 <img src="{{auction.Gacha.image_path}}" alt="Gacha Image" style='width: 40%'>
                 <p><strong>Base Price:</strong> {{auction.base_price}}</p>
-                <p><strong>Current Offer:</strong> {{auction.actual_offer}}</p>
+                <p id='offerTag'><strong>Current Offer:</strong> {{auction.actual_offer}}</p>
                 <p><strong>Owner:</strong> {{auction.player_username}}</p>
                 <p><strong>Expiration:</strong> {{auction.expired_at}}</p>
             </div>
@@ -51,6 +51,20 @@
     </section>
 
     <script>
+        function getToken() {
+            const storedToken = localStorage.getItem('authorization');
+            if (!storedToken) {
+                window.location.href = '/login';
+            }
+            return storedToken;
+        }
+
+        let token;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            token = getToken();
+        });
+        
         document.addEventListener('DOMContentLoaded', () => {
             const form = document.querySelector('#bidForm'); 
             const notification = document.getElementById('notification');
@@ -67,24 +81,42 @@
                     }),
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        'Authorization': token,
                     },
                 });
         
                 const data = await response.json(); 
-                console.log(data); 
         
                 if (response.ok) {
                     notification.textContent = 'Bid placed successfully!';
                     notification.classList.remove('is-hidden'); 
-                    setTimeout(() => {
-                        notification.classList.add('is-hidden');
-                        window.location.reload();
-                    }, 3000);
                 } else {
                     alert(data.response);
                 }
             });
+            setInterval(() => {
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                };
+                if (token) {
+                    headers['Authorization'] = token;
+                }
+
+                const options = {
+                    method: 'GET',
+                    headers: headers
+                };
+                
+                const request = new Request(`/market/${auctionUuid}`, options);
+
+                fetch(request)
+                    .then(response => response.json())
+                    .then(html => {
+                        document.getElementById('offerTag').innerHTML = `<strong>Current Offer:</strong> ${html.response.actual_offer}`;
+                    })
+                    .catch(error => console.error('Error loading page:', error));
+            }, 3000);
         });
                
     </script>
