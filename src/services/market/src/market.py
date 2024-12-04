@@ -141,6 +141,7 @@ def show_all():
                 'base_price': record['base_price'],
                 'Gacha': gacha_info, 
                 'player_username': player_username,
+                'user_uuid': record['user_uuid'],
                 'expired_at': expire.strftime('%d/%m/%Y %H:%M:%S %Z'),
                 'closed': record['closed']
             }

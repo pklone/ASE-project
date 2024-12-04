@@ -140,6 +140,8 @@ def login():
 
     if player == {} or not bcrypt.checkpw(password.encode(), player['password_hash'].encode()):
         return jsonify({'response': 'Invalid credentials'}), 401
+    elif player["active"] == False:
+        return jsonify({'response': 'Account is not active'}), 401
 
     expire = datetime.now(tz=timezone.utc) + timedelta(seconds=3600)
     time = datetime.now(tz=timezone.utc)

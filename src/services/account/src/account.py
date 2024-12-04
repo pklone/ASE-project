@@ -92,10 +92,21 @@ def create():
 @app.route('/user', methods=['DELETE'])
 @login_required
 def remove_my_user(auth_uuid):
+
+    try:
+        response = circuitbreaker.call(requests.get, f'https://market_service:5000/market', headers={'Accept': 'application/json'},  verify=False)
+    except Exception as e:  
+        return jsonify({'response': str(e)}), 500
+    
+    for auction in response.json()['response']:
+        if auction['user_uuid'] == auth_uuid and not auction['closed']:
+            return jsonify({'response': 'You have an active auction'}), 400
+
     try:
         r = circuitbreaker.call(requests.delete, f'https://player_service:5000/uuid/{auth_uuid}', verify=False)
     except Exception as e:  
         return jsonify({'response': str(e)}), 500
+        
 
     return r.text, r.status_code
 

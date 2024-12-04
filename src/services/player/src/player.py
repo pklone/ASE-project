@@ -34,7 +34,7 @@ def show_all():
         )
 
         cursor = conn.cursor()
-        cursor.execute('SELECT id, uuid, username, password_hash, wallet from player')
+        cursor.execute('SELECT id, uuid, username, password_hash, wallet, active from player')
         records = cursor.fetchall()
         cursor.close()
         conn.close()
@@ -87,7 +87,7 @@ def show_by_uuid(player_uuid):
         )
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute('SELECT id, uuid, username, wallet FROM player WHERE uuid = %s', 
+        cursor.execute('SELECT id, uuid, username, wallet, active FROM player WHERE uuid = %s', 
             [player_uuid])
         record = cursor.fetchone()
 
@@ -249,9 +249,11 @@ def remove_by_uuid(player_uuid):
             sslmode=POSTGRES_SSLMODE
         )
 
+        random_name = str(uuid.uuid4()) + 'DELETED'
+
         cursor = conn.cursor()
-        cursor.execute('DELETE FROM player WHERE uuid = %s', 
-            [player_uuid])
+        cursor.execute('UPDATE player SET active = false, wallet = 0, username= %s WHERE uuid = %s', 
+            [random_name, player_uuid])
         conn.commit()
         cursor.close()
         conn.close()

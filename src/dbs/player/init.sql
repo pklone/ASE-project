@@ -4,6 +4,7 @@ CREATE TABLE player (
     username         VARCHAR NOT NULL,
     password_hash    VARCHAR NOT NULL,
     wallet           INTEGER NOT NULL DEFAULT 0,
+    active           BOOLEAN NOT NULL DEFAULT TRUE,
 
     UNIQUE(uuid),
     UNIQUE(username)
@@ -24,11 +25,11 @@ CREATE TRIGGER negative_wallet
     FOR EACH ROW
     EXECUTE FUNCTION check_negative_wallet();
 
-INSERT INTO player (id, uuid, username, password_hash, wallet) VALUES 
-    (1, '71520f05-80c5-4cb1-b05a-a9642f9ae44d', 'test', '$2b$12$Z93LSBi0EVtyqVWnZB7tPu8ksgXbrFPd8YjI1haMzGl7KBLrbaR6G', 1000), -- psw: test
-    (2, '71520f05-80c5-4cb1-b05a-a9642f9ae111', 'test2', '$2b$12$Z93LSBi0EVtyqVWnZB7tPu8ksgXbrFPd8YjI1haMzGl7KBLrbaR6G', 200), -- psw: test
-    (3, '71520f05-80c5-4cb1-b05a-a9642f9ae222', 'test3', '$2b$12$Z93LSBi0EVtyqVWnZB7tPu8ksgXbrFPd8YjI1haMzGl7KBLrbaR6G', 800), -- psw: test
-    (4, '71520f05-80c5-4cb1-b05a-a9642f9ae333', 'test4', '$2b$12$Z93LSBi0EVtyqVWnZB7tPu8ksgXbrFPd8YjI1haMzGl7KBLrbaR6G', 500), -- psw: test
-    (5, '71520f05-80c5-4cb1-b05a-a9642f9ae444', 'test5', '$2b$12$Z93LSBi0EVtyqVWnZB7tPu8ksgXbrFPd8YjI1haMzGl7KBLrbaR6G', 500); -- psw: test
+INSERT INTO player (id, uuid, username, password_hash, wallet, active) VALUES 
+    (1, '71520f05-80c5-4cb1-b05a-a9642f9ae44d', 'test', '$2b$12$Z93LSBi0EVtyqVWnZB7tPu8ksgXbrFPd8YjI1haMzGl7KBLrbaR6G', 1000, TRUE), -- psw: test
+    (2, '71520f05-80c5-4cb1-b05a-a9642f9ae111', 'test2', '$2b$12$Z93LSBi0EVtyqVWnZB7tPu8ksgXbrFPd8YjI1haMzGl7KBLrbaR6G', 200, TRUE), -- psw: test
+    (3, '71520f05-80c5-4cb1-b05a-a9642f9ae222', 'test3', '$2b$12$Z93LSBi0EVtyqVWnZB7tPu8ksgXbrFPd8YjI1haMzGl7KBLrbaR6G', 800, TRUE), -- psw: test
+    (4, '71520f05-80c5-4cb1-b05a-a9642f9ae333', 'test4', '$2b$12$Z93LSBi0EVtyqVWnZB7tPu8ksgXbrFPd8YjI1haMzGl7KBLrbaR6G', 500, TRUE), -- psw: test
+    (5, '71520f05-80c5-4cb1-b05a-a9642f9ae444', 'test5', '$2b$12$Z93LSBi0EVtyqVWnZB7tPu8ksgXbrFPd8YjI1haMzGl7KBLrbaR6G', 500, TRUE); -- psw: test
 
 SELECT setval('player_id_seq', (SELECT max(id) FROM player));
