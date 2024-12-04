@@ -9,7 +9,7 @@
 <body>
     <nav class="navbar is-light" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
-            <a class="navbar-item" href="/login">
+            <a class="navbar-item" href="#">
                 <strong>EzGacha</strong>
             </a>
             <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMenu">
@@ -19,29 +19,28 @@
             </a>
         </div>
         <div class="navbar-end px-2">  
-            <div class="navbar-item has-dropdown is-hoverable">
-              <a class="navbar-link">
-                Menu
-              </a>
-          
+
+            <a id="loginBtn" class="navbar-item">Login</a>
+            <a id="signUpBtn" class="navbar-item">Sign Up</a>
+
+            <div class="navbar-item has-dropdown is-hoverable is-hidden" id='items-dropdown'>
+              <a class="navbar-link">Menu</a>
               <div class="navbar-dropdown is-right">
-                <a href="/login" class="navbar-item">Login</a>
-                <a href="/user" class="navbar-item">Sign Up</a>
-                <a id="logoutBtn" class="navbar-item">Logout</a>
                 <a id="currencyBtn" class="navbar-item">Currency</a>
-                <a href="/currency/buy" class="navbar-item">Buy Currency</a>
-                <a href="/user/transactions" class="navbar-item">Transactions</a>
-                <a href="/market" class="navbar-item">Marketplace</a>
-                <a href="/collection" class="navbar-item">Collection</a>
-                <a href="/roll" class="navbar-item">Roll</a>
-                <a href="/user/collection" class="navbar-item">my collection</a>
+                <a id="buyCurrencyBtn" class="navbar-item">Buy Currency</a>
+                <a id="myCollectionBtn" class="navbar-item">My Collection</a>
+                <a id="transactionsBtn" class="navbar-item">Transactions</a>
+                <a id="marketplaceBtn" class="navbar-item">Marketplace</a>
+                <a id="collectionBtn" class="navbar-item">System collection</a>
+                <a id="rollBtn" class="navbar-item">Roll</a>
+                <a id="logoutBtn" class="navbar-item">Logout</a>
               </div>
             </div>
         </div>
     </nav>
 
     <section class="section">
-        <div class="container">
+        <div class="container" id="content">
             <h1 class="title">Login</h1>
             <form id="loginForm">
                 <div class="field">
@@ -59,7 +58,7 @@
                 </div>
 
                 <div class="control">
-                    <button class="button is-primary" type="submit">Log In</button>
+                    <button class="button is-success" type="submit">Log In</button>
                 </div>
             </form>
             <div id="response" class="notification is-hidden"></div>
@@ -67,31 +66,45 @@
     </section>
 
     <script>
-        document.getElementById('currencyBtn').addEventListener('click', function(event) {
-            event.preventDefault();  
-            const token = localStorage.getItem('authorization')
-            let headers = {
-                'Content-Type': 'application/json',
-                'Accept': 'text/html'    
-            }
-            if (token) {
-                headers['Authorization'] = token;
-            }
+        function createNavigationHandler(buttonId, endpoint, method = 'GET') {
+            document.getElementById(buttonId).addEventListener('click', function(event) {
+                event.preventDefault();
+                const token = localStorage.getItem('authorization');
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'text/html'
+                };
+                if (token) {
+                    headers['Authorization'] = token;
+                }
 
-            var request = new Request('/user/currency', {
-                method: 'GET', 
-                headers: headers
-            })
-            fetch(request)
-                .then(response => response.text())
-                .then(html => {
-                    document.open();
-                    document.write(html);
-                    document.close();
-                });
-        });
-        
-        // Login form submission
+                const options = {
+                    method: method,
+                    headers: headers
+                };
+                
+                const request = new Request(endpoint, options);
+
+                fetch(request)
+                    .then(response => response.text())
+                    .then(html => {
+                        document.open();
+                        document.write(html);
+                        document.close();
+                    })
+                    .catch(error => console.error('Error loading page:', error));
+            });
+        }
+
+        createNavigationHandler('currencyBtn', '/user/currency', 'GET');
+        createNavigationHandler('signUpBtn', '/user', 'GET');
+        createNavigationHandler('transactionsBtn', '/user/transactions', 'GET');
+        createNavigationHandler('marketplaceBtn', '/market', 'GET');
+        createNavigationHandler('collectionBtn', '/collection', 'GET');
+        createNavigationHandler('myCollectionBtn', '/user/collection', 'GET');
+        createNavigationHandler('buyCurrencyBtn', '/currency/buy', 'GET');
+        createNavigationHandler('rollBtn', '/roll', 'GET');
+
         document.getElementById('loginForm').onsubmit = async function (e) {
             e.preventDefault();
 
@@ -107,22 +120,47 @@
             const result = await response.json();
             const authorizationHeader = response.headers.get('authorization');
             localStorage.setItem('authorization', authorizationHeader);
+
+            const dropItems = document.getElementById('items-dropdown');
+            dropItems.classList.remove('is-hidden');
+
             const responseDiv = document.getElementById('response');
             responseDiv.classList.remove('is-hidden');
-            responseDiv.textContent = result.response;
-            responseDiv.className = response.ok ? 'notification is-success' : 'notification is-danger';
+            if (response.status !== 200) {
+                document.getElementById('response').textContent = result.response;
+                document.getElementById('response').className = 'notification is-danger is-light';
+                return;
+            } else {
+                document.getElementById('response').textContent = 'Login successful';
+                document.getElementById('response').className = 'notification is-success is-light';
+            }
         };
-        // Logout functionality
+
         document.getElementById('logoutBtn').addEventListener('click', async function () {
             const response = await fetch('/logout', {
                 method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': localStorage.getItem('authorization') 
+                    }
             });
 
             localStorage.removeItem('authorization');
             const result = await response.json();
-            alert(result.response); 
+            const dropItems = document.getElementById('items-dropdown');
+            dropItems.classList.add('is-hidden');
+            alert(result.response);
+        });
 
+        document.addEventListener('DOMContentLoaded', function () {
+            const dropItems = document.getElementById('items-dropdown');
+        
+            const authorization = localStorage.getItem('authorization');
+            if (authorization) {
+                dropItems.classList.remove('is-hidden');
+            } else {
+                dropItems.classList.add('is-hidden');
+            }
         });
     </script>
 </body>
