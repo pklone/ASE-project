@@ -23,7 +23,7 @@
         <div id="navbarMenu" class="navbar-menu">
             <div class="navbar-end">
                 <div class="navbar-item">
-                    <a href="https://ase.localhost/login" class="button is-info">Login</a>
+                    <a href="https://ase.localhost/login" class="button is-light">Login</a>
                 </div> 
             </div>
         </div>
@@ -47,7 +47,7 @@
                 </div>
 
                 <div class="control">
-                    <button class="button is-primary" type="submit">Create User</button>
+                    <button class="button is-success" type="submit">Create User</button>
                 </div>
             </form>
             <div id="response" class="notification is-hidden"></div>
@@ -66,10 +66,16 @@
                     password: document.getElementById('password').value
                 })
             });
-
             document.getElementById('response').classList.remove('is-hidden');
-            document.getElementById('response').textContent = await response.text();
-            document.getElementById('response').className = response.ok ? 'notification is-success' : 'notification is-danger';
+
+            if (response.status !== 201) {
+                document.getElementById('response').textContent = 'Username already exists';
+                document.getElementById('response').className = 'notification is-danger is-light';
+                return;
+            } else {
+                document.getElementById('response').textContent = await 'User created successfully';
+                document.getElementById('response').className = 'notification is-success is-light';
+            }
         };
     </script>
 </body>
