@@ -80,8 +80,8 @@ class PlayerService:
         return {'response': record}, 200
 
     def show_by_uuid(self, player_uuid):
-        if PlayerService.check_uuid(player_uuid=player_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := PlayerService.check_uuid(player_uuid=player_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         try:
             record = self.connectorDB.getByUuid(player_uuid)
@@ -116,8 +116,8 @@ class PlayerService:
         if request.headers.get('Content-Type') != 'application/json':
             return {'response': 'Content-type not supported'}, 400
 
-        if PlayerService.check_uuid(player_uuid=player_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := PlayerService.check_uuid(player_uuid=player_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         new_username = request.json.get('username')
         new_wallet = request.json.get('wallet')
@@ -165,8 +165,8 @@ class PlayerService:
         return {'response': 'Player deleted'}, 200
 
     def remove_by_uuid(self, player_uuid):
-        if PlayerService.check_uuid(player_uuid=player_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := PlayerService.check_uuid(player_uuid=player_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
         
         try:
             random_name = str(uuid.uuid4()) + 'DELETED'
@@ -183,8 +183,8 @@ class PlayerService:
         if request.headers.get('Content-Type') != 'application/json':
             return {'response': 'Content-type not supported'}, 400
 
-        if PlayerService.check_uuid(player_uuid=player_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := PlayerService.check_uuid(player_uuid=player_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         try:
             amount = request.json['amount']
