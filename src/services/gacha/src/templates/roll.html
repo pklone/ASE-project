@@ -9,12 +9,22 @@
 <body>
     <nav class="navbar is-light" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
-            <a class="navbar-item" href="/collection">
-                <strong>System Collection</strong>
+            <a class="navbar-item" href="https://ase.localhost/login">
+                <strong>Home</strong>
             </a>
-            <a class="navbar-item" href="/user/collection">
-                <strong>Your Collection</strong>
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMenu">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
             </a>
+        </div>
+
+        <div id="navbarMenu" class="navbar-menu">
+            <div class="navbar-end">
+                <div class="navbar-item">
+                    <a href="https://ase.localhost/login" class="button is-light">Login</a>
+                </div>
+            </div>
         </div>
     </nav>
 
@@ -22,74 +32,91 @@
         <div class="container">
             <h1 class="title">Roll a Gacha!!</h1>
 
-            <div id="notification" class="notification is-danger is-hidden">
+            <div id="notification" class="notification is-danger is-light is-hidden">
                 Something went wrong. Please try again.
             </div>
 
             <div id="resultBox" class="box has-text-centered is-hidden">
                 <h2 class="subtitle" id="gachaName"></h2>
                 <p><strong>Rarity:</strong> <span id="gachaRarity"></span></p>
-                <img id="gachaImage" src="" alt="Gacha Image" style="width: 40%">
+                <img id="gachaImage" src="#" alt="Gacha Image" style="width: 40%">
                 <p><strong>Description:</strong> <span id="gachaDescription"></span></p>
             </div>
 
-            <form id="rollForm">
+            <form id="rollForm" action='#'>
                 <div class="field">
                     <div class="control">
-                        <button type="submit" class="button is-primary" id="rollButton">Roll</button>
+                        <button type="submit" class="button is-success" id="rollButton">Roll</button>
                     </div>
                 </div>
             </form>
         </div>
     </section>
 
-    <script>
+    <script>   
+        function getToken() {
+            const storedToken = localStorage.getItem('authorization');
+            if (!storedToken) {
+                window.location.href = '/login';
+            }
+            return storedToken;
+        }
+
+        let token;
+
         document.addEventListener('DOMContentLoaded', () => {
-            const form = document.querySelector('#rollForm');
-            const notification = document.getElementById('notification');
-            const resultBox = document.getElementById('resultBox');
-            const gachaName = document.getElementById('gachaName');
-            const gachaRarity = document.getElementById('gachaRarity');
-            const gachaImage = document.getElementById('gachaImage');
-            const gachaDescription = document.getElementById('gachaDescription');
-
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-
-                try {
-                    const response = await fetch('/roll', {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json',
-                        },
-                    });
-
-                    if (!response.ok) {
-                        throw new Error('Failed to perform roll');
-                    }
-
-                    const data = await response.json();
-
-                    if (data.response) {
-                        const gacha = data.response;
-
-                        gachaName.textContent = gacha.name;
-                        gachaRarity.textContent = gacha.rarity;
-                        gachaImage.src = gacha.image_path;
-                        gachaDescription.textContent = gacha.description;
-
-                        notification.classList.add('is-hidden');
-                        resultBox.classList.remove('is-hidden');
-                    } else {
-                        throw new Error('Invalid response');
-                    }
-                } catch (error) {
-                    console.error(error);
-                    notification.textContent = 'No money available.';
-                    notification.classList.remove('is-hidden');
-                }
-            });
+            token = getToken();
         });
+
+
+        document.getElementById('rollForm').onsubmit = async function (e) {
+            e.preventDefault();
+
+            try {
+                const response = await fetch('/roll', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': token
+                    },
+                });
+
+                const contentType = response.headers.get('content-type');
+                let result;
+        
+                if (contentType && contentType.includes('application/json')) {
+                    result = await response.json();
+                } else {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text);
+                    throw new Error('Server did not return JSON');
+                }
+
+        
+                if (response.status !== 200) {
+                    notification.classList.remove('is-hidden');
+                    responseMessage.className = 'notification is-danger is-light';
+                } else {
+                    const gachaName = document.getElementById('gachaName');
+                    const gachaRarity = document.getElementById('gachaRarity');
+                    const gachaImage = document.getElementById('gachaImage');
+                    const gachaDescription = document.getElementById('gachaDescription');
+                    const gacha = result;
+                    gachaName.textContent = gacha.response.name;
+                    gachaRarity.textContent = gacha.response.rarity;
+                    gachaImage.src = gacha.response.image_path;
+                    gachaDescription.textContent = gacha.response.description;
+                    notification.classList.add('is-hidden');
+                    resultBox.classList.remove('is-hidden');
+                }
+            } catch (error) {
+                console.error('Error processing purchase:', error);
+                document.getElementById('responseMessage').textContent = 'An error occurred while processing the purchase.';
+                document.getElementById('responseMessage').className = 'notification is-danger';
+                document.getElementById('responseMessage').classList.remove('is-hidden');
+            }
+        };
     </script>
 </body>
 </html>
