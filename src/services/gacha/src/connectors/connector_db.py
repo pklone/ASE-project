@@ -114,7 +114,8 @@ class CollectionConnectorDB:
 
             cursor.execute("UPDATE gacha SET active = false WHERE uuid = %s", 
                 [gacha_uuid])
-            conn.commit()
+                
+            self.conn.commit()
             cursor.close()
         except psycopg2.Error as e:
             self.conn.rollback()
