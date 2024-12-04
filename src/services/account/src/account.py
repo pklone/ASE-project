@@ -181,7 +181,7 @@ class AccountService:
         if 'application/json' in request.headers.get('Accept'):
             return {'response': wallet}, 200
         elif 'text/html' in request.headers.get('Accept'):
-            return render_template("Account.html", wallet=wallet), 200
+            return render_template("currency.html", wallet=wallet), 200
         else:
             return {'response': 'Not supported'}, 406
 
