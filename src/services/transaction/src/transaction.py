@@ -85,8 +85,8 @@ class TransactionService:
             uuid_auction = request.json['uuid_auction']
             price = request.json['price']
 
-            if TransactionService.check_uuid(uuid_player=uuid_player, uuid_auction=uuid_auction)['name']:
-                return {'response': f'Invalid {res['name']}'}, 400
+            if (res := TransactionService.check_uuid(uuid_player=uuid_player, uuid_auction=uuid_auction)['name']):
+                return {'response': f'Invalid {res}'}, 400
 
             if type(price) is not int or price < 0:
                 return {'response': 'Invalid price'}, 400
@@ -229,7 +229,7 @@ class TransactionService:
         )
 
     def testing(cert_path, key_path):
-        db = TrsnactionConnectorDBMock()
+        db = TransactionConnectorDBMock()
         http = TransactionConnectorHTTP()
         
         TransactionService(http, db).app.run(
@@ -269,6 +269,6 @@ if __name__ == '__main__':
         case 'production':
             TransactionService.production(DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, POSTGRES_SSLMODE, CERT_PATH, KEY_PATH)
         case 'testing':
-            TransactionService.testing(CERT_PATH, KEY_PATH, JWT_SECRET)
+            TransactionService.testing(CERT_PATH, KEY_PATH)
         case 'development':
             TransactionService.development(DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, POSTGRES_SSLMODE, CERT_PATH, KEY_PATH)
