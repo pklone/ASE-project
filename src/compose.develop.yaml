@@ -1,22 +1,32 @@
 services:
-  caddy:
-    image: caddy:latest
-    container_name: caddy_gateway
+  caddy_admin:
+    image: caddy:2.9-alpine
+    container_name: caddy_gateway_admin
     ports:
-      - "443:443"
-    depends_on:
-      - player_service
-      - authentication_service
-      - gacha_service
-      - account_service
-      - currency_service
-      - market_service
+      - "127.0.0.1:8443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./Caddyfile-admin:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config
     networks:
-      - internal_net
+      - internal_admin_net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
+
+  caddy_player:
+    image: caddy:2.9-alpine
+    container_name: caddy_gateway_player
+    ports:
+      - "127.0.0.1:443:443"
+    volumes:
+      - ./Caddyfile-player:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - internal_player_net
     deploy:
       resources:
         limits:
@@ -156,7 +166,8 @@ services:
         condition: service_healthy
     networks:
       - player_net
-      - internal_net
+      - internal_player_net
+      - internal_admin_net
     secrets:
       - player_certificate
       - player_key
@@ -185,7 +196,8 @@ services:
         condition: service_healthy
     networks:
       - authentication_net
-      - internal_net
+      - internal_player_net
+      - internal_admin_net
     secrets:
       - authentication_certificate
       - authentication_key
@@ -208,7 +220,7 @@ services:
     env_file:
       - path: ./services/gacha/.env
     environment:
-      DEPLOYMENT_MODE: development
+      DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:?undefined development mode}
     volumes:
       - gacha_service:/app/static/images/gachas
     ports:
@@ -218,7 +230,8 @@ services:
           condition: service_healthy
     networks:
       - gacha_net
-      - internal_net
+      - internal_player_net
+      - internal_admin_net
     secrets:
       - collection_certificate
       - collection_key
@@ -238,7 +251,8 @@ services:
     ports:
       - "127.0.0.1:8083:5000"
     networks:
-      - internal_net
+      - internal_player_net
+      - internal_admin_net
     secrets:
       - account_certificate
       - account_key
@@ -263,7 +277,8 @@ services:
     ports:
       - "127.0.0.1:8088:5000"
     networks:
-      - internal_net
+      - internal_player_net
+      - internal_admin_net
     secrets:
       - currency_certificate
       - currency_key
@@ -288,7 +303,8 @@ services:
     ports:
       - "127.0.0.1:8085:5000"
     networks:
-      - internal_net
+      - internal_player_net
+      - internal_admin_net
     secrets:
       - admin_certificate
       - admin_key
@@ -319,7 +335,8 @@ services:
         condition: service_healthy
     networks:
       - market_net
-      - internal_net
+      - internal_player_net
+      - internal_admin_net
     secrets:
       - market_certificate
       - market_key
@@ -350,7 +367,8 @@ services:
         condition: service_healthy
     networks:
       - transaction_net
-      - internal_net
+      - internal_player_net
+      - internal_admin_net
     secrets:
       - transaction_certificate
       - transaction_key
@@ -376,7 +394,8 @@ services:
      - "127.0.0.1:5671:5671"
      - "127.0.0.1:15672:15672"
     networks:
-     - internal_net
+     - internal_player_net
+     - internal_admin_net
     secrets:
       - rabbit_certificate
       - rabbit_key
@@ -393,7 +412,8 @@ services:
     links:
      - rabbitmq_broker
     networks:
-     - internal_net
+     - internal_player_net
+     - internal_admin_net
     secrets:
       - celery_certificate
       - celery_key
@@ -423,7 +443,8 @@ services:
     links:
      - rabbitmq_broker
     networks:
-     - internal_net
+     - internal_player_net
+     - internal_admin_net
     secrets:
       - celery_certificate
       - celery_key
@@ -525,4 +546,5 @@ networks:
  gacha_net:
  market_net:
  transaction_net:
- internal_net:
+ internal_player_net:
+ internal_admin_net:

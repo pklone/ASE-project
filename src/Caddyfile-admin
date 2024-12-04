@@ -1,0 +1,74 @@
+admin.ase.localhost {
+    
+    # Admin Service
+    handle /admin/login {
+        reverse_proxy https://admin_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
+    }
+    handle /admin/users/* {
+        reverse_proxy https://admin_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
+    }
+    handle /admin/users {
+        reverse_proxy https://admin_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
+    }
+    handle /admin/collection {
+        reverse_proxy https://admin_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
+    }
+    handle /admin/collection/* {
+        reverse_proxy https://admin_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
+    }
+    handle /admin/market {
+        reverse_proxy https://admin_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
+    }
+    handle /admin/market/{http.request.uri.path.2} {
+        reverse_proxy https://admin_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
+    }
+    handle /admin/payment/{http.request.uri.path.2} {
+        reverse_proxy https://admin_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
+    }
+    handle /admin/close/{http.request.uri.path.2} {
+        reverse_proxy https://admin_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
+    }
+    handle /admin/transaction/{http.request.uri.path.2} {
+        reverse_proxy https://admin_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
+    }
+}

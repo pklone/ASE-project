@@ -149,4 +149,12 @@ curl -X POST -k -H 'Content-Type: application/json' -d '{"username": "test2", "p
 //test2 look at the own transactions
   ```
 curl -X GET -k -H 'Content-Type: application/json' -H 'Accept: application/json' https://ase.localhost/user/transactions -b cookie.jar
+
+## Different Compose
+
+```
+docker compose -f "compose.develop.yaml" --env-file .test.env up
+docker compose -f "compose.develop.yaml" --env-file .dev.env  down -v && docker compose -f "compose.develop.yaml" --env-file .dev.env up --build 
+docker compose -f "compose.develop.yaml" --env-file .test.env  down -v && docker compose -f "compose.develop.yaml" --env-file .test.env up --build 
+```
   ```
