@@ -1,23 +1,37 @@
 services:
-  caddy:
-    image: caddy:latest
-    container_name: caddy_gateway
+  caddy_admin:
+    image: caddy:2.9-alpine
+    container_name: caddy_gateway_admin
     ports:
-      - "80:80"
-      - "443:443"
-    depends_on:
-      - player_service
-      - authentication_service
-      - gacha_service
-      - account_service
-      - currency_service
-      - market_service
+      - "127.0.0.1:8443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./Caddyfile-admin:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config
     networks:
-      - internal_net
+      - internal_admin_net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
+
+  caddy_player:
+    image: caddy:2.9-alpine
+    container_name: caddy_gateway_player
+    ports:
+      - "127.0.0.1:443:443"
+    volumes:
+      - ./Caddyfile-player:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - internal_player_net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
     
   player_db:
     build: ./dbs/player
@@ -25,12 +39,22 @@ services:
     env_file:
       - path: ./dbs/player/.env
     volumes:
-      - player_db:/var/lib/postgresql/data
-      - ./dbs/player/server.crt:/src/dbs/player/server.crt
-      - ./dbs/player/server.key:/src/dbs/player/server.key
-    command: -c ssl=on -c ssl_cert_file=/src/dbs/player/server.crt -c ssl_key_file=/src/dbs/player/server.key
+      - player_db:/var/lib/postgresql
+    secrets:
+      - player_db.crt
+      - player_db.key
     networks:
       - player_net
+    healthcheck:
+      test: pg_isready -U postgres -d postgres
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
 
   admin_db:
     build: ./dbs/admin
@@ -38,12 +62,22 @@ services:
     env_file:
       - path: ./dbs/admin/.env
     volumes:
-      - admin_db:/var/lib/postgresql/data
-      - ./dbs/admin/server.crt:/src/dbs/admin/server.crt
-      - ./dbs/admin/server.key:/src/dbs/admin/server.key
-    command: -c ssl=on -c ssl_cert_file=/src/dbs/admin/server.crt -c ssl_key_file=/src/dbs/admin/server.key
+      - admin_db:/var/lib/postgresql
+    secrets:
+      - admin_db.crt
+      - admin_db.key
     networks:
       - authentication_net
+    healthcheck:
+      test: pg_isready -U postgres -d postgres
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
 
   gacha_db:
     build: ./dbs/gacha/
@@ -51,12 +85,22 @@ services:
     env_file:
       - path: ./dbs/gacha/.env
     volumes:
-      - gacha_db:/var/lib/postgresql/data
-      - ./dbs/gacha/server.crt:/src/dbs/gacha/server.crt
-      - ./dbs/gacha/server.key:/src/dbs/gacha/server.key
-    command: -c ssl=on -c ssl_cert_file=/src/dbs/gacha/server.crt -c ssl_key_file=/src/dbs/gacha/server.key
+      - gacha_db:/var/lib/postgresql
+    secrets:
+      - gacha_db.crt
+      - gacha_db.key
     networks:
       - gacha_net
+    healthcheck:
+      test: pg_isready -U postgres -d postgres
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
 
   market_db:
     build: ./dbs/market/
@@ -64,12 +108,17 @@ services:
     env_file:
       - path: ./dbs/market/.env
     volumes:
-      - market_db:/var/lib/postgresql/data
-      - ./dbs/market/server.crt:/src/dbs/market/server.crt
-      - ./dbs/market/server.key:/src/dbs/market/server.key
-    command: -c ssl=on -c ssl_cert_file=/src/dbs/market/server.crt -c ssl_key_file=/src/dbs/market/server.key
+      - market_db:/var/lib/postgresql
+    secrets:
+      - market_db.crt
+      - market_db.key
     networks:
       - market_net
+    healthcheck:
+      test: pg_isready -U postgres -d postgres
+      interval: 10s
+      timeout: 3s
+      retries: 3
 
   transaction_db:
     build: ./dbs/transaction
@@ -77,12 +126,22 @@ services:
     env_file:
       - path: ./dbs/transaction/.env
     volumes:
-      - transaction_db:/var/lib/postgresql/data
-      - ./dbs/transaction/server.crt:/src/dbs/transaction/server.crt
-      - ./dbs/transaction/server.key:/src/dbs/transaction/server.key
-    command: -c ssl=on -c ssl_cert_file=/src/dbs/transaction/server.crt -c ssl_key_file=/src/dbs/transaction/server.key
+      - transaction_db:/var/lib/postgresql
+    secrets:
+      - transaction_db.crt
+      - transaction_db.key
     networks:
       - transaction_net
+    healthcheck:
+      test: pg_isready -U postgres -d postgres
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
 
  
   player_service:
@@ -91,10 +150,12 @@ services:
     env_file:
       - path: ./services/player/.env
     depends_on:
-      - player_db
+      player_db:
+        condition: service_healthy
     networks:
       - player_net
-      - internal_net
+      - internal_player_net
+      - internal_admin_net
     secrets:
       - player_certificate
       - player_key
@@ -105,17 +166,24 @@ services:
         target: /app
       - action: rebuild
         path: ./services/player/requirements.txt
-        
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 100M
+
   authentication_service:
     build: ./services/authentication
     container_name: authentication_service
     env_file:
       - path: ./services/authentication/.env
     depends_on:
-      - admin_db
+      admin_db:
+        condition: service_healthy
     networks:
       - authentication_net
-      - internal_net
+      - internal_player_net
+      - internal_admin_net
     secrets:
       - authentication_certificate
       - authentication_key
@@ -126,23 +194,34 @@ services:
         target: /app
       - action: rebuild
         path: ./services/authentication/requirements.txt
+    deploy:
+      resources:
+        limits:
+          cpus: '0.9'
+          memory: 100M
 
   gacha_service:
     build: ./services/gacha
     container_name: gacha_service
     env_file:
       - path: ./services/gacha/.env
+    environment:
+      DEPLOYMENT_MODE: production
+    volumes:
+      - gacha_service:/app/static/images/gachas
     depends_on:
-      - gacha_db
+        gacha_db:
+          condition: service_healthy
     networks:
       - gacha_net
-      - internal_net
+      - internal_player_net
+      - internal_admin_net
     secrets:
       - collection_certificate
       - collection_key
     develop:
      watch:
-      - action: sync
+      - action: rebuild
         path: ./services/gacha/src
         target: /app
       - action: rebuild
@@ -154,7 +233,8 @@ services:
     env_file:
       - path: ./services/account/.env
     networks:
-      - internal_net
+      - internal_player_net
+      - internal_admin_net
     secrets:
       - account_certificate
       - account_key
@@ -165,6 +245,11 @@ services:
         target: /app
       - action: rebuild
         path: ./services/account/requirements.txt
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 250M
 
   currency_service:
     build: ./services/currency
@@ -172,7 +257,8 @@ services:
     env_file:
       - path: ./services/currency/.env
     networks:
-      - internal_net
+      - internal_player_net
+      - internal_admin_net
     secrets:
       - currency_certificate
       - currency_key
@@ -183,6 +269,11 @@ services:
         target: /app
       - action: rebuild
         path: ./services/currency/requirements.txt
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
 
   admin_service:
     build: ./services/admin
@@ -190,7 +281,8 @@ services:
     env_file:
       - path: ./services/admin/.env
     networks:
-      - internal_net
+      - internal_player_net
+      - internal_admin_net
     secrets:
       - admin_certificate
       - admin_key
@@ -201,6 +293,11 @@ services:
           target: /app
         - action: rebuild
           path: ./services/admin/requirements.txt
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 100M
 
   market_service:
     build: ./services/market
@@ -208,11 +305,14 @@ services:
     env_file:
       - path: ./services/market/.env
     depends_on:
-      - market_db
-      - rabbitmq_broker
+      market_db:
+        condition: service_healthy
+      rabbitmq_broker:
+        condition: service_healthy
     networks:
       - market_net
-      - internal_net
+      - internal_player_net
+      - internal_admin_net
     secrets:
       - market_certificate
       - market_key
@@ -225,6 +325,11 @@ services:
           target: /app
         - action: rebuild
           path: ./services/market/requirements.txt
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 150M
 
   transaction_service:
     build: ./services/transaction
@@ -232,10 +337,12 @@ services:
     env_file:
       - path: ./services/transaction/.env
     depends_on:
-      - transaction_db
+      transaction_db:
+        condition: service_healthy
     networks:
       - transaction_net
-      - internal_net
+      - internal_player_net
+      - internal_admin_net
     secrets:
       - transaction_certificate
       - transaction_key
@@ -246,6 +353,11 @@ services:
         target: /app
       - action: rebuild
         path: ./services/transaction/requirements.txt
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 150M
     
 
   rabbitmq_broker:
@@ -253,7 +365,8 @@ services:
     build: ./services/rabbitmq
     container_name: rabbitmq_broker
     networks:
-     - internal_net
+     - internal_player_net
+     - internal_admin_net
     secrets:
       - rabbit_certificate
       - rabbit_key
@@ -270,7 +383,8 @@ services:
     links:
      - rabbitmq_broker
     networks:
-     - internal_net
+     - internal_player_net
+     - internal_admin_net
     secrets:
       - celery_certificate
       - celery_key
@@ -289,6 +403,10 @@ services:
         delay: 5s
         max_attempts: 3
         window: 60s
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 200M
       
   celery_worker_2:
     hostname: celery_worker_2
@@ -296,7 +414,8 @@ services:
     links:
      - rabbitmq_broker
     networks:
-     - internal_net
+     - internal_player_net
+     - internal_admin_net
     secrets:
       - celery_certificate
       - celery_key
@@ -315,8 +434,32 @@ services:
         delay: 5s
         max_attempts: 3
         window: 60s
-    
-secrets:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 200M
+     
+secrets: 
+  player_db.crt:
+    file: ./dbs/player/server.crt
+  player_db.key:
+    file: ./dbs/player/server.key
+  admin_db.crt:
+    file: ./dbs/admin/server.crt
+  admin_db.key:
+    file: ./dbs/admin/server.key
+  gacha_db.crt:
+    file: ./dbs/gacha/server.crt
+  gacha_db.key:
+    file: ./dbs/gacha/server.key
+  market_db.crt:
+    file: ./dbs/market/server.crt
+  market_db.key:
+    file: ./dbs/market/server.key
+  transaction_db.crt:
+    file: ./dbs/transaction/server.crt
+  transaction_db.key:
+    file: ./dbs/transaction/server.key
   account_certificate:
     file: ./cert/account_cert.pem
   account_key:
@@ -364,6 +507,7 @@ volumes:
  gacha_db:
  market_db:
  transaction_db:
+ gacha_service:
  caddy_data:
  caddy_config:
 
@@ -373,4 +517,5 @@ networks:
  gacha_net:
  market_net:
  transaction_net:
- internal_net:
+ internal_player_net:
+ internal_admin_net:
