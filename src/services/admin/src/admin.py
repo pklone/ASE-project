@@ -140,7 +140,10 @@ class AdminService:
         return r['http_body'], r['http_code']
 
     @login_required
-    def user(self, user_uuid, auth_uuid):    
+    def user(self, user_uuid, auth_uuid):
+        if (res := AdminService.check_uuid(user_uuid=user_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
+
         try:
             r = self.connectorHTTP.getPlayer(user_uuid)
         except Exception as e:
@@ -150,8 +153,8 @@ class AdminService:
 
     @login_required
     def user_modify(self, user_uuid, auth_uuid):
-        if AdminService.check_uuid(user_uuid=user_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := AdminService.check_uuid(user_uuid=user_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         new_username = request.json.get('username')
         new_wallet = request.json.get('wallet')
@@ -165,8 +168,8 @@ class AdminService:
 
     @login_required
     def user_delete(self, user_uuid, auth_uuid):
-        if AdminService.check_uuid(user_uuid=user_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := AdminService.check_uuid(user_uuid=user_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         try:
             r = self.connectorHTTP.removePlayer(user_uuid)
@@ -177,8 +180,8 @@ class AdminService:
 
     @login_required
     def collection(self, user_uuid, auth_uuid):
-        if AdminService.check_uuid(user_uuid=user_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := AdminService.check_uuid(user_uuid=user_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         try:
             r = self.connectorHTTP.getPlayerCollection(user_uuid)
@@ -214,8 +217,8 @@ class AdminService:
 
     @login_required
     def modify_gacha(self, gacha_uuid, auth_uuid):
-        if AdminService.check_uuid(gacha_uuid=gacha_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := AdminService.check_uuid(gacha_uuid=gacha_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         new_file = None
         if 'gacha_image' in request.files:
@@ -237,8 +240,8 @@ class AdminService:
 
     @login_required
     def remove_gacha(self, gacha_uuid, auth_uuid):
-        if AdminService.check_uuid(gacha_uuid=gacha_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := AdminService.check_uuid(gacha_uuid=gacha_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         try:
             r = self.connectorHTTP.removeGacha(gacha_uuid)
@@ -260,8 +263,8 @@ class AdminService:
 
     @login_required
     def show_one(self, auction_uuid, auth_uuid):
-        if AdminService.check_uuid(auction_uuid=auction_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := AdminService.check_uuid(auction_uuid=auction_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         auth_header = request.headers.get('Authorization')
 
@@ -274,8 +277,8 @@ class AdminService:
 
     @login_required
     def close(self, auction_uuid, auth_uuid):
-        if AdminService.check_uuid(auction_uuid=auction_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := AdminService.check_uuid(auction_uuid=auction_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
         
         auth_header = request.headers.get('Authorization')
 
@@ -288,8 +291,8 @@ class AdminService:
 
     @login_required
     def transactions(self, user_uuid, auth_uuid):
-        if AdminService.check_uuid(user_uuid=user_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := AdminService.check_uuid(user_uuid=user_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         auth_header = request.headers.get('Authorization')
 
@@ -302,8 +305,8 @@ class AdminService:
     
     @login_required
     def payment(self, auction_uuid, auth_uuid):
-        if AdminService.check_uuid(auction_uuid=auction_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := AdminService.check_uuid(auction_uuid=auction_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         try:
             r = self.connectorHTTP.paymentAuction(auction_uuid)
