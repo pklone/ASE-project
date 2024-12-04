@@ -124,8 +124,8 @@ class CollectionService:
             return {'response': 'Not supported'}, 400
 
     def show(self, gacha_uuid):
-        if CollectionService.check_uuid(gacha_uuid=gacha_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := CollectionService.check_uuid(gacha_uuid=gacha_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         try:
             record = self.connectorDB.getByUuid(gacha_uuid)
@@ -137,8 +137,8 @@ class CollectionService:
         return {'response': record}, 200
 
     def show_by_player(self, player_uuid):
-        if CollectionService.check_uuid(player_uuid=player_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := CollectionService.check_uuid(player_uuid=player_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         try:
             records = self.connectorDB.getByPlayer(player_uuid)
@@ -148,8 +148,8 @@ class CollectionService:
         return {'response': records}, 200
 
     def update_quantity(self, player_uuid):
-        if CollectionService.check_uuid(player_uuid=player_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := CollectionService.check_uuid(player_uuid=player_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         try:
             q = request.json['q'] # q is 1 (buyer) or -1 (owner)
@@ -244,8 +244,8 @@ class CollectionService:
         return {'response': record}, 201
         
     def modify_gacha(self, gacha_uuid):
-        if CollectionService.check_uuid(gacha_uuid=gacha_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := CollectionService.check_uuid(gacha_uuid=gacha_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
             
         new_name = request.form.get('name')
         new_description = request.form.get('description')
@@ -292,8 +292,8 @@ class CollectionService:
         return {'response': record}, 200
 
     def delete_gacha(self, gacha_uuid):
-        if CollectionService.check_uuid(gacha_uuid=gacha_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := CollectionService.check_uuid(gacha_uuid=gacha_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         try:
             self.connectorDB.remove(gacha_uuid)
