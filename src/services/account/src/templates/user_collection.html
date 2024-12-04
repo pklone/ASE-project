@@ -9,12 +9,22 @@
 <body>
     <nav class="navbar is-light" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
-            <a class="navbar-item" href="/collection">
-                <strong>System Collection</strong>
+            <a class="navbar-item" href="https://ase.localhost/login">
+                <strong>Home</strong>
             </a>
-            <a class="navbar-item" href="/roll">
-                <strong>Roll</strong>
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMenu">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
             </a>
+        </div>
+
+        <div id="navbarMenu" class="navbar-menu">
+            <div class="navbar-end">
+                <div class="navbar-item">
+                    <a href="https://ase.localhost/login" class="button is-light">Login</a>
+                </div>
+            </div>
         </div>
     </nav>
 
@@ -32,9 +42,9 @@
                             <p>Quantity: {{ gacha.quantity }} </p>
                             <img src="{{ gacha.image_path }}" alt="Gacha Image" onerror="this.src='/static/default.png';">
                             <p>{{ gacha.description }}</p>
-                            <a class="navbar-item has-text-centered" href="/market/gacha/{{ gacha.uuid }}">
-                                <strong>Create auction</strong>
-                            </a>
+                            <footer class="button is-primary is-outlined" style="display: flex; justify-content: center; align-items: center;">
+                                <a id="createAuctionBtn" data-gachaurl="https://ase.localhost/market/gacha/{{gacha.uuid}}" class="card-footer-item">Create auction</a>
+                            </footer>
                         </div>
                     </div>
                 </div>
@@ -45,5 +55,37 @@
             {% endif %}
         </div>
     </section>
+    <script>
+        (document.querySelectorAll('a#createAuctionBtn.card-footer-item') || []).forEach(a_tag => {
+            a_tag.addEventListener('click', (event) => {
+                event.preventDefault();
+                let url = event.target.dataset.gachaurl;
+                const token = localStorage.getItem('authorization');
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'text/html'
+                };
+                if (token) {
+                    headers['Authorization'] = token;
+                }
+            
+                const options = {
+                    method: 'GET',
+                    headers: headers
+                };
+            
+                const request = new Request(url, options);
+            
+                fetch(request)
+                    .then(response => response.text())
+                    .then(html => {
+                        document.open();
+                        document.write(html);
+                        document.close();
+                    })
+                    .catch(error => console.error('Error loading page:', error));
+                });
+        });
+</script>    
 </body>
 </html>
