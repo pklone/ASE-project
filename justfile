@@ -1,7 +1,7 @@
 set dotenv-load
 
-devel_compose := 'compose.develop.yaml'
-devel_env := '.dev.env' 
+devel_compose := './src/compose.develop.yaml'
+devel_env     := './src/.dev.env' 
 
 command_std   := '/bin/bash'
 command_app   := command_std
@@ -16,7 +16,6 @@ _default:
 [private]
 run:
 	@just --choose --unsorted
-
 
 # start docker daemon
 on:
