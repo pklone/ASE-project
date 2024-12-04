@@ -1,0 +1,2 @@
+class CurrencyConnectorHTTPMock:
+    pass

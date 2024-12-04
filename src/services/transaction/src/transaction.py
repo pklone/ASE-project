@@ -6,197 +6,183 @@ import requests
 import os
 import uuid
 import re
+import werkzeug.exceptions
+from functools import wraps
+from connectors.connector_db import TransactionConnectorDB
+from connectors.connector_db_mock import TransactionConnectorDBMock
+from connectors.connector_http import TransactionConnectorHTTP
+from connectors.connector_http_mock import TransactionConnectorHTTPMock
 
-app = Flask(__name__)
+# testing
+#   curl -X GET -k https://127.0.0.1:8087
+#   curl -X POST -k -d '{"uuid_player": "71520f05-80c5-4cb1-b05a-a9642f9ae333", "uuid_auction": "71520f05-80c5-4cb1-b05a-a9642f9aaaaa", "price": 100}' https://127.0.0.1:8087
+#   curl -X GET -k https://127.0.0.1:8087/uuid/86d1f0db-85c6-48be-9136-71921ec79cf1
+#   curl -X GET -k https://127.0.0.1:8087/user/71520f05-80c5-4cb1-b05a-a9642f9ae333
+#   curl -X GET -k https://127.0.0.1:8087/user/71520f05-80c5-4cb1-b05a-a9642f9ae333/96cef223-5fd4-4b8d-be62-cfe5dd5fb11b
 
-#set db connection
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-CERT_PATH = os.getenv("CERT_PATH")
-KEY_PATH = os.getenv("KEY_PATH")
-POSTGRES_SSLMODE = os.getenv("POSTGRES_SSLMODE")
+class TransactionService:
+    UUID_REGEX = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
 
-UUID_REGEX = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    def __init__(self, connectorHTTP, connectorDB):
+        self.app = Flask(__name__)
+        self.__init_routes()
+        self.connectorDB = connectorDB
+        self.connectorHTTP = connectorHTTP
 
-def check_uuid(uuid_string):
-    p = re.compile(UUID_REGEX, re.IGNORECASE)
-    m = p.match(uuid_string)
+    # routes
+    def __init_routes(self):
+        self.app.add_url_rule('/',                                                    endpoint='show_all',         view_func=self.show_all,         methods=['GET'])
+        self.app.add_url_rule('/',                                                    endpoint='create',           view_func=self.create,           methods=['POST'])
+        self.app.add_url_rule('/uuid/<string:transaction_uuid>',                      endpoint='show_by_uuid',     view_func=self.show_by_uuid,     methods=['GET'])
+        self.app.add_url_rule('/user/<string:player_uuid>',                           endpoint='show_all_by_user', view_func=self.show_all_by_user, methods=['GET'])
+        self.app.add_url_rule('/user/<string:player_uuid>/<string:transaction_uuid>', endpoint='show_by_user',     view_func=self.show_by_user,     methods=['GET'])
+        self.app.register_error_handler(werkzeug.exceptions.NotFound, TransactionService.page_not_found)
 
-    return m is not None
+    # util functions
+    def page_not_found(error):
+        return {'response': "page not found"}, 404
 
-@app.errorhandler(404)
-def page_not_found(error):
-    return jsonify({'response': "page not found"}), 404
+    def check_uuid(**kwargs):
+        res = {'name': None}
+        p = re.compile(TransactionService.UUID_REGEX, re.IGNORECASE)
 
-@app.route('/', methods=['GET'])
-def show_all():
-    try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT,
-            sslmode=POSTGRES_SSLMODE
-        )
+        for key, value in kwargs.items():
+            if p.match(value) is None:
+                res['name'] = key
+                break
 
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute('SELECT * from transaction')
-        records = cursor.fetchall()
-        cursor.close()
-        conn.close()
-    except psycopg2.Error as e:
-        return jsonify({'response': str(e)}), 500
+        return res
 
-    return jsonify({'response': records}), 200
+    # decorators
+    #def check_uuid(f):
+        #@wraps(f)
+        #def decorated_function(*args, **kwargs):
+        #    p = re.compile(args[0].UUID_REGEX, re.IGNORECASE)
+        #
+        #    for key, value in kwargs.items():
+        #        if 'uuid' in key and p.match(value) is None:
+        #                return {'response': f'invalid API uuid'}, 400
+        #
+        #    return f(*args, **kwargs)
+        #
+        #return decorated_function
 
-@app.route('/', methods=['POST'])
-def create():
-    if request.headers.get('Content-Type') != 'application/json':
-        return jsonify({'message': 'Content-type not supported'}), 400
+    # APIs
+    def show_all(self):
+        try:
+            records = self.connectorDB.getAll()
+        except Exception as e:
+            return {'response': str(e)}, 500
 
-    try:
-        uuid_player = request.json['uuid_player']
-        uuid_auction = request.json['uuid_auction']
-        price = request.json['price']
-    except KeyError:
-        return jsonify({'message': 'Missing data'}), 400
+        return {'response': records}, 200
 
-    if not check_uuid(uuid_player) or not check_uuid(uuid_auction):
-        return jsonify({'message': 'Invalid uuids'}), 400
+    def create(self):
+        if request.headers.get('Content-Type') != 'application/json':
+            return {'response': 'Content-type not supported'}, 400
 
-    created_at = int(datetime.now(tz=timezone.utc).timestamp())
-    uuid_transaction = str(uuid.uuid4())
+        try:
+            uuid_player = request.json['uuid_player']
+            uuid_auction = request.json['uuid_auction']
+            price = request.json['price']
 
-    try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT,
-            sslmode=POSTGRES_SSLMODE
-        )
+            if TransactionService.check_uuid(uuid_player=uuid_player, uuid_auction=uuid_auction)['name']:
+                return {'response': f'Invalid {res['name']}'}, 400
 
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute('INSERT INTO transaction (id, uuid, price, created_at, uuid_player, uuid_auction) VALUES (DEFAULT, %s, %s, %s, %s, %s)', 
-            [uuid_transaction, price, created_at, uuid_player, uuid_auction])
-        cursor.execute('SELECT id, uuid, price, created_at, uuid_player, uuid_auction FROM transaction WHERE uuid = %s', 
-            [uuid_transaction])
-        record = cursor.fetchone()
-        conn.commit()
-        cursor.close()
-        conn.close()
-    except psycopg2.Error as e:
-        return jsonify({'error': str(e)}), 500
+            if type(price) is not int or price < 0:
+                return {'response': 'Invalid price'}, 400
+        except KeyError:
+            return {'response': 'Missing data'}, 400
 
-    return jsonify({'response': record}), 201
+        created_at = int(datetime.now(tz=timezone.utc).timestamp())
+        uuid_transaction = str(uuid.uuid4())
 
-@app.route('/uuid/<string:transaction_uuid>', methods=['GET'])
-def show_by_uuid(transaction_uuid):
-    result = {}
+        try:
+            record = self.connectorDB.add(uuid_transaction, price, created_at, uuid_player, uuid_auction)
+        except psycopg2.Error as e:
+            return {'response': str(e)}, 500
 
-    try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT,
-            sslmode=POSTGRES_SSLMODE
-        )
+        return {'response': record}, 201
 
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute('SELECT id, uuid, price, created_at, uuid_player, uuid_auction FROM transaction WHERE uuid = %s', 
-            [transaction_uuid])
-        record = cursor.fetchone()
+    def show_by_uuid(self, transaction_uuid):
+        if TransactionService.check_uuid(transaction_uuid=transaction_uuid)['name']:
+            return {'response': f'Invalid {res['name']}'}, 400
+        
+        try:
+            record = self.connectorDB.getByUuid(transaction_uuid)
+        except ValueError as e:
+            return {'response': str(e)}, 400
+        except Exception as e:
+            return {'response': str(e)}, 500
 
-        if record:
-            result = record
+        return {'response': record}, 200
 
-        cursor.close()
-        conn.close()
-    except psycopg2.Error as e:
-        return jsonify({'response': str(e)}), 500
+    def show_all_by_user(self, player_uuid):
+        transactions = []
+        transactions_in = []
+        transactions_out = []
 
-    return jsonify({'response': result}), 200
+        auth_header = request.headers.get('Authorization')
 
-@app.route('/user/<string:player_uuid>', methods=['GET'])
-def show_all_by_user(player_uuid):
-    transactions = []
-    transactions_in = []
-    transactions_out = []
+        if TransactionService.check_uuid(player_uuid=player_uuid)['name']:
+            return {'response': f'Invalid {res['name']}'}, 400
 
-    try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT,
-            sslmode=POSTGRES_SSLMODE
-        )
+        # get all the transactions by player_uuid (i.e. the player bought a gacha)
+        try:
+            records = self.connectorDB.getAllByPlayer(player_uuid)
+        except Exception as e:
+            return {'response': str(e)}, 500
 
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute('SELECT id, uuid, price, created_at, uuid_player, uuid_auction FROM transaction WHERE uuid_player = %s', 
-            [player_uuid])
-        records = cursor.fetchall()
-        cursor.close()
-        conn.close()
-    except psycopg2.Error as e:
-        return jsonify({'response': str(e)}), 500
-    
-    for record in records:
-        r = requests.get(url=f"https://market_service:5000/market/{record['uuid_auction']}", headers={'Accept': 'application/json'}, verify=False)
-        response = json.loads(r.text)
-        if response.get("response"):
-            to_player = response['response']['player_uuid']
-    
-            transaction = {
-                'id': record['id'],
-                'uuid': record['uuid'],
-                'price': record['price'],
-                'created_at': record['created_at'],
-                'bought': player_uuid,
-                'sold': to_player,
-                'uuid_auction': record['uuid_auction']
-            }
-            transactions_out.append(transaction)
-
-    r = requests.get(url=f"https://market_service:5000/market/user/{player_uuid}", verify=False) 
-    response = json.loads(r.text)
-    if response.get("response"):
-        for r in response['response']:
-            response_uuid = r['uuid']
-    
+        # from each transaction, get the related auction
+        for record in records:
             try:
-                conn = psycopg2.connect(
-                    dbname=DB_NAME,
-                    user=DB_USER,
-                    password=DB_PASSWORD,
-                    host=DB_HOST,
-                    port=DB_PORT,
-                    sslmode=POSTGRES_SSLMODE
-                )
+                r = self.connectorHTTP.getAuctionByUuid(record['uuid_auction'])
+                response = r['json']
+            except Exception as e:
+                return {'response': str(e)}, 500
 
-                cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-                cursor.execute('SELECT id, uuid, price, created_at, uuid_player, uuid_auction FROM transaction WHERE uuid_auction = %s', 
-                    [response_uuid])
-                records = cursor.fetchall()
-                cursor.close()
-                conn.close()
-            except psycopg2.Error as e:
-                return jsonify({'response': str(e)}), 500
+            if response.get('response'):
+                to_player = response['response']['player_uuid']
+        
+                # mix all the data for out_transaction
+                transaction = {
+                    'id': record['id'],
+                    'uuid': record['uuid'],
+                    'price': record['price'],
+                    'created_at': record['created_at'],
+                    'bought': player_uuid,
+                    'sold': to_player,
+                    'uuid_auction': record['uuid_auction']
+                }
 
-            for record in records:
-                r = requests.get(url=f"https://market_service:5000/market/{record['uuid_auction']}", headers={'Accept': 'application/json'}, verify=False)
+                transactions_out.append(transaction)
+
+        # get all the auctions by player_uuid (i.e. the player sold a gacha)
+        try:
+            r = self.connectorHTTP.getAllAuctionsByPlayer(auth_header, player_uuid)
+            response = r['json']
+        except Exception as e:
+            return {'response': str(e)}, 500   
+
+        # from each auction, get the related auction
+        if response.get("response"):
+            for auction in response['response']:
+                try:
+                    record = self.connectorDB.getByAuction(auction['uuid'])
+                    r = self.connectorHTTP.getAuctionByUuid(auth_header, record['uuid_auction'])
+                    response = r['json']
+                except ValueError as e:
+                    # if the auction is not associated with a transaction 
+                    # (the auction is still open), we can simply ignore it
+                    continue
+                    
+                    #return {'response': str(e)}, 400
+                except Exception as e:
+                    return {'response': str(e)}, 500
+
                 if response.get("response"):
-                    response = json.loads(r.text)
                     to_player = response['response']['player_uuid']
 
+                # mix all the data for in_transaction
                 transaction = {
                     'id': record['id'],
                     'uuid': record['uuid'],
@@ -206,43 +192,80 @@ def show_all_by_user(player_uuid):
                     'sold': record['uuid_player'],
                     'uuid_auction': record['uuid_auction']
                 }
+
                 transactions_in.append(transaction)
 
-    transactions = {
-        "incoming transactions": transactions_in,
-        "outgoing transactions": transactions_out
-    }
+        # in and out transactions
+        transactions = {
+            "incoming transactions": transactions_in,
+            "outgoing transactions": transactions_out
+        }
 
-    return jsonify({'response': transactions}), 200
+        return {'response': transactions}, 200
 
-@app.route('/user/<string:player_uuid>/<string:transaction_uuid>', methods=['GET'])
-def show_by_user(player_uuid, transaction_uuid):
-    result = {}
+    def show_by_user(self, player_uuid, transaction_uuid):
+        try:
+            record = self.connectorDB.getByUuidAndPlayer(player_uuid, transaction_uuid)
+        except ValueError as e:
+            return {'response': str(e)}, 400
+        except Exception as e:
+            return {'response': str(e)}, 500
 
-    try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT,
-            sslmode=POSTGRES_SSLMODE
+        return {'response': record}, 200
+
+    # static factory methods
+    def development(db_name, db_user, db_password, db_host, db_port, db_sslmode, cert_path, key_path):
+        db = TransactionConnectorDB(db_name, db_user, db_password, db_host, db_port, db_sslmode)
+        http = TransactionConnectorHTTP()
+
+        TransactionService(http, db).app.run(
+            host="0.0.0.0", 
+            port=5000, 
+            debug=True, 
+            ssl_context=(cert_path, key_path)
         )
 
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute('SELECT id, uuid, price, created_at, uuid_player, uuid_auction FROM transaction WHERE uuid_player = %s AND uuid = %s', 
-            [player_uuid, transaction_uuid])
-        record = cursor.fetchone()
-
-        if record:
-            result = record
+    def testing(cert_path, key_path):
+        db = TrsnactionConnectorDBMock()
+        http = TransactionConnectorHTTP()
         
-        cursor.close()
-        conn.close()
-    except psycopg2.Error as e:
-        return jsonify({'response': str(e)}), 500
+        TransactionService(http, db).app.run(
+            host="0.0.0.0", 
+            port=5000, 
+            debug=True, 
+            ssl_context=(cert_path, key_path)
+        )
 
-    return jsonify({'response': record}), 200
+    def production(db_name, db_user, db_password, db_host, db_port, db_sslmode, cert_path, key_path):
+        db = TransactionConnectorDB(db_name, db_user, db_password, db_host, db_port, db_sslmode)
+        http = TransactionConnectorHTTP()
+
+        TransactionService(http, db).app.run(
+            host="0.0.0.0", 
+            port=5000, 
+            ssl_context=(cert_path, key_path)
+        )
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=(CERT_PATH, KEY_PATH))
+    # set db connection
+    DB_NAME = os.getenv("DB_NAME")
+    DB_USER = os.getenv("DB_USER")
+    DB_PASSWORD = os.getenv("DB_PASSWORD")
+    DB_HOST = os.getenv("DB_HOST")
+    DB_PORT = os.getenv("DB_PORT")
+    POSTGRES_SSLMODE = os.getenv("POSTGRES_SSLMODE")
+
+    # set https certs
+    CERT_PATH = os.getenv("CERT_PATH")
+    KEY_PATH = os.getenv("KEY_PATH")
+
+    # deployment mode
+    DEPLOYMENT_MODE = os.getenv("DEPLOYMENT_MODE")
+
+    match DEPLOYMENT_MODE:
+        case 'production':
+            TransactionService.production(DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, POSTGRES_SSLMODE, CERT_PATH, KEY_PATH)
+        case 'testing':
+            TransactionService.testing(CERT_PATH, KEY_PATH, JWT_SECRET)
+        case 'development':
+            TransactionService.development(DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, POSTGRES_SSLMODE, CERT_PATH, KEY_PATH)

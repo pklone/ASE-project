@@ -159,6 +159,8 @@ services:
     container_name: player_service
     env_file:
       - path: ./services/player/.env
+    environment:
+      DEPLOYMENT_MODE: development
     ports:
       - "127.0.0.1:8080:5000"
     depends_on:
@@ -173,7 +175,7 @@ services:
       - player_key
     develop:
      watch:
-      - action: sync
+      - action: rebuild
         path: ./services/player/src
         target: /app
       - action: rebuild
@@ -181,7 +183,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: '0.8'
           memory: 100M
 
   authentication_service:
@@ -189,6 +191,8 @@ services:
     container_name: authentication_service
     env_file:
       - path: ./services/authentication/.env
+    environment:
+      DEPLOYMENT_MODE: development
     ports:
       - "127.0.0.1:8081:5000"
     depends_on:
@@ -203,7 +207,7 @@ services:
       - authentication_key
     develop:
      watch:
-      - action: sync
+      - action: rebuild
         path: ./services/authentication/src
         target: /app
       - action: rebuild
@@ -248,6 +252,8 @@ services:
     container_name: account_service
     env_file:
       - path: ./services/account/.env
+    environment:
+      DEPLOYMENT_MODE: development
     ports:
       - "127.0.0.1:8083:5000"
     networks:
@@ -258,7 +264,7 @@ services:
       - account_key
     develop:
      watch:
-      - action: sync
+      - action: rebuild
         path: ./services/account/src
         target: /app
       - action: rebuild
@@ -274,6 +280,8 @@ services:
     container_name: currency_service
     env_file:
       - path: ./services/currency/.env
+    environment:
+      DEPLOYMENT_MODE: development
     ports:
       - "127.0.0.1:8088:5000"
     networks:
@@ -284,7 +292,7 @@ services:
       - currency_key
     develop:
      watch:
-      - action: sync
+      - action: rebuild
         path: ./services/currency/src
         target: /app
       - action: rebuild
@@ -300,6 +308,8 @@ services:
     container_name: admin_service
     env_file:
       - path: ./services/admin/.env
+    environment:
+      DEPLOYMENT_MODE: development
     ports:
       - "127.0.0.1:8085:5000"
     networks:
@@ -310,7 +320,7 @@ services:
       - admin_key
     develop:
       watch:
-        - action: sync
+        - action: rebuild
           path: ./services/admin/src
           target: /app
         - action: rebuild
@@ -326,6 +336,8 @@ services:
     container_name: market_service
     env_file:
       - path: ./services/market/.env
+    environment:
+      DEPLOYMENT_MODE: development
     ports:
       - "127.0.0.1:8086:5000"
     depends_on:
@@ -344,7 +356,7 @@ services:
       - celery_key
     develop:
       watch:
-        - action: sync
+        - action: rebuild
           path: ./services/market/src
           target: /app
         - action: rebuild
@@ -360,6 +372,8 @@ services:
     container_name: transaction_service
     env_file:
       - path: ./services/transaction/.env
+    environment:
+      DEPLOYMENT_MODE: development
     ports:
       - "127.0.0.1:8087:5000"
     depends_on:
@@ -374,7 +388,7 @@ services:
       - transaction_key
     develop:
      watch:
-      - action: sync
+      - action: rebuild
         path: ./services/transaction/src
         target: /app
       - action: rebuild

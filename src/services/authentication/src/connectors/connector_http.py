@@ -1,8 +1,11 @@
 import requests
 import pybreaker
 
-class CollectionConnectorHTTP:
-    URL_UPDATE_PLAYER_WALLET = 'https://player_service:5000/{player_uuid}/wallet'
+#except json.JSONDecodeError as e:
+#return jsonify({'response': 'Json error'}), 500
+
+class AuthenticationConnectorHTTP:
+    URL_GET_WITH_PASSWORD_BY_USERNAME = 'https://player_service:5000/username/{player_username}/all'
 
     def __init__(self):
         self.circuitbreaker = pybreaker.CircuitBreaker(
@@ -19,10 +22,7 @@ class CollectionConnectorHTTP:
         return {'http_code': r.status_code, 'http_body': r.json()}
 
     # HTTP requests
-    def updatePlayerWallet(self, player_uuid, amount):
-        url = self.URL_UPDATE_PLAYER_WALLET.format(player_uuid=player_uuid)
-        data = {
-            'amount': amount
-        }
+    def getPlayerWithPasswordHashByUsername(self, player_username):
+        url = AuthenticationConnectorHTTP.URL_GET_WITH_PASSWORD_BY_USERNAME.format(player_username=player_username)
 
-        return self.__req(requests.put, url, data)
+        return self.__req(requests.get, url)

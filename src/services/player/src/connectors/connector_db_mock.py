@@ -1,0 +1,2 @@
+class PlayerConnectorDBMock:
+    pass

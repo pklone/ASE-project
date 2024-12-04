@@ -1,8 +1,8 @@
 import requests
 import pybreaker
 
-class CollectionConnectorHTTP:
-    URL_UPDATE_PLAYER_WALLET = 'https://player_service:5000/{player_uuid}/wallet'
+class CurrencyConnectorHTTP:
+    URL_PLAYER_ADD_WALLET = 'https://player_service:5000/{player_uuid}/wallet'
 
     def __init__(self):
         self.circuitbreaker = pybreaker.CircuitBreaker(
@@ -19,10 +19,10 @@ class CollectionConnectorHTTP:
         return {'http_code': r.status_code, 'http_body': r.json()}
 
     # HTTP requests
-    def updatePlayerWallet(self, player_uuid, amount):
-        url = self.URL_UPDATE_PLAYER_WALLET.format(player_uuid=player_uuid)
+    def playerWallet(self, player_uuid, amount):
+        url = self.URL_PLAYER_ADD_WALLET.format(player_uuid=player_uuid)
         data = {
-            'amount': amount
+            'amount' : amount
         }
 
         return self.__req(requests.put, url, data)

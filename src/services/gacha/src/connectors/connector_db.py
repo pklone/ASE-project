@@ -14,7 +14,6 @@ class CollectionConnectorDB:
         self.cursor = None
 
         self.__connect()
-        self.__cursor()
 
     def __del__(self):
         self.__close()
@@ -37,13 +36,14 @@ class CollectionConnectorDB:
     def __cursor(self):
         try:
             #if not cursor:
-            self.cursor = self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            cursor = self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         except psycopg2.Error as e:
             raise Exception('Error: invalid cursor')
 
+        return cursor
+
     def __close(self):
         try:
-            self.cursor.close()
             self.conn.close()
         except psycopg2.Error as e:
             raise Exception('Error: cannot close connection')
@@ -51,13 +51,15 @@ class CollectionConnectorDB:
     # APIs
     def getAll(self):
         try:
-            self.cursor.execute("""
+            cursor = self.__cursor()
+            cursor.execute("""
                 SELECT g.uuid, g.name, LEFT(g.description, 100) || '...' AS description, image_path, r.name as rarity 
                 FROM gacha g 
                     INNER JOIN rarity r on g.uuid_rarity = r.uuid WHERE g.active = true
             """)
 
-            records = self.cursor.fetchall()
+            records = cursor.fetchall()
+            cursor.close()
         except psycopg2.Error as e:
             raise Exception('Error: failed query')
 
@@ -65,16 +67,18 @@ class CollectionConnectorDB:
 
     def getByUuid(self, gacha_uuid):
         try:
-            self.cursor.execute("""
+            cursor = self.__cursor()
+            cursor.execute("""
                 SELECT g.uuid, g.name, description, image_path, r.name as rarity 
                 FROM gacha g 
                     INNER JOIN rarity r on g.uuid_rarity = r.uuid WHERE g.uuid = %s
                 """, [gacha_uuid])
 
-            if self.cursor.rowcount == 0:
-                raise Exception(f'Error: gacha not found')
+            if cursor.rowcount == 0:
+                raise ValueError(f'Error: gacha not found')
 
-            record = self.cursor.fetchone()
+            record = cursor.fetchone()
+            cursor.close()
         except psycopg2.Error as e:
             raise Exception('Error: failed query')
 
@@ -83,7 +87,8 @@ class CollectionConnectorDB:
 
     def getByPlayer(self, player_uuid):
         try:
-            self.cursor.execute("""
+            cursor = self.__cursor()
+            cursor.execute("""
                 SELECT g.uuid, g.name, LEFT(g.description, 100) || '...' AS description, image_path, quantity, r.name as rarity 
                 FROM gacha g 
                     INNER JOIN rarity r on g.uuid_rarity = r.uuid 
@@ -91,7 +96,8 @@ class CollectionConnectorDB:
                 WHERE pg.uuid_player = %s""", 
             [player_uuid])
 
-            records = self.cursor.fetchall()
+            records = cursor.fetchall()
+            cursor.close()
         except psycopg2.Error as e:
             raise Exception('Error: failed query')
 
@@ -99,15 +105,17 @@ class CollectionConnectorDB:
 
     def remove(self, gacha_uuid):
         try:
-            self.cursor.execute("SELECT 1 from gacha WHERE uuid = %s", 
+            cursor = self.__cursor()
+            cursor.execute("SELECT 1 from gacha WHERE uuid = %s", 
                 [gacha_uuid])
             
-            if self.cursor.rowcount == 0:
-                raise Exception("Error: gacha not found")
+            if cursor.rowcount == 0:
+                raise ValueError("Error: gacha not found")
 
-            self.cursor.execute("UPDATE gacha SET active = false WHERE uuid = %s", 
+            cursor.execute("UPDATE gacha SET active = false WHERE uuid = %s", 
                 [gacha_uuid])
-            self.conn.commit()
+            conn.commit()
+            cursor.close()
         except psycopg2.Error as e:
             self.conn.rollback()
             raise Exception('Error: failed query')
@@ -116,17 +124,19 @@ class CollectionConnectorDB:
 
     def updateQuantity(self, gacha_uuid, player_uuid, q):
         try:
-            self.cursor.execute('SELECT 1 FROM player_gacha WHERE uuid_player = %s AND uuid_gacha = %s', 
+            cursor = self.__cursor()
+            cursor.execute('SELECT 1 FROM player_gacha WHERE uuid_player = %s AND uuid_gacha = %s', 
                 [player_uuid, gacha_uuid])
 
-            if self.cursor.rowcount == 0:
-                self.cursor.execute('INSERT INTO player_gacha (uuid_player, uuid_gacha) VALUES (%s, %s)',
+            if cursor.rowcount == 0:
+                cursor.execute('INSERT INTO player_gacha (uuid_player, uuid_gacha) VALUES (%s, %s)',
                     [player_uuid, gacha_uuid])
             else:
-                self.cursor.execute('UPDATE player_gacha SET quantity = quantity + (%s) WHERE uuid_player = %s AND uuid_gacha = %s', 
+                cursor.execute('UPDATE player_gacha SET quantity = quantity + (%s) WHERE uuid_player = %s AND uuid_gacha = %s', 
                     [q, player_uuid, gacha_uuid])
 
             self.conn.commit()
+            cursor.close()
         except psycopg2.Error as e:
             self.conn.rollback()
             raise Exception(str(e))
@@ -135,8 +145,10 @@ class CollectionConnectorDB:
 
     def getAllRarity(self):
         try:
-            self.cursor.execute('SELECT uuid, percentage FROM rarity')
-            records = self.cursor.fetchall()
+            cursor = self.__cursor()
+            cursor.execute('SELECT uuid, percentage FROM rarity')
+            records = cursor.fetchall()
+            cursor.close()
         except psycopg2.Error as e:
             raise Exception('Error: failed query')
 
@@ -144,16 +156,18 @@ class CollectionConnectorDB:
 
     def getAllByRarity(self, rarity_uuid):
         try:
-            self.cursor.execute('SELECT 1 FROM rarity WHERE uuid = %s',
+            cursor = self.__cursor()
+            cursor.execute('SELECT 1 FROM rarity WHERE uuid = %s',
                 [rarity_uuid])
 
-            if self.cursor.rowcount == 0:
-                raise Exception(f'Error: rarity not found')
+            if cursor.rowcount == 0:
+                raise ValueError(f'Error: rarity not found')
 
-            self.cursor.execute('SELECT uuid FROM gacha WHERE uuid_rarity = %s and active = true',
+            cursor.execute('SELECT uuid FROM gacha WHERE uuid_rarity = %s and active = true',
                 [rarity_uuid])
 
-            records = self.cursor.fetchall()
+            records = cursor.fetchall()
+            cursor.close()
         except psycopg2.Error as e:
             raise Exception('Error: failed query')
 
@@ -161,13 +175,15 @@ class CollectionConnectorDB:
 
     def getRarityBySymbol(self, symbol):
         try:
-            self.cursor.execute('SELECT uuid from rarity where symbol = %s', 
+            cursor = self.__cursor()
+            cursor.execute('SELECT uuid from rarity where symbol = %s', 
                 [symbol])
 
-            if self.cursor.rowcount == 0:
-                raise Exception(f'Error: rarity not found')
+            if cursor.rowcount == 0:
+                raise ValueError(f'Error: rarity not found')
             
-            record = self.cursor.fetchone()
+            record = cursor.fetchone()
+            cursor.close()
         except psycopg2.Error as e:
             raise Exception('Error: failed query')
 
@@ -175,26 +191,28 @@ class CollectionConnectorDB:
 
     def add(self, gacha_uuid, name, description, image_path, rarity_uuid):
         try:
-            self.cursor.execute("""
+            cursor = self.__cursor()
+            cursor.execute("""
                 INSERT INTO gacha 
                     (uuid, name, description, image_path, uuid_rarity) 
                 VALUES
                     (%s, %s, %s, %s, %s)""", 
             (gacha_uuid, name, description, image_path, rarity_uuid))
 
-            self.cursor.execute("""
+            cursor.execute("""
                 SELECT g.uuid, g.name, description, image_path, r.name as rarity 
                 FROM gacha g 
                     INNER JOIN rarity r on g.uuid_rarity = r.uuid WHERE g.uuid = %s""", 
                 [gacha_uuid])
 
-            if self.cursor.rowcount == 0:
+            if cursor.rowcount == 0:
                 self.conn.rollback()
                 raise Exception('Error: failed query')
 
-            record = self.cursor.fetchone()
+            record = cursor.fetchone()
 
             self.conn.commit()
+            cursor.close()
         except psycopg2.Error as e:
             self.conn.rollback()
             raise Exception('Error: failed query')
@@ -203,7 +221,8 @@ class CollectionConnectorDB:
 
     def update(self, new_name, new_description, new_image_path, new_rarity_uuid, gacha_uuid):
         try:
-            self.cursor.execute("""
+            cursor = self.__cursor()
+            cursor.execute("""
                 UPDATE gacha SET
                     name = COALESCE(%s, name),
                     description = COALESCE(%s, description),
@@ -213,23 +232,24 @@ class CollectionConnectorDB:
             [new_name, new_description, new_image_path, new_rarity_uuid, gacha_uuid])
 
             # update query returns the number of modified rows
-            if self.cursor.rowcount == 0:
+            if cursor.rowcount == 0:
                 self.conn.rollback()
                 raise Exception(f'Error: failed update')
 
-            self.cursor.execute("""
+            cursor.execute("""
                 SELECT g.uuid, g.name, description, image_path, r.name as rarity 
                 FROM gacha g 
                     INNER JOIN rarity r on g.uuid_rarity = r.uuid WHERE g.uuid = %s""", 
                 [gacha_uuid])
 
-            if self.cursor.rowcount == 0:
+            if cursor.rowcount == 0:
                 self.conn.rollback()
                 raise Exception(f'Error: failed query')
 
-            record = self.cursor.fetchone()
+            record = cursor.fetchone()
 
             self.conn.commit()
+            cursor.close()
         except psycopg2.Error as e:
             raise Exception('Error: failed query')
         

@@ -1,208 +1,278 @@
 from flask import Flask, request, jsonify, abort, json, render_template
 from functools import wraps
-import psycopg2
 import os
-import requests
 import jwt
-import pybreaker
-
-app = Flask(__name__)
+import re
+import werkzeug.exceptions
+from connectors.connector_http import AccountConnectorHTTP
+from connectors.connector_http_mock import AccountConnectorHTTPMock
 
 # testing
-#   curl -X GET -H 'Accept: application/json' -b cookie.jar -k https://127.0.0.1:8083/user/collection
+#   curl -X POST -H 'Content-Type: application/json' -d '{"username": "kek", "password": "kek"}' -k https://127.0.0.1:8083/user
+#   curl -X POST -s -o /dev/null -w 'Authorization: %header{Authorization}' -H 'Content-Type: application/json' -d '{"username": "test", "password": "test"}' -k https://127.0.0.1:8081 > headers.txt
+#       curl -X GET -H 'Accept: application/json' -H @headers.txt -k https://127.0.0.1:8083/user/collection
+#       curl -X DELETE -H @headers.txt -k https://127.0.0.1:8083/user
+#       curl -X PUT -H 'Content-Type: application/json' -H @headers.txt -d '{"username": "kek", "wallet": 100}' -k https://127.0.0.1:8083/user
+#       curl -X GET -H 'Accept: application/json' -H @headers.txt -k https://127.0.0.1:8083/user/currency
+#       curl -X GET -H 'Accept: application/json' -H @headers.txt -k https://127.0.0.1:8083/user/transactions
+#       curl -X GET -H 'Accept: application/json' -H @headers.txt -k https://127.0.0.1:8083/user/transactions/3b8009f2-31c8-484b-aa74-32defbb02985
 
-circuitbreaker = pybreaker.CircuitBreaker(
-    fail_max=5, 
-    reset_timeout=60*5
-)
+class AccountService:
+    UUID_REGEX = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
 
-#set db connection
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-CERT_PATH = os.getenv("CERT_PATH")
-KEY_PATH = os.getenv("KEY_PATH")
-POSTGRES_SSLMODE = os.getenv("POSTGRES_SSLMODE")
+    def __init__(self, connectorHTTP, jwt_secret):
+        self.app = Flask(__name__)
 
-# set jwt
-SECRET = os.getenv("JWT_SECRET")
+        self.__init_routes()
+        self.connectorHTTP = connectorHTTP
+        self.jwt_secret = jwt_secret
 
-def login_required(f):
-  @wraps(f)
-  def decorated_function(*args, **kwargs):
-      encoded_jwt = request.headers.get('Authorization')
-  
-      if not encoded_jwt:
-          return jsonify({'response': 'You\'re not logged'}), 401
-      
-      encoded_jwt = encoded_jwt.split(' ')[1]
+    # routes
+    def __init_routes(self):
+        self.app.add_url_rule('/user',                                        endpoint='signup',           view_func=self.signup,           methods=['GET'])
+        self.app.add_url_rule('/user',                                        endpoint='create',           view_func=self.create,           methods=['POST'])
+        self.app.add_url_rule('/user',                                        endpoint='remove_my_user',   view_func=self.remove_my_user,   methods=['DELETE'])
+        self.app.add_url_rule('/user',                                        endpoint='update_my_user',   view_func=self.update_my_user,   methods=['PUT'])
+        self.app.add_url_rule('/user/collection',                             endpoint='collection',       view_func=self.collection,       methods=['GET'])
+        self.app.add_url_rule('/user/currency',                               endpoint='currency',         view_func=self.currency,         methods=['GET'])
+        self.app.add_url_rule('/user/transactions',                           endpoint='transactions_all', view_func=self.transactions_all, methods=['GET'])
+        self.app.add_url_rule('/user/transactions/<string:transaction_uuid>', endpoint='transaction',      view_func=self.transaction,      methods=['GET'])
+        self.app.add_url_rule('/userinfo',                                    endpoint='userinfo',         view_func=self.userinfo,         methods=['GET'])
+        self.app.register_error_handler(werkzeug.exceptions.NotFound, AccountService.page_not_found)
 
-      try:
-          options = {
-              'require': ['exp'], 
-              'verify_signature': True, 
-              'verify_exp': True
-          }
-  
-          decoded_jwt = jwt.decode(encoded_jwt, SECRET, algorithms=['HS256'], options=options)
-      except jwt.ExpiredSignatureError:
-          return jsonify({'response': 'Expired token'}), 403
-      except jwt.InvalidTokenError:
-          return jsonify({'response': 'Invalid token'}), 403
-  
-      if 'sub' not in decoded_jwt:
-          return jsonify({'response': 'Try later'}), 403
-      
-      if decoded_jwt['scope'] != 'player':
-          return jsonify({'response': 'You are not autorized'}), 401  
-  
-      additional = {'auth_uuid': decoded_jwt['sub']}
-  
-      return f(*args, **kwargs, **additional)
-  
-  return decorated_function
+    # util functions
+    def page_not_found(error):
+        return {'response': "page not found"}, 404
 
-@app.errorhandler(404)
-def page_not_found(error):
-    return jsonify({'response': "page not found"}), 404
+    def check_uuid(**kwargs):
+        res = {'name': None}
+        p = re.compile(AccountService.UUID_REGEX, re.IGNORECASE)
 
-@app.route('/user', methods=['GET'])
-def signup():
-    return render_template('signup.html'), 200
+        for key, value in kwargs.items():
+            if p.match(value) is None:
+                res['name'] = key
+                break
 
-@app.route('/user', methods=['POST'])
-def create():
-    username = request.json['username']
-    password = request.json['password']
+        return res
 
-    player = {
-        'username': username,
-        'password': password
-    }
-
-    try:
-        r = circuitbreaker.call(requests.post, 'https://player_service:5000', verify=False, json=player)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-    
-    return r.text, r.status_code
-
-@app.route('/user', methods=['DELETE'])
-@login_required
-def remove_my_user(auth_uuid):
-
-    try:
-        response = circuitbreaker.call(requests.get, f'https://market_service:5000/market', headers={'Accept': 'application/json'},  verify=False)
-    except Exception as e:  
-        return jsonify({'response': str(e)}), 500
-    
-    for auction in response.json()['response']:
-        if auction['user_uuid'] == auth_uuid and not auction['closed']:
-            return jsonify({'response': 'You have an active auction'}), 400
-
-    try:
-        r = circuitbreaker.call(requests.delete, f'https://player_service:5000/uuid/{auth_uuid}', verify=False)
-    except Exception as e:  
-        return jsonify({'response': str(e)}), 500
+    def login_required(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            encoded_jwt = request.headers.get('Authorization')
         
+            if not encoded_jwt:
+                return jsonify({'response': 'You\'re not logged'}), 401
+            
+            encoded_jwt = encoded_jwt.split(' ')[1]
+        
+            try:
+                options = {
+                    'require': ['exp'], 
+                    'verify_signature': True, 
+                    'verify_exp': True
+                }
+        
+                decoded_jwt = jwt.decode(encoded_jwt, args[0].jwt_secret, algorithms=['HS256'], options=options)
+            except jwt.ExpiredSignatureError:
+                return jsonify({'response': 'Expired token'}), 403
+            except jwt.InvalidTokenError:
+                return jsonify({'response': 'Invalid token'}), 403
+        
+            if 'sub' not in decoded_jwt:
+                return jsonify({'response': 'Try later'}), 403
 
-    return r.text, r.status_code
+            if decoded_jwt['scope'] != 'player':
+                return jsonify({'response': 'You are not authorized'}), 401
+        
+            additional = {'auth_uuid': decoded_jwt['sub']}
+        
+            return f(*args, **kwargs, **additional)
+        
+        return decorated_function
 
-@app.route('/user', methods=['PUT'])
-@login_required
-def update_my_user(auth_uuid):
-    new_username = request.json.get('username')
-    new_wallet = request.json.get('wallet')
+    # APIs
+    def signup(self):
+        return render_template('signup.html'), 200
 
-    new_player = {
-        'username': new_username,
-        'wallet': new_wallet
-    }
-
-    try:
-        r = circuitbreaker.call(requests.put, f'https://player_service:5000/uuid/{auth_uuid}', verify=False, json=new_player)
-    except Exception as e:  
-        return jsonify({'response': str(e)}), 500
-
-    return r.text, r.status_code
-
-@app.route('/user/collection', methods=['GET'])
-@login_required
-def collection(auth_uuid):
-    try:
-        r = circuitbreaker.call(requests.get, f'https://gacha_service:5000/collection/user/{auth_uuid}', verify=False)
-    except Exception as e:
-        return jsonify({'response': str(e)}), 500
-
-    if 'application/json' in request.headers.get('Accept'):
-        return r.text, r.status_code
-    elif 'text/html' in request.headers.get('Accept'):
+    def create(self):
         try:
-            records = r.json()['response']
-        except ValueError:
-            return jsonify({'response': 'Invalid response from gacha service'}), 500
-        return render_template("user_collection.html", records=records), 200
-    else:
-        return jsonify({'response': 'Not supported'}), 400
+            username = request.json['username']
+            password = request.json['password']
 
-@app.route('/user/currency', methods=['GET'])
-@login_required
-def currency(auth_uuid):
-    try:
-        r = circuitbreaker.call(requests.get, f'https://player_service:5000/uuid/{auth_uuid}', verify=False)
-    except Exception as e:
-        return jsonify({'response': str(e)}), 500
+            r = self.connectorHTTP.createPlayer(username, password)
+        except KeyError:
+            return {'response': 'Missing data'}, 400
+        except Exception as e:
+            return {'response': str(e)}, 500
+        
+        return r['http_body'], r['http_code']
 
-    wallet = json.loads(r.text)['response']['wallet']
+    @login_required
+    def remove_my_user(self, auth_uuid):
+        auth_header = request.headers.get('Authorization')
 
-    if 'application/json' in request.headers.get('Accept'):
-        return jsonify({'response': wallet}), 200
-    elif 'text/html' in request.headers.get('Accept'):
-        return render_template("currency.html", wallet=wallet), 200
-    else:
-        return jsonify({'response': 'Not supported'}), 406
+        try:
+            r = self.connectorHTTP.getAllAuctions(auth_header)
+            if r['http_code'] != 200:
+                return {'response': 'Try later'}, 500
 
-@app.route('/user/transactions', methods=['GET'])
-@login_required
-def transactions_all(auth_uuid):
-    try:
-        r = circuitbreaker.call(requests.get, f'https://transaction_service:5000/user/{auth_uuid}', verify=False)
-    except Exception as e:
-        return jsonify({'response': str(e)}), 500
-    transactions = json.loads(r.text)['response']
+            for auction in r['http_body']['response']:
+                if auction['user_uuid'] == auth_uuid and not auction['closed']:
+                    return {'response': 'You have an active auction'}, 400
 
-    if 'application/json' in request.headers['Accept']:
-        return jsonify({'response': transactions}), 200
-    elif 'text/html' in request.headers['Accept']:
-        return render_template('transactions.html', records=transactions), 200
-    else:
-        return jsonify({'response': 'Not supported'}), 400
+            r = self.connectorHTTP.removePlayer(auth_uuid)
 
-@app.route('/user/transactions/<string:transaction_uuid>', methods=['GET'])
-@login_required
-def transaction(transaction_uuid, auth_uuid):
-    try:
-        r = circuitbreaker.call(requests.get, f'https://transaction_service:5000/user/{auth_uuid}/{transaction_uuid}', verify=False)
-    except Exception as e:
-        return jsonify({'response': str(e)}), 500
-    
-    return r.text, r.status_code
-    transaction = json.loads(r.text)['response']
+            if r['http_code'] != 200:
+                return {'response': 'Try later'}, 500
+        except Exception as e:
+            return {'response': str(e)}, 500
+        
+        return r['http_body'], r['http_code']
 
-    return jsonify({"response": transaction}), 200
+    @login_required
+    def update_my_user(self, auth_uuid):
+        try:
+            new_username = request.json['username']
+            new_wallet = request.json['wallet']
 
-@app.route('/userinfo', methods=['GET'])
-@login_required
-def userinfo(auth_uuid):
-    try:
-        r = circuitbreaker.call(requests.get, f'https://player_service:5000/uuid/{auth_uuid}', verify=False)
-    except Exception as e:
-        return jsonify({'response': str(e)}), 500
+            if type(new_wallet) is not int or new_wallet < 0:
+                return {'response': 'Invalid amount'}, 400
 
-    return r.text, r.status_code
+            r = self.connectorHTTP.modifyPlayer(auth_uuid, new_username, new_wallet)
+
+            if r['http_code'] != 200:
+                return {'response': 'Try later'}, 500
+        except KeyError:
+            return {'response': 'Missing data'}, 400
+        except Exception as e:
+            return {'response': str(e)}, 500
+        
+        return r['http_body'], 200
+
+    @login_required
+    def collection(self, auth_uuid):
+        try:
+            r = self.connectorHTTP.playerCollection(auth_uuid)
+
+            if r['http_code'] != 200:
+                return {'response': 'Try later'}, 500
+        except Exception as e:
+            return {'response': str(e)}, 500
+
+        if 'application/json' in request.headers.get('Accept'):
+            return r['http_body'], 200
+        elif 'text/html' in request.headers.get('Accept'):
+            return render_template("user_collection.html", records=r['http_body']['response']), 200
+        else:
+            return {'response': 'Not supported'}, 400
+
+    @login_required
+    def currency(self, auth_uuid):
+        try:
+            r = self.connectorHTTP.getPlayer(auth_uuid)
+            
+            if r['http_code'] != 200:
+                return {'response': 'Try later'}, 500
+        except Exception as e:
+            return {'response': str(e)}, 500
+
+        if 'application/json' in request.headers.get('Accept'):
+            return r['http_body'], 200
+        elif 'text/html' in request.headers.get('Accept'):
+            return render_template("Account.html", wallet=r['http_body']['response']['wallet']), 200
+        else:
+            return {'response': 'Not supported'}, 406
+
+    @login_required
+    def transactions_all(self, auth_uuid):
+        try:
+            r = self.connectorHTTP.getAllTransactions(auth_uuid)
+            
+            if r['http_code'] != 200:
+                return {'response': 'Try later'}, 500
+        except Exception as e:
+            return jsonify({'response': str(e)}), 500
+
+        if 'application/json' in request.headers['Accept']:
+            return r['http_body'], 200
+        elif 'text/html' in request.headers['Accept']:
+            return render_template('transactions.html', records=r['http_body']['response']), 200
+        else:
+            return {'response': 'Not supported'}, 400
+
+    @login_required
+    def transaction(self, transaction_uuid, auth_uuid):
+        if AccountService.check_uuid(transaction_uuid=transaction_uuid)['name']:
+            return {'response': f'Invalid {res['name']}'}, 400
+
+        try:
+            r = self.connectorHTTP.getTransaction(auth_uuid, transaction_uuid)
+            
+            if r['http_code'] != 200:
+                return {'response': 'Try later'}, 500
+        except Exception as e:
+            return {'response': str(e)}, 500
+
+        return r['http_body'], 200
+
+    @login_required
+    def userinfo(self, auth_uuid):
+        try:
+            r = self.connectorHTTP.getPlayer(auth_uuid)
+
+            if r['http_code'] != 200:
+                return {'response': 'Try later'}, 500
+        except Exception as e:
+            return {'response': str(e)}, 500
+        
+        return r['http_body'], r['http_code']
+
+    # static factory methods
+    def development(cert_path, key_path, jwt_secret):
+        http = AccountConnectorHTTP()
+
+        AccountService(http, jwt_secret).app.run(
+            host="0.0.0.0", 
+            port=5000, 
+            debug=True, 
+            ssl_context=(cert_path, key_path)
+        )
+
+    def testing(cert_path, key_path, jwt_secret):
+        http = AccountConnectorHTTPMock()
+        
+        AccountService(http, jwt_secret).app.run(
+            host="0.0.0.0", 
+            port=5000, 
+            debug=True, 
+            ssl_context=(cert_path, key_path)
+        )
+
+    def production(cert_path, key_path, jwt_secret):
+        http = AccountConnectorHTTP()
+        
+        AccountService(http, jwt_secret).app.run(
+            host="0.0.0.0", 
+            port=5000, 
+            ssl_context=(cert_path, key_path)
+        )
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=(CERT_PATH, KEY_PATH))
+    # set https certs
+    CERT_PATH = os.getenv("CERT_PATH")
+    KEY_PATH = os.getenv("KEY_PATH")
+
+    # set jwt
+    JWT_SECRET = os.getenv("JWT_SECRET")
+
+    # deployment mode
+    DEPLOYMENT_MODE = os.getenv("DEPLOYMENT_MODE")
+
+    match DEPLOYMENT_MODE:
+        case 'production':
+            AccountService.production(CERT_PATH, KEY_PATH, JWT_SECRET)
+        case 'testing':
+            AccountService.testing(CERT_PATH, KEY_PATH, JWT_SECRET)
+        case 'development':
+            AccountService.development(CERT_PATH, KEY_PATH, JWT_SECRET)
 

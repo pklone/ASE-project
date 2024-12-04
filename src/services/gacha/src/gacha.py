@@ -3,7 +3,7 @@ import os
 import jwt
 import random
 import uuid
-import requests
+import re
 from werkzeug.utils import secure_filename
 import werkzeug.exceptions
 from functools import wraps
@@ -17,7 +17,7 @@ from connectors.connector_http_mock import CollectionConnectorHTTPMock
 #   curl -X GET -k https://127.0.0.1:8082/collection/dde21dde-5513-46d2-8d03-686fc620394c
 #   curl -X GET -k https://127.0.0.1:8082/collection/user/71520f05-80c5-4cb1-b05a-a9642f9ae44d
 #   curl -X PUT -H 'Content-type: application/json' -d '{"gacha_uuid": "dde21dde-5513-46d2-8d03-686fc620394c", "q": 1}' -k https://127.0.0.1:8082/collection/user/71520f05-80c5-4cb1-b05a-a9642f9ae44d
-#   curl -X POST -H 'Content-Type: application/json' -d '{"username": "test", "password": "test"}' -c cookie.jar -k https://127.0.0.1:8081/login
+#   curl -X POST -s -o /dev/null -w 'Authorization: %header{Authorization}' -H 'Content-Type: application/json' -d '{"username": "test", "password": "test"}' -k https://127.0.0.1:8081 > headers.txt
 #       curl -X GET -H 'Accept: application/json' -k -b cookie.jar https://127.0.0.1:8082/roll
 #   cp ~/Documenti/media/immagini/meme/batkek.jpg . 
 #       curl -X POST -F 'gacha_image=@batkek.jpg' -F 'name=placeholder' -F 'description=placeholder' -F 'rarity=S' -k https://127.0.0.1:8082/collection
@@ -30,6 +30,7 @@ class CollectionService:
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
     STATIC_DIR_PATH = '/assets'
     GACHAS_DIR_PATH = STATIC_DIR_PATH + '/images/gachas'
+    UUID_REGEX = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
 
     def __init__(self, connectorHTTP, connectorDB, jwt_secret):
         self.app = Flask(__name__, static_url_path=self.STATIC_DIR_PATH)
@@ -51,15 +52,26 @@ class CollectionService:
         self.app.add_url_rule('/collection',                           endpoint='add_gacha',       view_func=self.add_gacha,       methods=['POST'])
         self.app.add_url_rule('/collection/<string:gacha_uuid>',       endpoint='modify_gacha',    view_func=self.modify_gacha,    methods=['PUT'])
         self.app.add_url_rule('/collection/<string:gacha_uuid>',       endpoint='delete_gacha',    view_func=self.delete_gacha,    methods=['DELETE'])
-        self.app.register_error_handler(werkzeug.exceptions.NotFound, self.page_not_found)
+        self.app.register_error_handler(werkzeug.exceptions.NotFound, CollectionService.page_not_found)
 
     # util functions
-    def page_not_found(self, error):
+    def page_not_found(error):
         return {'response': "page not found"}, 404
 
-    def allowed_file(self, filename):
+    def check_uuid(**kwargs):
+        res = {'name': None}
+        p = re.compile(CollectionService.UUID_REGEX, re.IGNORECASE)
+
+        for key, value in kwargs.items():
+            if p.match(value) is None:
+                res['name'] = key
+                break
+
+        return res
+
+    def allowed_file(filename):
         return '.' in filename and \
-            filename.rsplit('.', 1)[1].lower() in self.ALLOWED_EXTENSIONS
+            filename.rsplit('.', 1)[1].lower() in CollectionService.ALLOWED_EXTENSIONS
 
     # decorators
     def login_required(f):
@@ -112,14 +124,22 @@ class CollectionService:
             return {'response': 'Not supported'}, 400
 
     def show(self, gacha_uuid):
+        if CollectionService.check_uuid(gacha_uuid=gacha_uuid)['name']:
+            return {'response': f'Invalid {res['name']}'}, 400
+
         try:
             record = self.connectorDB.getByUuid(gacha_uuid)
+        except ValueError as e:
+            return {'response': str(e)}, 400    
         except Exception as e:
             return {'response': str(e)}, 500
 
         return {'response': record}, 200
 
     def show_by_player(self, player_uuid):
+        if CollectionService.check_uuid(player_uuid=player_uuid)['name']:
+            return {'response': f'Invalid {res['name']}'}, 400
+
         try:
             records = self.connectorDB.getByPlayer(player_uuid)
         except Exception as e:
@@ -128,6 +148,9 @@ class CollectionService:
         return {'response': records}, 200
 
     def update_quantity(self, player_uuid):
+        if CollectionService.check_uuid(player_uuid=player_uuid)['name']:
+            return {'response': f'Invalid {res['name']}'}, 400
+
         try:
             q = request.json['q'] # q is 1 (buyer) or -1 (owner)
             gacha_uuid = request.json['gacha_uuid']
@@ -154,6 +177,8 @@ class CollectionService:
 
         try:
             records = self.connectorDB.getAllByRarity(rarity_uuid)
+        except ValueError as e:
+            return {'response': str(e)}, 400
         except Exception as e:
             return {'response': str(e)}, 500
 
@@ -166,6 +191,8 @@ class CollectionService:
 
             self.connectorDB.updateQuantity(gacha_uuid, auth_uuid, 1)
             record = self.connectorDB.getByUuid(gacha_uuid)
+        except ValueError as e:
+            return {'response': str(e)}, 400
         except Exception as e:
             return {'response': str(e)}, 500
 
@@ -184,7 +211,7 @@ class CollectionService:
         if file.filename == '':
             return {'response': 'filename not found'}, 400
 
-        if not file or not self.allowed_file(file.filename):
+        if not file or not CollectionService.allowed_file(file.filename):
             return {'response': 'invalid image format or empty image'}, 400
 
         try:
@@ -207,6 +234,8 @@ class CollectionService:
             record = self.connectorDB.add(gacha_uuid, name, description, image_path, rarity_uuid)
         except KeyError:
             return {'response': 'Missing data'}, 400
+        except ValueError as e:
+            return {'response': str(e)}, 400
         except FileNotFoundError:
             return {'response': 'Internal error'}, 500
         except Exception as e:
@@ -215,6 +244,9 @@ class CollectionService:
         return {'response': record}, 201
         
     def modify_gacha(self, gacha_uuid):
+        if CollectionService.check_uuid(gacha_uuid=gacha_uuid)['name']:
+            return {'response': f'Invalid {res['name']}'}, 400
+            
         new_name = request.form.get('name')
         new_description = request.form.get('description')
         new_rarity = request.form.get('rarity')
@@ -229,6 +261,8 @@ class CollectionService:
                     return {'response': 'invalid rarity'}, 400
 
                 new_rarity_uuid = record['uuid']
+            except ValueError as e:
+                return {'response': str(e)}, 400
             except Exception as e:
                 return {'response': str(e)}, 500
         
@@ -238,7 +272,7 @@ class CollectionService:
             if file.filename == '':
                 return {'response': 'gacha image filename not found'}, 400
 
-            if not file or not self.allowed_file(file.filename):
+            if not file or not CollectionService.allowed_file(file.filename):
                 return {'response': 'invalid image format or empty image'}, 400
             
             try:
@@ -258,8 +292,13 @@ class CollectionService:
         return {'response': record}, 200
 
     def delete_gacha(self, gacha_uuid):
+        if CollectionService.check_uuid(gacha_uuid=gacha_uuid)['name']:
+            return {'response': f'Invalid {res['name']}'}, 400
+
         try:
             self.connectorDB.remove(gacha_uuid)
+        except ValueError as e:
+            return {'response': str(e)}, 400
         except Exception as e:
             return {'response': str(e)}, 500
         
@@ -297,7 +336,6 @@ class CollectionService:
             port=5000, 
             ssl_context=(cert_path, key_path)
         )
-        ssl_context=(CERT_PATH, KEY_PATH)
 
 if __name__ == '__main__':
     # set db connection

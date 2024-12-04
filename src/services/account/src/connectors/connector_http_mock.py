@@ -1,0 +1,2 @@
+class AccountConnectorHTTPMock:
+    pass

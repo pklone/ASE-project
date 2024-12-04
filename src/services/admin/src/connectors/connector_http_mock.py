@@ -1,0 +1,2 @@
+class AdminConnectorHTTPMock:
+    pass

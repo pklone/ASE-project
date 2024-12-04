@@ -1,199 +1,276 @@
 from flask import Flask, request, jsonify, make_response, json, render_template
 from datetime import datetime, timezone, timedelta
-import psycopg2, os
-import psycopg2.extras
 import jwt
 import bcrypt
-import requests
-import pybreaker
+import os
+import werkzeug.exceptions
+from connectors.connector_db import AuthenticationConnectorDB
+from connectors.connector_db_mock import AuthenticationConnectorDBMock
+from connectors.connector_http import AuthenticationConnectorHTTP
+from connectors.connector_http_mock import AuthenticationConnectorHTTPMock
 
-app = Flask(__name__)
+# if r['http_code'] != 200:
+#    return {'response': r['http_body']['response']}, 500
 
-circuitbreaker = pybreaker.CircuitBreaker(
-    fail_max=5, 
-    reset_timeout=60*5
-)
+# testing
+#   curl -X POST -s -o /dev/null -w 'Authorization: %header{Authorization}' -H 'Content-Type: application/json' -d '{"username": "test", "password": "test"}' -k https://127.0.0.1:8081 > headers.txt
+#   curl -X DELETE -H @headers.txt -k https://127.0.0.1:8081/logout
 
+class AuthenticationService:
+    def __init__(self, connectorHTTP, connectorDB, jwt_secret):
+        self.app = Flask(__name__)
 
-#set db connection
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-CERT_PATH = os.getenv("CERT_PATH")
-KEY_PATH = os.getenv("KEY_PATH")
-POSTGRES_SSLMODE = os.getenv("POSTGRES_SSLMODE")
+        self.__init_routes()
+        self.connectorHTTP = connectorHTTP
+        self.connectorDB = connectorDB
+        self.jwt_secret = jwt_secret
 
-# set jwt
-SECRET = os.getenv("JWT_SECRET")
+    # routes
+    def __init_routes(self):
+        self.app.add_url_rule('/login',       endpoint='index',       view_func=self.index,       methods=['GET'])
+        self.app.add_url_rule('/admin_login', endpoint='admin_login', view_func=self.admin_login, methods=['POST'])
+        self.app.add_url_rule('/',            endpoint='login',       view_func=self.login,       methods=['POST'])
+        self.app.add_url_rule('/logout',      endpoint='logout',      view_func=self.logout,      methods=['DELETE'])
+        self.app.register_error_handler(werkzeug.exceptions.NotFound, AuthenticationService.page_not_found)
 
-@app.errorhandler(404)
-def page_not_found(error):
-    return jsonify({'response': "page not found"}), 404
+    # util functions
+    def page_not_found(error):
+        return {'response': "page not found"}, 404
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            encoded_jwt = request.cookies.get('session')
 
-@app.route('/login', methods=['GET'])
-def index():
-    return render_template('index.html'), 200
+            if not encoded_jwt:
+                return {'response': 'You\'re not logged'}, 401
 
-@app.route('/admin_login', methods=['POST'])
-def admin_login():
-    result = {}
-    
-    admin_username = request.json.get('username')
-    admin_password = request.json.get('password')
+            try:
+                options = {
+                    'require': ['exp'], 
+                    'verify_signature': True, 
+                    'verify_exp': True
+                }
 
-    try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT,
-            sslmode=POSTGRES_SSLMODE
+                decoded_jwt = jwt.decode(encoded_jwt, args[0].jwt_secret, algorithms=['HS256'], options=options)
+            except jwt.ExpiredSignatureError:
+                return {'response': 'Expired token'}, 403
+            except jwt.InvalidTokenError:
+                return {'response': 'Invalid token'}, 403
+
+            if 'uuid' not in decoded_jwt:
+                return {'response': 'Try later'}, 403
+
+            additional = {'auth_uuid': decoded_jwt['uuid']}
+
+            return f(*args, **kwargs, **additional)
+
+        return decorated_function
+
+    # APIs
+    def index(self):
+        return render_template('index.html'), 200
+
+    def admin_login(self):
+        if request.headers.get('Content-Type') != 'application/json':
+            return {'response': 'Content-type not supported'}, 400
+
+        encoded_jwt = request.headers.get('Authorization')
+
+        if encoded_jwt:
+            return {'response': 'Already logged in'}, 200
+
+        try:
+            admin_username = request.json['username']
+            admin_password = request.json['password']
+
+            record = self.connectorDB.getAdminByUsername(admin_username)
+            if not bcrypt.checkpw(admin_password.encode(), record['password_hash'].encode()):
+                return {'response': 'Invalid credentials'}, 401
+
+        except KeyError:
+            return {'response': 'Missing data'}, 400
+        except ValueError as e:
+            return {'response': str(e)}, 400
+        except Exception as e:
+            return {'response': str(e)}, 500
+
+        expire = datetime.now(tz=timezone.utc) + timedelta(seconds=3600)
+        time = datetime.now(tz=timezone.utc)
+
+        payload_access = {
+            'iss': 'https://ase.localhost',
+            'sub': record['uuid'], 
+            'exp': expire,
+            'scope': 'admin'
+        }
+
+        payload_id = {
+            'iss': 'https://ase.localhost',
+            'aud': 'https://ase.localhost/login',
+            'sub': record['uuid'], 
+            'exp': expire,
+            'iat': time,
+            'nbf': time,
+            'scope': 'admin'
+        }
+
+        access_token = jwt.encode(payload_access, self.jwt_secret, algorithm='HS256')
+        id_token = jwt.encode(payload_id, self.jwt_secret, algorithm='HS256')
+
+        response = {
+            'access_token': access_token,
+            'token_type': 'Bearer',
+            'expires_in': 3600,
+            'id_token': id_token
+        }
+
+        headers = {
+            'Authorization': f'Bearer {access_token}',
+        }
+
+        response = make_response(jsonify(response))
+        response.headers = headers
+
+        return response, 200
+
+    def login(self):
+        if request.headers.get('Content-Type') != 'application/json':
+            return {'response': 'Content-type not supported'}, 400
+
+        encoded_jwt = request.headers.get('Authorization')
+
+        if encoded_jwt:
+            return {'response': 'Already logged in'}, 200
+
+        try:
+            username = request.json['username']
+            password = request.json['password']
+
+            r = self.connectorHTTP.getPlayerWithPasswordHashByUsername(username)
+            if r['http_code'] != 200:
+                return {'response': r['http_body']['response']}, 500
+
+            player = r['http_body']['response']
+
+            if player["active"] == False:
+                return {'response': 'Account not found'}, 401
+
+            if not bcrypt.checkpw(password.encode(), player['password_hash'].encode()):
+                return {'response': 'Invalid credentials'}, 401
+
+        except KeyError:
+            return {'response': 'Missing credentials'}, 400
+        except ValueError as e:
+            return {'response': str(e)}, 400
+        except Exception as e:
+            return {'response': str(e)}, 500
+
+        expire = datetime.now(tz=timezone.utc) + timedelta(seconds=3600)
+        time = datetime.now(tz=timezone.utc)
+
+        payload_access = {
+            'iss': 'https://ase.localhost',
+            'sub': player['uuid'], 
+            'exp': expire,
+            'scope': 'player'
+        }
+
+        payload_id = {
+            'iss': 'https://ase.localhost',
+            'aud': 'https://ase.localhost/login',
+            'sub': player['uuid'], 
+            'scope': 'player',
+            'exp': expire,
+            'iat': time,
+            'nbf': time
+        }
+
+        access_token = jwt.encode(payload_access, self.jwt_secret, algorithm='HS256')
+        id_token = jwt.encode(payload_id,  self.jwt_secret, algorithm='HS256')
+
+        response = {
+            'access_token': access_token,
+            'token_type': 'Bearer',
+            'expires_in': 3600,
+            'id_token': id_token
+        }
+
+        headers = {
+            'Authorization': f'Bearer {access_token}',
+        }
+
+        response = make_response(jsonify(response))
+        response.headers = headers
+
+        return response, 200
+
+    def logout(self):
+        encoded_jwt = request.headers.get('Authorization')
+
+        if not encoded_jwt:
+            return {'response': 'You are not logged'}, 401
+        
+        encoded_jwt = encoded_jwt.split(' ')[1]
+
+        response = make_response(jsonify({'response': 'Logout successful'}))
+
+        return response, 200
+
+    # static factory methods
+    def development(db_name, db_user, db_password, db_host, db_port, db_sslmode, cert_path, key_path, jwt_secret):
+        db = AuthenticationConnectorDB(db_name, db_user, db_password, db_host, db_port, db_sslmode)
+        http = AuthenticationConnectorHTTP()
+
+        AuthenticationService(http, db, jwt_secret).app.run(
+            host="0.0.0.0", 
+            port=5000, 
+            debug=True, 
+            ssl_context=(cert_path, key_path)
         )
 
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute('SELECT * FROM admin WHERE username = %s', 
-            [admin_username])
-        record = cursor.fetchone()
+    def testing(cert_path, key_path, jwt_secret):
+        db = AuthenticationConnectorDBMock()
+        http = AuthenticationConnectorHTTPMock()
+        
+        AuthenticationService(http, db, jwt_secret).app.run(
+            host="0.0.0.0", 
+            port=5000, 
+            debug=True, 
+            ssl_context=(cert_path, key_path)
+        )
 
-        if record:
-            result = record
-
-        cursor.close()
-        conn.close()
-    except psycopg2.Error as e:
-        return jsonify({'response': str(e)}), 500
-    
-    admin = result
-
-    if admin == {} or not bcrypt.checkpw(admin_password.encode(), admin['password_hash'].encode()):
-        return jsonify({'response': 'Invalid credentials'}), 401
-    
-    expire = datetime.now(tz=timezone.utc) + timedelta(seconds=3600)
-    time = datetime.now(tz=timezone.utc)
-
-    payload_access = {
-        'iss': 'https://ase.localhost',
-        'sub': admin['uuid'], 
-        'exp': expire,
-        'scope': 'admin'
-    }
-
-    payload_id = {
-        'iss': 'https://ase.localhost',
-        'aud': 'https://ase.localhost/login',
-        'sub': admin['uuid'], 
-        'exp': expire,
-        'iat': time,
-        'nbf': time,
-        'scope': 'admin'
-    }
-
-    access_token = jwt.encode(payload_access, SECRET, algorithm='HS256')
-    id_token = jwt.encode(payload_id, SECRET, algorithm='HS256')
-
-    response = {
-        'access_token': access_token,
-        'token_type': 'Bearer',
-        'expires_in': 3600,
-        'id_token': id_token
-    }
-
-    headers = {
-        'Authorization': f'Bearer {access_token}',
-    }
-
-    response = make_response(jsonify(response))
-    response.headers = headers
-
-    return response, 200
-
-@app.route('/login', methods=['POST'])
-def login():
-    encoded_jwt = request.headers.get('Authorization')
-
-    if encoded_jwt:
-        return jsonify({'response': 'Already logged in'}), 401
-
-    if request.headers.get('Content-Type') != 'application/json':
-        return jsonify({'response': 'Content-type not supported'}), 400
-
-    username = request.json.get('username')
-    password = request.json.get('password')
-
-    if not username or not password:
-        return jsonify({'response': 'Missing credentials'}), 400
-
-    try:
-        r = circuitbreaker.call(requests.get, f'https://player_service:5000/username/{username}', verify=False)
-    except Exception as e:
-        return jsonify({'response': str(e)}), 500
-    
-    try:
-        response = json.loads(r.text)
-    except json.JSONDecodeError as e:
-        return jsonify({'response': 'Json error'}), 500
-
-    player = response['response']
-
-    if player == {} or not bcrypt.checkpw(password.encode(), player['password_hash'].encode()):
-        return jsonify({'response': 'Invalid credentials'}), 401
-    elif player["active"] == False:
-        return jsonify({'response': 'Account is not active'}), 401
-
-    expire = datetime.now(tz=timezone.utc) + timedelta(seconds=3600)
-    time = datetime.now(tz=timezone.utc)
-
-    payload_access = {
-        'iss': 'https://ase.localhost',
-        'sub': player['uuid'], 
-        'exp': expire,
-        'scope': 'player'
-    }
-
-    payload_id = {
-        'iss': 'https://ase.localhost',
-        'aud': 'https://ase.localhost/login',
-        'sub': player['uuid'], 
-        'scope': 'player',
-        'exp': expire,
-        'iat': time,
-        'nbf': time
-    }
-
-    access_token = jwt.encode(payload_access, SECRET, algorithm='HS256')
-    id_token = jwt.encode(payload_id, SECRET, algorithm='HS256')
-
-    response = {
-        'access_token': access_token,
-        'token_type': 'Bearer',
-        'expires_in': 3600,
-        'id_token': id_token
-    }
-
-    headers = {
-        'Authorization': f'Bearer {access_token}',
-    }
-
-    response = make_response(jsonify(response))
-    response.headers = headers
-
-    return response, 200
-
-@app.route('/logout', methods=['DELETE'])
-def logout():
-    encoded_jwt = request.headers.get('Authorization')
-
-    if not encoded_jwt:
-        return jsonify({'response': 'You are not logged'}), 401
-    
-    encoded_jwt = encoded_jwt.split(' ')[1]
-
-    response = make_response(jsonify({'response': 'Logout successful'}))
-
-    return response, 200
+    def production(db_name, db_user, db_password, db_host, db_port, db_sslmode, cert_path, key_path, jwt_secret):
+        db = AuthenticationConnectorDB(db_name, db_user, db_password, db_host, db_port, db_sslmode)
+        http = AuthenticationConnectorHTTP()
+        
+        AuthenticationService(http, db, jwt_secret).app.run(
+            host="0.0.0.0", 
+            port=5000, 
+            ssl_context=(cert_path, key_path)
+        )
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True, ssl_context=(CERT_PATH, KEY_PATH))
+    # set db connection
+    DB_NAME = os.getenv("DB_NAME")
+    DB_USER = os.getenv("DB_USER")
+    DB_PASSWORD = os.getenv("DB_PASSWORD")
+    DB_HOST = os.getenv("DB_HOST")
+    DB_PORT = os.getenv("DB_PORT")
+    POSTGRES_SSLMODE = os.getenv("POSTGRES_SSLMODE")
+
+    # set https certs
+    CERT_PATH = os.getenv("CERT_PATH")
+    KEY_PATH = os.getenv("KEY_PATH")
+
+    # set jwt
+    JWT_SECRET = os.getenv("JWT_SECRET")
+
+    # deployment mode
+    DEPLOYMENT_MODE = os.getenv("DEPLOYMENT_MODE")
+
+    match DEPLOYMENT_MODE:
+        case 'production':
+            AuthenticationService.production(DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, POSTGRES_SSLMODE, CERT_PATH, KEY_PATH, JWT_SECRET)
+        case 'testing':
+            AuthenticationService.testing(CERT_PATH, KEY_PATH, JWT_SECRET)
+        case 'development':
+            AuthenticationService.development(DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, POSTGRES_SSLMODE, CERT_PATH, KEY_PATH, JWT_SECRET)
