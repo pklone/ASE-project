@@ -176,10 +176,12 @@ class AccountService:
         except Exception as e:
             return {'response': str(e)}, 500
 
+        wallet = r['http_body']['response']['wallet']
+
         if 'application/json' in request.headers.get('Accept'):
-            return r['http_body'], 200
+            return {'response': wallet}, 200
         elif 'text/html' in request.headers.get('Accept'):
-            return render_template("Account.html", wallet=r['http_body']['response']['wallet']), 200
+            return render_template("Account.html", wallet=wallet), 200
         else:
             return {'response': 'Not supported'}, 406
 
@@ -202,8 +204,8 @@ class AccountService:
 
     @login_required
     def transaction(self, transaction_uuid, auth_uuid):
-        if AccountService.check_uuid(transaction_uuid=transaction_uuid)['name']:
-            return {'response': f'Invalid {res['name']}'}, 400
+        if (res := AccountService.check_uuid(transaction_uuid=transaction_uuid)['name']):
+            return {'response': f'Invalid {res}'}, 400
 
         try:
             r = self.connectorHTTP.getTransaction(auth_uuid, transaction_uuid)
