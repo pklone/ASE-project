@@ -72,10 +72,6 @@ class CollectionService:
             
             encoded_jwt = encoded_jwt.split(' ')[1]
 
-            r = requests.get('https://authentication_service:5000/tokenchecks', headers={'Authorization': f'Bearer {encoded_jwt}'}, verify=False)
-            if r.status_code != 200:
-                return {'response': 'Invalid token'}, 403
-
             try:
                 options = {
                     'require': ['exp'], 
@@ -91,6 +87,9 @@ class CollectionService:
 
             if 'sub' not in decoded_jwt:
                 return {'response': 'Try later'}, 403
+            
+            if decoded_jwt['scope'] != 'player':
+                return {'response': 'You are not autorized'}, 401 
 
             additional = {'auth_uuid': decoded_jwt['sub']}
 
