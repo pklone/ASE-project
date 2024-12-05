@@ -887,7 +887,7 @@ paths:
               examples:
                 Auction not found:
                   value:
-                    response: "Auction not found"
+                    response: "Error: Auction not found"
                 Not Owner of the auction:
                   value:
                     response: "You're not the owner of this auction"
@@ -1094,7 +1094,7 @@ paths:
               examples:
                 User not found:
                   value:
-                    response: "Auction not found"
+                    response: "Error: Player not found"
        '401':
             description: Unauthorized
             content:
@@ -1140,7 +1140,7 @@ paths:
        content:
          application/json:
            schema:
-             $ref: '#/components/schemas/UserProfile'
+             $ref: '#/components/schemas/UserProfileMod'
      responses:
        '200':
          description: User profile updated
@@ -1621,7 +1621,7 @@ paths:
               examples:
                 Auction not found:
                   value:
-                    response: "Auction not found"
+                    response: "Error: Auction not found"
                 Auction closed:
                   value:
                     response: "Auction is already closed"
@@ -1689,7 +1689,7 @@ paths:
              examples:
                Auction not found:
                  value:
-                   response: "Auction not found"
+                   response: "Error: Auction not found"
                Auction closed:
                  value:
                    response: "Auction is already closed"
@@ -1742,6 +1742,16 @@ components:
        user_uuid:
          type: string
          description: Unique identifier of the User
+       username:
+         type: string
+         description: Unique nickname of the User
+       wallet:
+         type: number
+         description: In game currency of the User (default 0) 
+   UserProfileMod:
+     type: object
+     description: Player of the game
+     properties:
        username:
          type: string
          description: Unique nickname of the User
