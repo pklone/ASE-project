@@ -12,7 +12,7 @@ class AdminConnectorHTTP:
     URL_MARKET_SERVICE_UUID     = 'https://market_service:5000/market/{auction_uuid}'
     URL_AUCTION_CLOSE           = 'https://market_service:5000/market/{auction_uuid}/close'
     URL_PLAYER_TRANSACTIONS     = 'https://transaction_service:5000/user/{player_uuid}'
-    URL_aUCTION_PAYMENT         = 'https://market_service:5000/market/{auction_uuid}/payment'
+    URL_AUCTION_PAYMENT         = 'https://market_service:5000/market/{auction_uuid}/payment'
 
     def __init__(self):
         self.circuitbreaker = pybreaker.CircuitBreaker(

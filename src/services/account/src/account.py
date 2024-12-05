@@ -117,7 +117,7 @@ class AccountService:
                 return {'response': 'Try later'}, 500
 
             for auction in r['http_body']['response']:
-                if auction['user_uuid'] == auth_uuid and not auction['closed']:
+                if auction["Player"]['uuid'] == auth_uuid and not auction['closed']:
                     return {'response': 'You have an active auction'}, 400
 
             r = self.connectorHTTP.removePlayer(auth_uuid)

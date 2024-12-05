@@ -74,3 +74,12 @@ class MarketConnectorHTTP:
         
         return self.__req(requests.put, url, data)
     
+    def updatePlayerCollection(self, player_uuid, gacha_uuid, q):
+        url = MarketConnectorHTTP.URL_PLAYER_COLLECTION.format(player_uuid=player_uuid)
+        data = {
+            'gacha_uuid': gacha_uuid,
+            'q': q
+        }
+
+        return self.__req(requests.put, url, data)
+    

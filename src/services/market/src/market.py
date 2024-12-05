@@ -81,9 +81,18 @@ class MarketService:
         
             if 'sub' not in decoded_jwt:
                 return {'response': 'Try later'}, 403
-
-            if decoded_jwt['scope'] != 'player':
-                return {'response': 'You are not autorized'}, 401
+            
+            try:
+                hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]    
+            except socket.herror:
+                return {'response': 'unknown host'}, 500
+            
+            if hostname != 'admin_service':
+                if decoded_jwt['scope'] != 'player':
+                    return {'response': 'You are not authorized'}, 401
+            else:
+                if decoded_jwt['scope'] != 'admin':
+                    return {'response': 'You are not authorized'}, 401
         
             additional = {'auth_uuid': decoded_jwt['sub']}
         
@@ -354,11 +363,12 @@ class MarketService:
 
             if len(records) == 0 or (records[0]['offer'] == 0 and records[1]['offer'] == 0 and records[2]['offer'] == 0):
                 return {'response': 'There are no bids for this auction'}, 400
+            
 
             for i in range(min(3, len(records))):
-                buyer_uuid = record[i]['buyer']
-                owner_uuid = record[i]['owner']
-                offer = record[i]['offer']
+                buyer_uuid = records[i]['buyer']
+                owner_uuid = records[i]['owner']
+                offer = records[i]['offer']
 
                 r = self.connectorHTTP.getPlayer(buyer_uuid)
                 if r['http_code'] != 200:
@@ -381,11 +391,11 @@ class MarketService:
                 if r['http_code'] != 200:
                     return {'response': 'Failed to update owner wallet'}, 500
 
-                r = self.connectorHTTP.updatePlayerCollection(buyer_uuid, record[i]['gacha_uuid'], 1)
+                r = self.connectorHTTP.updatePlayerCollection(buyer_uuid, records[i]['gacha_uuid'], 1)
                 if r['http_code'] != 200:
                     return {'response': 'Failed to update buyer collection'}, 500
 
-                r = self.connectorHTTP.updatePlayerCollection(owner_uuid, record[i]['gacha_uuid'], -1)
+                r = self.connectorHTTP.updatePlayerCollection(owner_uuid, records[i]['gacha_uuid'], -1)
                 if r['http_code'] != 200:
                     return {'response': 'Failed to update owner collection'}, 500
 
