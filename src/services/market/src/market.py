@@ -16,6 +16,7 @@ from connectors.connector_http_mock import MarketConnectorHTTPMock
 
 # testing
 #   curl -X GET -H @headers.txt -H 'Accept: application/json' -k https://127.0.0.1:8086/market
+#   curl -X GET -H @headers.txt -k https://127.0.0.1:8086/market/71520f05-80c5-4cb1-b05a-a9642f9aaaaa/bid
 
 class MarketService:
     UUID_REGEX = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
@@ -179,6 +180,8 @@ class MarketService:
         except Exception as e:
             return {'response': str(e)}
 
+        is_owner = (auth_uuid and auth_uuid == record["user_uuid"])
+
         auction = {
             'auction_uuid': record['uuid'],
             'base_price': record['base_price'],
@@ -192,7 +195,7 @@ class MarketService:
         if 'application/json' in request.headers.get('Accept'):
             return {'response': auction}, 200
         elif 'text/html' in request.headers.get('Accept'):
-            return render_template("auction_details.html", auction=auction), 200
+            return render_template("auction_details.html", auction=auction, is_owner=is_owner), 200
         else:
             return {'response': 'Not supported'}, 400
     

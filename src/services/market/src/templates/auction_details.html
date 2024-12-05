@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Auction Details</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
 </head>
+
 <body>
     <nav class="navbar is-light" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
@@ -27,6 +29,7 @@
                 <p><strong>Owner:</strong> {{auction.player_username}}</p>
                 <p><strong>Expiration:</strong> {{auction.expired_at}}</p>
             </div>
+            {% if not is_owner %}
             <div class="box">
                 <h2 class="subtitle">Place Your Bid</h2>
                 <div id="notification" class="notification is-success is-hidden">
@@ -36,7 +39,8 @@
                     <div class="field">
                         <label class="label" for="offer">Your Offer</label>
                         <div class="control">
-                            <input class="input" type="number" name="offer" id="offer" placeholder="Enter your offer" min="1" step="1" required>
+                            <input class="input" type="number" name="offer" id="offer" placeholder="Enter your offer"
+                                min="1" step="1" required>
                         </div>
                     </div>
 
@@ -47,6 +51,7 @@
                     </div>
                 </form>
             </div>
+            {% endif %}
         </div>
     </section>
 
@@ -64,16 +69,16 @@
         document.addEventListener('DOMContentLoaded', () => {
             token = getToken();
         });
-        
+
         document.addEventListener('DOMContentLoaded', () => {
-            const form = document.querySelector('#bidForm'); 
+            const form = document.querySelector('#bidForm');
             const notification = document.getElementById('notification');
             const auctionUuid = "{{ auction.auction_uuid }}";
-        
+
             form.addEventListener('submit', async (e) => {
-                e.preventDefault(); 
+                e.preventDefault();
                 const formData = new FormData(form);
-        
+
                 const response = await fetch(`/market/${auctionUuid}/bid`, {
                     method: 'POST',
                     body: JSON.stringify({
@@ -84,12 +89,12 @@
                         'Authorization': token,
                     },
                 });
-        
-                const data = await response.json(); 
-        
+
+                const data = await response.json();
+
                 if (response.ok) {
                     notification.textContent = 'Bid placed successfully!';
-                    notification.classList.remove('is-hidden'); 
+                    notification.classList.remove('is-hidden');
                 } else {
                     alert(data.response);
                 }
@@ -107,7 +112,7 @@
                     method: 'GET',
                     headers: headers
                 };
-                
+
                 const request = new Request(`/market/${auctionUuid}`, options);
 
                 fetch(request)
@@ -118,7 +123,8 @@
                     .catch(error => console.error('Error loading page:', error));
             }, 3000);
         });
-               
+
     </script>
 </body>
+
 </html>
