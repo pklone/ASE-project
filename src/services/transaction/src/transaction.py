@@ -15,7 +15,6 @@ from connectors.connector_http_mock import TransactionConnectorHTTPMock
 
 # testing
 #   curl -X GET -k https://127.0.0.1:8087
-#   curl -X POST -k -d '{"uuid_player": "71520f05-80c5-4cb1-b05a-a9642f9ae333", "uuid_auction": "71520f05-80c5-4cb1-b05a-a9642f9aaaaa", "price": 100}' https://127.0.0.1:8087
 #   curl -X GET -k https://127.0.0.1:8087/uuid/86d1f0db-85c6-48be-9136-71921ec79cf1
 #   curl -X GET -k https://127.0.0.1:8087/user/71520f05-80c5-4cb1-b05a-a9642f9ae333
 #   curl -X GET -k https://127.0.0.1:8087/user/71520f05-80c5-4cb1-b05a-a9642f9ae333/96cef223-5fd4-4b8d-be62-cfe5dd5fb11b
@@ -136,12 +135,14 @@ class TransactionService:
         for record in records:
             try:
                 r = self.connectorHTTP.getAuctionByUuid(record['uuid_auction'])
-                response = r['json']
+
+                if r['http_code'] != 200:
+                    return {'response': 'Try later'}, 500
             except Exception as e:
                 return {'response': str(e)}, 500
 
-            if response.get('response'):
-                to_player = response['response']['player_uuid']
+            if 'response' in r['json']:
+                to_player = r['json']['response']['Player']['uuid']
         
                 # mix all the data for out_transaction
                 transaction = {
@@ -158,18 +159,22 @@ class TransactionService:
 
         # get all the auctions by player_uuid (i.e. the player sold a gacha)
         try:
-            r = self.connectorHTTP.getAllAuctionsByPlayer(auth_header, player_uuid)
-            response = r['json']
+            r = self.connectorHTTP.getAllAuctionsByPlayer(player_uuid)
+            
+            if r['http_code'] != 200:
+                return {'response': 'Try later'}, 500
         except Exception as e:
             return {'response': str(e)}, 500   
 
         # from each auction, get the related auction
-        if response.get("response"):
-            for auction in response['response']:
+        if 'response' in r['json']:
+            for auction in r['json']['response']:
                 try:
                     record = self.connectorDB.getByAuction(auction['uuid'])
-                    r = self.connectorHTTP.getAuctionByUuid(auth_header, record['uuid_auction'])
-                    response = r['json']
+                    r = self.connectorHTTP.getAuctionByUuid(record['uuid_auction'])
+
+                    if r['http_code'] != 200:
+                        return {'response': 'Try later'}, 500
                 except ValueError as e:
                     # if the auction is not associated with a transaction 
                     # (the auction is still open), we can simply ignore it
@@ -179,8 +184,8 @@ class TransactionService:
                 except Exception as e:
                     return {'response': str(e)}, 500
 
-                if response.get("response"):
-                    to_player = response['response']['player_uuid']
+                if 'response' in r['json']:
+                    to_player = r['json']['response']['Player']['uuid']
 
                 # mix all the data for in_transaction
                 transaction = {
@@ -230,7 +235,7 @@ class TransactionService:
 
     def testing(cert_path, key_path):
         db = TransactionConnectorDBMock()
-        http = TransactionConnectorHTTP()
+        http = TransactionConnectorHTTPMock()
         
         TransactionService(http, db).app.run(
             host="0.0.0.0", 

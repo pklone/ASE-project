@@ -59,57 +59,53 @@ class MarketService:
     def login_required(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            encoded_jwt = request.headers.get('Authorization')
-        
-            if not encoded_jwt:
-                return jsonify({'response': 'You\'re not logged'}), 401
-            
-            encoded_jwt = encoded_jwt.split(' ')[1]
-        
-            try:
-                options = {
-                    'require': ['exp'], 
-                    'verify_signature': True, 
-                    'verify_exp': True
-                }
-        
-                decoded_jwt = jwt.decode(encoded_jwt, args[0].jwt_secret, algorithms=['HS256'], options=options)
-            except jwt.ExpiredSignatureError:
-                return {'response': 'Expired token'}, 403
-            except jwt.InvalidTokenError:
-                return {'response': 'Invalid token'}, 403
-        
-            if 'sub' not in decoded_jwt:
-                return {'response': 'Try later'}, 403
-            
+            hostname = 'testing' # testing from localhost
+            auth_uuid = None
+
             try:
                 hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]    
             except socket.herror:
-                return {'response': 'unknown host'}, 500
+                pass
+
+            if 'caddy' in hostname:
+                encoded_jwt = request.headers.get('Authorization')
             
-            if hostname != 'admin_service':
+                if not encoded_jwt:
+                    return jsonify({'response': 'You\'re not logged'}), 401
+                
+                encoded_jwt = encoded_jwt.split(' ')[1]
+            
+                try:
+                    options = {
+                        'require': ['exp'], 
+                        'verify_signature': True, 
+                        'verify_exp': True
+                    }
+            
+                    decoded_jwt = jwt.decode(encoded_jwt, args[0].jwt_secret, algorithms=['HS256'], options=options)
+                except jwt.ExpiredSignatureError:
+                    return {'response': 'Expired token'}, 403
+                except jwt.InvalidTokenError:
+                    return {'response': 'Invalid token'}, 403
+            
+                if 'sub' not in decoded_jwt:
+                    return {'response': 'Try later'}, 403
+            
                 if decoded_jwt['scope'] != 'player':
                     return {'response': 'You are not authorized'}, 401
-            else:
-                if decoded_jwt['scope'] != 'admin':
-                    return {'response': 'You are not authorized'}, 401
+
+                auth_uuid = decoded_jwt['sub']
         
-            additional = {'auth_uuid': decoded_jwt['sub']}
+            additional = {'auth_uuid': auth_uuid, 'hostname': hostname}
         
             return f(*args, **kwargs, **additional)
         
         return decorated_function
 
     @login_required
-    def show_all(self, auth_uuid):
+    def show_all(self, auth_uuid, hostname):
         auctions = []
         is_admin = False
-
-        try:
-            hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]
-        except socket.herror:
-            hostname = 'testing-from-127.0.0.1'
-            #return {'response': 'unknown host'}, 500
 
         if hostname == 'admin_service':
             is_admin = True
@@ -158,14 +154,8 @@ class MarketService:
             return {'response': 'Not supported'}, 400
 
     @login_required
-    def show_one(self, auction_uuid, auth_uuid):
+    def show_one(self, auction_uuid, auth_uuid, hostname):
         is_admin = False
-
-        try:
-            hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]    
-        except socket.herror:
-            hostname = 'testing-from-127.0.0.1'
-            #return {'response': 'unknown host'}, 500
 
         if hostname == 'admin_service' or hostname == 'transaction_service':
             is_admin = True
@@ -207,14 +197,20 @@ class MarketService:
             return {'response': 'Not supported'}, 400
     
     @login_required
-    def show_create_auction(self, gacha_uuid, auth_uuid):
+    def show_create_auction(self, gacha_uuid, auth_uuid, hostname):
+        if 'caddy' not in hostname:
+            return {'response': 'Forbidden'}, 403
+
         if (res := MarketService.check_uuid(gacha_uuid=gacha_uuid)['name']):
             return {'response': f'Invalid {res}'}, 400
 
         return render_template("create_auction.html", gacha_uuid=gacha_uuid), 200
 
     @login_required
-    def create_auction(self, auth_uuid):
+    def create_auction(self, auth_uuid, hostname):
+        if 'caddy' not in hostname:
+            return {'response': 'Forbidden'}, 403
+
         try:
             gacha_uuid = request.json['gacha_uuid']
             starting_price = int(request.json['starting_price'])
@@ -258,7 +254,10 @@ class MarketService:
             return {'response': 'Not supported'}, 400
 
     @login_required
-    def make_bid(self, auction_uuid, auth_uuid):
+    def make_bid(self, auction_uuid, auth_uuid, hostname):
+        if 'caddy' not in hostname:
+            return {'response': 'Forbidden'}, 403
+
         if (res := MarketService.check_uuid(auction_uuid=auction_uuid)['name']):
             return {'response': f'Invalid {res}'}, 400
 
@@ -305,7 +304,7 @@ class MarketService:
         return {'response': auction}, 200
 
     @login_required
-    def close_auction(self, auction_uuid, auth_uuid):
+    def close_auction(self, auction_uuid, auth_uuid, hostname):
         player_uuid = None
         is_admin = False
 
@@ -417,12 +416,13 @@ class MarketService:
 
     def show_user_auctions(self, player_uuid):
         try:
+            hostname = 'testing'
             hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]  
-
-            if hostname != 'admin_service' and hostname != 'transaction_service':
-                return {'response': 'Forbidden'}, 403
         except socket.herror:
-            return {'response': 'unknown host'}, 500
+            pass
+
+        if 'admin_service' not in hostname and 'transaction_service' not in hostname:
+            return {'response': 'Forbidden'}, 403
 
         if (res := MarketService.check_uuid(player_uuid=player_uuid)['name']):
             return {'response': f'Invalid {res}'}, 400

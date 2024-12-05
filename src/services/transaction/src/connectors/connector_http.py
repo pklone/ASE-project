@@ -20,21 +20,17 @@ class TransactionConnectorHTTP:
         return {'http_code': r.status_code, 'json': r.json()}
 
     # HTTP requests
-    def getAuctionByUuid(self, auth_header, auction_uuid):
+    def getAuctionByUuid(self, auction_uuid):
         url = TransactionConnectorHTTP.URL_GET_AUCTION_BY_UUID.format(auction_uuid=auction_uuid)
         headers = {
             'Accept': 'application/json',
-            'Authorization': auth_header
         }
 
         return self.__req(requests.get, url, headers=headers)
 
-    def getAllAuctionsByPlayer(self, auth_header, player_uuid):
+    def getAllAuctionsByPlayer(self, player_uuid):
         url = TransactionConnectorHTTP.URL_GET_ALL_AUCTIONS_BY_PLAYER.format(player_uuid=player_uuid)
-        headers = {
-            'Authorization': auth_header
-        }
 
-        return self.__req(requests.get, url, headers=headers)
+        return self.__req(requests.get, url)
 
         

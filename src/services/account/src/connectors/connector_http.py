@@ -67,11 +67,10 @@ class AccountConnectorHTTP:
 
         return self.__req(requests.get, url)
 
-    def getAllAuctions(self, auth_header):
+    def getAllAuctions(self):
         url = AccountConnectorHTTP.URL_MARKET_SERVICE
         headers = {
-            'Accept': 'application/json',
-            'Authorization': auth_header
+            'Accept': 'application/json'
         }
 
         return self.__req(requests.get, url, headers=headers)
