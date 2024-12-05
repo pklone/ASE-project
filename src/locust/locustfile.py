@@ -1,8 +1,22 @@
 from locust import HttpUser, task, between
 import logging
 import json
-import random
+import threading
+import random as rd
 import string
+import warnings
+from urllib3.exceptions import InsecureRequestWarning
+
+warnings.simplefilter('ignore', InsecureRequestWarning)
+
+lock = threading.Lock()
+rarity_counter = {
+    "Common": 0,
+    "Uncommon": 0,
+    "Rare": 0,
+    "Epic": 0,
+    "Legendary": 0
+}
 
 def post_sign_up(workflow):
     payload = {  
@@ -22,8 +36,11 @@ def post_sign_up(workflow):
     else:
         with response:
             if response.status_code != 201:
-                if response.status_code != 400:
+                if response.status_code == 500:
                     logging.info(f"post_sign_up: error - {response.text}")
+                else:
+                    logging.info(f"post_sign_up: error - {response.text}")
+                    response.success()
 
 def post_login(workflow):
     payload = {
@@ -43,8 +60,11 @@ def post_login(workflow):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code != 400:
+                if response.status_code == 500:
                     logging.info(f"post_login: error - {response.text}")
+                else:
+                    logging.info(f"post_login: error - {response.text}")
+                    response.success()
             else:
                 workflow.is_logged_in = True
                 workflow.is_logged_out = False
@@ -68,8 +88,11 @@ def post_admin_login(workflow):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code != 400:
+                if response.status_code == 500:
                     logging.info(f"post_admin_login: error - {response.text}")
+                else:
+                    logging.info(f"post_admin_login: error - {response.text}")                    
+                    response.success()
             else:
                 workflow.admin_logged_in = True
                 workflow.admin_logged_out = False
@@ -88,8 +111,11 @@ def get_admin_users(workflow):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code != 400:
+                if response.status_code == 500:
                     logging.info(f"get_admin_users: error - {response.text}")
+                else:
+                    logging.info(f"get_admin_users: error - {response.text}")
+                    response.success()
             else:
                 users = response.json()["response"]
                 return users
@@ -107,8 +133,11 @@ def get_admin_user_collection(workflow, user_uuid):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code != 400:
+                if response.status_code == 500:
                     logging.info(f"get_user_collection: error - {response.text}")
+                else:
+                    logging.info(f"get_user_collection: error - {response.text}")
+                    response.success()
             else:
                 user_collection = response.json()["response"]
                 return user_collection
@@ -126,10 +155,11 @@ def post_admin_payment(workflow, auction_uuid):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code != 400:
+                if response.status_code == 500:
                     logging.info(f"post_admin_payment: error - {response.text}")
-            else:
-                logging.info(f"post_admin_payment: Successfully paid for auction {auction_uuid}")
+                else:
+                    logging.info(f"post_admin_payment: error - {response.text}")
+                    response.success()
 
 def get_admin_auction(workflow):
     try:
@@ -144,8 +174,11 @@ def get_admin_auction(workflow):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code != 400:
+                if response.status_code == 500:
                     logging.info(f"get_admin_auction: error - {response.text}")
+                else:
+                    logging.info(f"get_admin_auction: error - {response.text}")
+                    response.success()
             else:
                 auctions = response.json()["response"]
                 return auctions
@@ -163,8 +196,11 @@ def get_user_transactions(workflow):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code != 400:
+                if response.status_code == 500:
                     logging.info(f"get_user_transactions: error - {response.text}")
+                else:
+                    logging.info(f"get_user_transactions: error - {response.text}")
+                    response.success()
             else:
                 transactions = response.json()["response"]
                 return transactions
@@ -182,8 +218,11 @@ def get_user_collection(workflow):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code != 400:
+                if response.status_code == 500:
                     logging.info(f"get_user_collection: error - {response.text}")
+                else:
+                    logging.info(f"get_user_collection: error - {response.text}")
+                    response.success()
 
 def delete_logout(workflow):
     try:
@@ -198,8 +237,11 @@ def delete_logout(workflow):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code != 400:
+                if response.status_code == 500:
                     logging.info(f"delete_logout: error - {response.text}")
+                else:
+                    logging.info(f"delete_logout: error - {response.text}")
+                    response.success()
             else:
                 workflow.is_logged_in = False
                 workflow.is_logged_out = True
@@ -221,8 +263,11 @@ def post_buy_currency(workflow):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code != 400:
+                if response.status_code == 500:
                     logging.info(f"post_buy_currency: error - {response.text}")
+                else:
+                    logging.info(f"post_buy_currency: error - {response.text}")
+                    response.success()
 
 def get_currency(workflow):
     try:
@@ -230,18 +275,22 @@ def get_currency(workflow):
             "/user/currency",
             headers={"Content-Type": "application/json", "Accept": "application/json", "Authorization": workflow.headers["Authorization"]},
             verify=False,
-            catch_response=True  
+            catch_response=True
         )   
+
     except Exception as e:
         logging.info(f"get_currency: error - {str(e)}")
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code != 400:
+                if response.status_code == 500:
                     logging.info(f"get_currency: error - {response.text}")
+                else:
+                    logging.info(f"get_currency: error - {response.text}")
+                    response.success()
             else:
-                workflow.currency = response.json()["response"]
-
+                return response.json()["response"]
+            
 def get_roll(workflow):
     try:
         response = workflow.client.get(
@@ -255,17 +304,15 @@ def get_roll(workflow):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code != 400:
+                if response.status_code == 500:
                     logging.info(f"get_roll: error - {response.text}")
+                else:
+                    logging.info(f"get_roll: error - {response.text}")
+                    response.success()
             else:
-                #workflow.gacha_uuid = response.json()["response"]["uuid"]
-                #logging.info(f"get_roll: ok!")
-                #if response.json().get("response") and response.json()["response"].get("uuid"):
-                #    workflow.gacha_uuid = response.json()["response"]["uuid"] #TODO: check getAllRarity query into connector.py
-                #else:
-                #    logging.info(f"get_roll: no gacha_uuid")
                 gacha_uuid = response.json()["response"]["uuid"]
-                return gacha_uuid
+                gacha_rarity = response.json()["response"]["rarity"]
+                return [gacha_uuid, gacha_rarity]
             
 def post_create_auction(workflow, gacha_uuid):
     payload = {
@@ -285,8 +332,11 @@ def post_create_auction(workflow, gacha_uuid):
     else:
         with response:
             if response.status_code != 201:
-                if response.status_code != 400:
+                if response.status_code == 500:
                     logging.info(f"post_create_auction: error - {response.text}")
+                else:
+                    logging.info(f"post_create_auction: error - {response.text}")
+                    response.success()
 
 def get_auction(workflow):
     try:
@@ -301,8 +351,11 @@ def get_auction(workflow):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code != 400:
+                if response.status_code == 500:
                     logging.info(f"get_auction: error - {response.text}")
+                else:
+                    logging.info(f"get_auction: error - {response.text}")
+                    response.success()
             else:
                 auction = response.json()["response"]
                 return auction
@@ -320,8 +373,11 @@ def get_auction_by_uuid(workflow, auction_uuid):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code != 400:
+                if response.status_code == 500:
                     logging.info(f"get_auction_by_uuid: error - {response.text}")
+                else:
+                    logging.info(f"get_auction_by_uuid: error - {response.text}")
+                    response.success()
             else:
                 auction = response.json()["response"]
                 return auction
@@ -343,20 +399,25 @@ def post_bid(workflow, auction_uuid, offer):
     else:
         with response:
             if response.status_code != 200:
-                if response.status_code != 400:
+                if response.status_code == 500:
                     logging.info(f"post_bid: error - {response.text}")
-            else:
-                logging.info(f"post_bid: Successfully placed bid on auction {auction_uuid}")
+                else:
+                    logging.info(f"post_bid: error - {response.text}")
+                    response.success()
+
+def print_rarity():
+    logging.info(f"Common: {rarity_counter['Common']}%, Uncommon: {rarity_counter['Uncommon']}%, Rare: {rarity_counter['Rare']}%, Epic: {rarity_counter['Epic']}%, Legendary: {rarity_counter['Legendary']}%")
 
 
 class UserCollectionWorkflow(HttpUser):
 
+    host = "https://localhost"
     wait_time = between(1, 5)
 
     def on_start(self):
         self.is_logged_in = False
         self.is_logged_out = True
-        self.random = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+        self.random = ''.join(rd.choices(string.ascii_lowercase + string.digits, k=8))
         post_sign_up(self)
         self.headers = post_login(self)
 
@@ -376,87 +437,119 @@ class UserCollectionWorkflow(HttpUser):
 
 class UserGachaWorkflow(HttpUser):
 
+    host = "https://localhost"
     wait_time = between(1, 5)
 
     def on_start(self):
         self.is_logged_in = False
         self.is_logged_out = True
         self.currency = 0
-        self.random = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+        self.random = ''.join(rd.choices(string.ascii_lowercase + string.digits, k=8))
         post_sign_up(self)
         self.headers = post_login(self)
         post_buy_currency(self)
-        get_currency(self)
+        self.currency = get_currency(self)
 
-    @task(1)
+    @task(2)
     def create_auction(self):
         if self.is_logged_in and self.currency >= 10:
-            gacha_uuid = get_roll(self)
+            gacha_uuid = get_roll(self)[0]
             if gacha_uuid:
                 post_create_auction(self, gacha_uuid)
         else:
             pass
     
-    def on_end(self):
+    def on_stop(self):
         if self.is_logged_in:
             delete_logout(self)
     
 class UserMarketWorkflow(HttpUser):
 
+    host = "https://localhost"
     wait_time = between(1, 5)
 
     def on_start(self):
         self.is_logged_in = False
         self.is_logged_out = True
-        self.random = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+        self.random = ''.join(rd.choices(string.ascii_lowercase + string.digits, k=8))
         post_sign_up(self)
         self.headers = post_login(self)
     
-    @task(1)
+    @task(3)
     def bid(self):
         if self.is_logged_in:
+            non_owned_auctions = []
             auctions = get_auction(self)
             if not auctions:
                 logging.info("No auctions available to bid on.")
-                pass
+                return
 
-            non_owned_auctions = [
-                auction for auction in auctions
-                if auction["player_username"] != self.random
-            ]
+            for auction in auctions:
+                if auction:
+                    if auction.get("Player"):
+                        if auction["Player"]["username"]!= self.random:
+                            non_owned_auctions.append(auction)
 
-            if not non_owned_auctions:
-                logging.info("No auctions available to bid on.")
-                pass
-
-            chose_auction = random.choice(non_owned_auctions)
-            auction_uuid = chose_auction["auction_uuid"]
-            target_auction = get_auction_by_uuid(self, auction_uuid)
-            if target_auction["base_price"] >= target_auction["actual_offer"]:
-                offer = target_auction["base_price"] + random.randint(1, 100)
+            if non_owned_auctions:
+                chose_auction = rd.choice(non_owned_auctions)
+                auction_uuid = chose_auction["auction_uuid"]
+                target_auction = get_auction_by_uuid(self, auction_uuid)
+                if target_auction["base_price"] >= target_auction["actual_offer"]:
+                    offer = target_auction["base_price"] + rd.randint(1, 100)
+                else:
+                    offer = target_auction["actual_offer"] + rd.randint(1, 100)
+                post_bid(self, auction_uuid, offer)
             else:
-                offer = target_auction["actual_offer"] + random.randint(1, 100)
-            post_bid(self, auction_uuid, offer)
+                logging.info("No auctions available to bid on.")
         else:
             logging.info("User not logged in.")
-            pass
+    
+    @task(3)
+    def transaction(self):
+        if self.is_logged_in:
+            transactions = get_user_transactions(self)
 
-    def on_end(self):
+    def on_stop(self):
+        if self.is_logged_in:
+            delete_logout(self)
+
+class RarityCounterWorkflow(HttpUser): 
+
+    host = "https://localhost"
+    wait_time = between(1, 5)        
+
+    def on_start(self):
+        self.is_logged_in = False
+        self.is_logged_out = True
+        self.random = ''.join(rd.choices(string.ascii_lowercase + string.digits, k=8))
+        post_sign_up(self)
+        self.headers = post_login(self)
+        post_buy_currency(self)
+
+    @task(3)
+    def rarity_counter(self):
+        if self.is_logged_in:
+            rarity = get_roll(self)
+            if rarity:
+                with lock:
+                    rarity_counter[rarity[1]] += 1     
+    
+    def on_stop(self):
+        total = sum(rarity_counter.values())
+        for key in rarity_counter:
+            rarity_counter[key] = int(rarity_counter[key] * 100 / total)
+        print_rarity()
         if self.is_logged_in:
             delete_logout(self)
 
 class AdminWorkflow(HttpUser):
 
+    host = "https://localhost:8443"
     wait_time = between(1, 5)
 
     def on_start(self):
-        self.is_logged_in = False
-        self.is_logged_out = True
         self.admin_logged_in = False
         self.admin_logged_out = True
-        self.random = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
-        post_sign_up(self)
-        self.headers = post_login(self)
         self.admin_headers = post_admin_login(self)
     
     @task(3)
@@ -464,14 +557,9 @@ class AdminWorkflow(HttpUser):
         if self.admin_logged_in:
             users = get_admin_users(self)
             if users:
-                user = random.choice(users)
-                user_uuid = user[2]
+                user = rd.choice(users)
+                user_uuid = user['uuid']
                 user_collection = get_admin_user_collection(self, user_uuid)
-
-    @task(3)
-    def transaction(self):
-        if self.is_logged_in:
-            transactions = get_user_transactions(self)
 
     @task(1)
     def admin_payment(self):
@@ -480,11 +568,5 @@ class AdminWorkflow(HttpUser):
 
     task(1)
     def admin_logout(self):
-        if self.admin_logged_in:
-            delete_logout(self)
-    
-    def on_end(self):
-        if self.is_logged_in:
-            delete_logout(self)
         if self.admin_logged_in:
             delete_logout(self)
