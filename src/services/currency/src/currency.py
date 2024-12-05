@@ -36,6 +36,7 @@ class CurrencyService:
         @wraps(f)
         def decorated_function(*args, **kwargs):
             encoded_jwt = request.headers.get('Authorization')
+
         
             if not encoded_jwt:
                 return jsonify({'response': 'You\'re not logged'}), 401
