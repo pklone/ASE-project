@@ -15,6 +15,7 @@ from connectors.connector_http_mock import TransactionConnectorHTTPMock
 
 # testing
 #   curl -X GET -k https://127.0.0.1:8087
+#   curl -X POST -k -H 'Content-Type: application/json' -d '{"uuid_player": "71520f05-80c5-4cb1-b05a-a9642f9ae333", "uuid_auction": "71520f05-80c5-4cb1-b05a-a9642f9aaaaa", "price": 100}' https://127.0.0.1:8087
 #   curl -X GET -k https://127.0.0.1:8087/uuid/86d1f0db-85c6-48be-9136-71921ec79cf1
 #   curl -X GET -k https://127.0.0.1:8087/user/71520f05-80c5-4cb1-b05a-a9642f9ae333
 #   curl -X GET -k https://127.0.0.1:8087/user/71520f05-80c5-4cb1-b05a-a9642f9ae333/96cef223-5fd4-4b8d-be62-cfe5dd5fb11b
@@ -89,15 +90,16 @@ class TransactionService:
 
             if type(price) is not int or price < 0:
                 return {'response': 'Invalid price'}, 400
+
+            created_at = int(datetime.now(tz=timezone.utc).timestamp())
+            uuid_transaction = str(uuid.uuid4())
+
+            record = self.connectorDB.add(uuid_transaction, price, created_at, uuid_player, uuid_auction)
         except KeyError:
             return {'response': 'Missing data'}, 400
-
-        created_at = int(datetime.now(tz=timezone.utc).timestamp())
-        uuid_transaction = str(uuid.uuid4())
-
-        try:
-            record = self.connectorDB.add(uuid_transaction, price, created_at, uuid_player, uuid_auction)
-        except psycopg2.Error as e:
+        except ValueError as e:
+            return {'response': str(e)}, 400
+        except Exception as e:
             return {'response': str(e)}, 500
 
         return {'response': record}, 201
@@ -146,7 +148,6 @@ class TransactionService:
         
                 # mix all the data for out_transaction
                 transaction = {
-                    'id': record['id'],
                     'uuid': record['uuid'],
                     'price': record['price'],
                     'created_at': record['created_at'],
