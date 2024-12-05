@@ -62,12 +62,8 @@ class TransactionConnectorDB:
     def add(self, uuid_transaction, price, created_at, uuid_player, uuid_auction):
         try:
             self.cursor.execute('SELECT 1 FROM transaction WHERE uuid_auction = %s', [uuid_auction])
-            if self.cursor.rowcount == 0:
+            if self.cursor.rowcount > 0:
                 raise ValueError('Error: transaction already exists for this auction')
-
-            if self.cursor.rowcount == 0:
-                self.conn.rollback()
-                raise Exception('Error: failed query')
 
             self.cursor.execute('''
                 INSERT INTO transaction 
