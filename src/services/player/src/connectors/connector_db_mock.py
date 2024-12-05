@@ -51,7 +51,7 @@ class PlayerConnectorDBMock:
     def add(self, player_uuid, username, password_hash):
         for player in self.players:
             if player['username'] == username:
-                raise ValueError('Error: player already created')
+                raise ValueError('Error: player already exists')
 
         new_player = {
             'uuid': player_uuid,

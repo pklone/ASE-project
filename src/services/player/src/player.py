@@ -42,7 +42,6 @@ class PlayerService:
         self.app.add_url_rule('/id/<int:player_id>',                         endpoint='remove_by_id',                        view_func=self.remove_by_id,                        methods=['DELETE'])
         self.app.add_url_rule('/uuid/<string:player_uuid>',                  endpoint='remove_by_uuid',                      view_func=self.remove_by_uuid,                      methods=['DELETE'])
         self.app.add_url_rule('/<string:player_uuid>/wallet',                endpoint='update_wallet',                       view_func=self.update_wallet,                       methods=['PUT'])
-        self.app.add_url_rule('/currency/buy',                               endpoint='currency',                            view_func=self.currency,                            methods=['POST'])
         self.app.register_error_handler(werkzeug.exceptions.NotFound, PlayerService.page_not_found)
 
     # util functions
@@ -128,7 +127,7 @@ class PlayerService:
         try:
             record = self.connectorDB.update(new_username, new_wallet, player_uuid)
         except ValueError as e:
-            return {'response': str(e)}, 404
+            return {'response': str(e)}, 400
         except Exception as e:
             return {'response': str(e)}, 500
 
@@ -194,30 +193,6 @@ class PlayerService:
                 return {'response': 'Invalid amount'}, 400
 
             record = self.connectorDB.updateWallet(player_uuid, amount)
-        except KeyError:
-            return {'response': 'Missing data'}, 400
-        except ValueError as e:
-            return {'response': str(e)}, 404
-        except Exception as e:
-            return {'response': str(e)}, 500
-
-        return jsonify({'response': "wallet updated Successfully!"}), 200
-
-    def currency(self):
-        if request.headers.get('Content-Type') != 'application/json':
-            return {'response': 'Content-type not supported'}, 400
-
-        try:
-            player_uuid = request.json['player_uuid']
-            purchase = request.json['purchase']
-
-            if type(purchase) is not int or purchase < 0:
-                return {'response': 'Invalid purchase'}, 400
-
-            if PlayerService.check_uuid(player_uuid=player_uuid)['name']:
-                return {'response': f'Invalid {res['name']}'}, 400
-
-            record = self.connectorDB.updateWallet(player_uuid, purchase)
         except KeyError:
             return {'response': 'Missing data'}, 400
         except ValueError as e:
