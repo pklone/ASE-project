@@ -55,7 +55,7 @@ class AuthenticationConnectorDB:
                 [admin_username])
 
             if self.cursor.rowcount == 0:
-                raise ValueError(f'Error: admin not found')
+                raise ValueError(f'Invalid credentials')
 
             record = self.cursor.fetchone()
         except psycopg2.Error as e:

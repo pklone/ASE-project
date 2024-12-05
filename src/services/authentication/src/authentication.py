@@ -61,7 +61,7 @@ class AuthenticationService:
         except KeyError:
             return {'response': 'Missing data'}, 400
         except ValueError as e:
-            return {'response': str(e)}, 400
+            return {'response': str(e)}, 401
         except Exception as e:
             return {'response': str(e)}, 500
 
@@ -132,7 +132,7 @@ class AuthenticationService:
         except KeyError:
             return {'response': 'Missing credentials'}, 400
         except ValueError as e:
-            return {'response': str(e)}, 400
+            return {'response': str(e)}, 401
         except Exception as e:
             return {'response': str(e)}, 500
 
