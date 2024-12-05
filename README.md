@@ -154,6 +154,7 @@ will run a shell no matter the container you choose
 ```
 cd ASE-project/src
 docker run --rm --network host -v "$PWD"/locust:/mnt/locust locustio/locust -f /mnt/locust/locustfile.py --host https://ase.localhost
+docker run --rm --network host -v "$PWD"/locust:/mnt/locust locustio/locust -f /mnt/locust/locustfile.py --headless -u 100 -r 5 --run-time 120 --stop-timeout 10s
 ```
 
 ## TODO
