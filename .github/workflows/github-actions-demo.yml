@@ -38,6 +38,7 @@ jobs:
 
       - name: Run Locust container
         run: |
+          cd src
           docker run --rm --network host -v "$PWD"/locust:/mnt/locust locustio/locust -f /mnt/locust/locustfile.py --headless -u 100 -r 5 --run-time 120 --stop-timeout 10s
 
   compose-mocks:
@@ -50,7 +51,7 @@ jobs:
         uses: hoverkraft-tech/compose-action@v2.0.1
         with:
           compose-file: "./src/compose.develop.yaml"
-          compose-flags: "--env-file .test.env"
+          compose-flags: "--env-file ./src/.test.env"
           up-flags: "--build"
           down-flags: "--volumes"
 
