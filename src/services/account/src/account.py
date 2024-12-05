@@ -208,7 +208,7 @@ class AccountService:
             r = self.connectorHTTP.getTransaction(auth_uuid, transaction_uuid)
             
             if r['http_code'] != 200:
-                return {'response': 'Try later'}, 500
+                return  r['http_body'], r['http_code']
         except Exception as e:
             return {'response': str(e)}, 500
 
