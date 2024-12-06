@@ -7,26 +7,34 @@ import os
 import uuid
 import jwt
 import re
-from mytasks import add, req, invoke_payment
 import werkzeug.exceptions
 from connectors.connector_db import MarketConnectorDB
 from connectors.connector_db_mock import MarketConnectorDBMock
 from connectors.connector_http import MarketConnectorHTTP
 from connectors.connector_http_mock import MarketConnectorHTTPMock
+from connectors.connector_celery import MarketConnectorCelery
+from connectors.connector_celery_mock import MarketConnectorCeleryMock
 
 # testing
-#   curl -X GET -H @headers.txt -H 'Accept: application/json' -k https://127.0.0.1:8086/market
-#   curl -X GET -H @headers.txt -k https://127.0.0.1:8086/market/71520f05-80c5-4cb1-b05a-a9642f9aaaaa/bid
+#   curl -X POST -s -o /dev/null -w 'Authorization: %header{Authorization}' -H 'Content-Type: application/json' -d '{"username": "test", "password": "test"}' -k https://127.0.0.1:8081/login > headers.txt
+#       curl -X GET -H @headers.txt -H 'Accept: application/json' -k https://127.0.0.1:8086/market
+#       curl -X GET -H @headers.txt -k https://127.0.0.1:8086/market/71520f05-80c5-4cb1-b05a-a9642f9aaaaa
+#       curl -X POST -H @headers.txt -H 'Content-Type: application/json' -d '{"gacha_uuid": "c6cc4f1f-f5f8-4e76-a446-b01b48b10575", "starting_price": 20}' -k https://127.0.0.1:8086/market
+#       curl -X POST -H @headers.txt -H 'Content-Type: application/json' -d '{"offer": 350}' -k https://127.0.0.1:8086/market/71520f05-80c5-4cb1-b05a-a9642f9aaaaa/bid
+#       curl -X PUT -H @headers.txt -k https://127.0.0.1:8086/market/71520f05-80c5-4cb1-b05a-a9642f9ccccc/close
+#       curl -X PUT -H @headers.txt -k https://127.0.0.1:8086/market/71520f05-80c5-4cb1-b05a-a9642f9ccccc/payment
+#       curl -X GET -k https://127.0.0.1:8086/market/user/71520f05-80c5-4cb1-b05a-a9642f9ae111
 
 class MarketService:
     UUID_REGEX = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
 
-    def __init__(self, connectorHTTP, connectorDB, jwt_secret):
+    def __init__(self, connectorHTTP, connectorDB, connectorCelery, jwt_secret):
         self.app = Flask(__name__)
 
         self.__init_routes()
         self.connectorHTTP = connectorHTTP
         self.connectorDB = connectorDB
+        self.connectorCelery = connectorCelery
         self.jwt_secret = jwt_secret
 
     # routes
@@ -68,7 +76,7 @@ class MarketService:
             except socket.herror:
                 pass
 
-            if 'caddy' in hostname:
+            if 'caddy' in hostname or 'testing' in hostname:
                 encoded_jwt = request.headers.get('Authorization')
             
                 if not encoded_jwt:
@@ -201,7 +209,7 @@ class MarketService:
     
     @login_required
     def show_create_auction(self, gacha_uuid, auth_uuid, hostname):
-        if 'caddy' not in hostname:
+        if 'caddy' not in hostname and 'testing' not in hostname:
             return {'response': 'Forbidden'}, 403
 
         if (res := MarketService.check_uuid(gacha_uuid=gacha_uuid)['name']):
@@ -211,7 +219,7 @@ class MarketService:
 
     @login_required
     def create_auction(self, auth_uuid, hostname):
-        if 'caddy' not in hostname:
+        if 'caddy' not in hostname and 'testing' not in hostname:
             return {'response': 'Forbidden'}, 403
 
         try:
@@ -247,7 +255,7 @@ class MarketService:
         except Exception as e:
             return {'response': str(e)}, 500
 
-        task = invoke_payment.apply_async((auction_uuid,), eta=expired_at)
+        self.connectorCelery.sendPaymentTask(auction_uuid, expired_at)
         
         if 'application/json' in request.headers.get('Accept'):
             return {'response': record}, 201
@@ -258,7 +266,7 @@ class MarketService:
 
     @login_required
     def make_bid(self, auction_uuid, auth_uuid, hostname):
-        if 'caddy' not in hostname:
+        if 'caddy' not in hostname and 'testing' not in hostname:
             return {'response': 'Forbidden'}, 403
 
         if (res := MarketService.check_uuid(auction_uuid=auction_uuid)['name']):
@@ -271,9 +279,14 @@ class MarketService:
                 return {'response': 'Bid must be positive'}, 400
 
             record = self.connectorDB.getAuctionWithMaxOffer(auction_uuid)
-
-            current_time = int(datetime.now(tz=timezone.utc).timestamp())
-            final_time = int(record['expired_at'].timestamp())
+            
+            #current_time = int(datetime.now(tz=timezone.utc).timestamp())
+            current_time = datetime.now(tz=timezone.utc)
+            
+            #final_time = int(record['expired_at'].timestamp())
+            final_time_utc = datetime.strptime(record['expired_at'], '%d/%m/%Y %H:%M:%S%z')
+            final_time = final_time_utc.astimezone(ZoneInfo('Europe/Rome'))
+            
             base_price = record['base_price']
             current_price = record['offer']
 
@@ -312,9 +325,10 @@ class MarketService:
         is_admin = False
 
         try:
+            hostname = 'testing'
             hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]    
         except socket.herror:
-            return {'response': 'unknown host'}, 500
+            pass
 
         if hostname == 'admin_service':
             is_admin = True
@@ -335,7 +349,7 @@ class MarketService:
                 if record['offer'] != 0:
                     return {'response': 'Not possible to close an auction with bids'}, 400
 
-            self.connectorDB.close(auction_uuid)
+            self.connectorDB.closeAndClearBids(auction_uuid)
         except ValueError as e:
             return {'response': str(e)}, 400
         except Exception as e:
@@ -345,11 +359,12 @@ class MarketService:
 
     def payment(self, auction_uuid):
         try:
+            hostname = 'testing'
             hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]    
         except socket.herror:
-            return {'response': 'unknown host'}, 500
+            pass
         
-        if 'celery_worker' not in hostname and 'admin_service' not in hostname:
+        if 'celery_worker' not in hostname and 'admin_service' not in hostname and 'testing' not in hostname:
             return {'response': 'You\'re not authorized'}, 403
         
         if (res := MarketService.check_uuid(auction_uuid=auction_uuid)['name']):
@@ -424,7 +439,7 @@ class MarketService:
         except socket.herror:
             pass
 
-        if 'admin_service' not in hostname and 'transaction_service' not in hostname:
+        if 'admin_service' not in hostname and 'transaction_service' not in hostname and 'testing' not in hostname:
             return {'response': 'Forbidden'}, 403
 
         if (res := MarketService.check_uuid(player_uuid=player_uuid)['name']):
@@ -441,8 +456,9 @@ class MarketService:
     def development(db_name, db_user, db_password, db_host, db_port, db_sslmode, cert_path, key_path, jwt_secret):
         db = MarketConnectorDB(db_name, db_user, db_password, db_host, db_port, db_sslmode)
         http = MarketConnectorHTTP()
+        celery = MarketConnectorCelery()
 
-        MarketService(http, db, jwt_secret).app.run(
+        MarketService(http, db, celery, jwt_secret).app.run(
             host="0.0.0.0", 
             port=5000, 
             debug=True, 
@@ -452,8 +468,9 @@ class MarketService:
     def testing(cert_path, key_path, jwt_secret):
         db = MarketConnectorDBMock()
         http = MarketConnectorHTTPMock()
+        celery = MarketConnectorCeleryMock()
         
-        MarketService(http, db, jwt_secret).app.run(
+        MarketService(http, db, celery, jwt_secret).app.run(
             host="0.0.0.0", 
             port=5000, 
             debug=True, 
@@ -463,8 +480,9 @@ class MarketService:
     def production(db_name, db_user, db_password, db_host, db_port, db_sslmode, cert_path, key_path, jwt_secret):
         db = MarketConnectorDB(db_name, db_user, db_password, db_host, db_port, db_sslmode)
         http = MarketConnectorHTTP()
+        celery = MarketConnectorCelery()
         
-        MarketService(http, db, jwt_secret).app.run(
+        MarketService(http, db, celery, jwt_secret).app.run(
             host="0.0.0.0", 
             port=5000, 
             ssl_context=(cert_path, key_path)

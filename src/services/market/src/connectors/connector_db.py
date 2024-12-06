@@ -64,7 +64,7 @@ class MarketConnectorDB:
         try:
             cursor = self.__cursor()
             cursor.execute('''
-                SELECT a.uuid, a.base_price, a.gacha_uuid, a.user_uuid, a.expired_at, a.closed, COALESCE(b.offer, 0) AS offer
+                SELECT a.uuid, a.base_price, a.gacha_uuid, a.user_uuid, to_char(a.expired_at, 'DD/MM/YYYY HH:MI:SSOF:00') as expired_at, a.closed, COALESCE(b.offer, 0) AS offer
                     FROM auction a 
                     LEFT JOIN bid b ON a.uuid = b.auction_uuid 
                     WHERE a.uuid = %s 
@@ -84,7 +84,7 @@ class MarketConnectorDB:
     def getNumberOfActiveAuctionsForGacha(self, player_uuid, gacha_uuid):
         try:
             cursor = self.__cursor()
-            cursor.execute('SELECT count(id) as active_auctions FROM auction WHERE user_uuid = %s AND gacha_uuid = %s', 
+            cursor.execute('SELECT count(id) as active_auctions FROM auction WHERE user_uuid = %s AND gacha_uuid = %s AND closed = FALSE', 
                 [player_uuid, gacha_uuid])
             record = cursor.fetchone()
             cursor.close()
@@ -139,26 +139,6 @@ class MarketConnectorDB:
                 VALUES 
                     (DEFAULT, %s, %s, %s)''', 
             [auction_uuid, player_uuid, offer])
-
-            self.conn.commit()
-            cursor.close()
-        except psycopg2.Error as e:
-            self.conn.rollback()
-            raise Exception('Error: failed query')
-
-        return
-
-    def close(self, auction_uuid):
-        try:
-            cursor = self.__cursor()
-            cursor.execute('DELETE FROM bid WHERE auction_uuid = %s',
-                [auction_uuid])
-
-            if cursor.rowcount == 0:
-                raise ValueError('Error: auction not found')
-
-            cursor.execute('UPDATE auction SET closed = TRUE WHERE uuid = %s',
-                [auction_uuid])
 
             self.conn.commit()
             cursor.close()
