@@ -28,7 +28,7 @@ from connectors.connector_celery_mock import MarketConnectorCeleryMock
 class MarketService:
     UUID_REGEX = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
 
-    def __init__(self, connectorHTTP, connectorDB, connectorCelery, jwt_secret):
+    def __init__(self, connectorHTTP, connectorDB, connectorCelery, jwt_secret, deployment_mode):
         self.app = Flask(__name__)
 
         self.__init_routes()
@@ -36,6 +36,7 @@ class MarketService:
         self.connectorDB = connectorDB
         self.connectorCelery = connectorCelery
         self.jwt_secret = jwt_secret
+        self.deployment_mode = deployment_mode
 
     # routes
     def __init_routes(self):
@@ -68,13 +69,14 @@ class MarketService:
     def login_required(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            hostname = 'testing' # testing from localhost
+            hostname = 'testing' # testing from localhost            
             auth_uuid = None
 
-            try:
-                hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]    
-            except socket.herror:
-                pass
+            if args[0].deployment_mode != 'testing':
+                try:
+                    hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]
+                except socket.herror:
+                    pass
 
             if 'caddy' in hostname or 'testing' in hostname:
                 encoded_jwt = request.headers.get('Authorization')
@@ -323,12 +325,6 @@ class MarketService:
         player_uuid = None
         is_admin = False
 
-        try:
-            hostname = 'testing'
-            hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]    
-        except socket.herror:
-            pass
-
         if hostname == 'admin_service':
             is_admin = True
 
@@ -357,11 +353,13 @@ class MarketService:
         return {'response': 'Auction closed'}, 200
 
     def payment(self, auction_uuid):
-        try:
-            hostname = 'testing'
-            hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]    
-        except socket.herror:
-            pass
+        hostname = 'testing'
+
+        if self.deployment_mode != 'testing':
+            try:
+                hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]
+            except socket.herror:
+                pass
         
         if 'celery_worker' not in hostname and 'admin_service' not in hostname and 'testing' not in hostname:
             return {'response': 'You\'re not authorized'}, 403
@@ -432,11 +430,13 @@ class MarketService:
             return {'response': str(e)}, 500
 
     def show_user_auctions(self, player_uuid):
-        try:
-            hostname = 'testing'
-            hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]  
-        except socket.herror:
-            pass
+        hostname = 'testing'
+
+        if self.deployment_mode != 'testing':
+            try:
+                hostname = (socket.gethostbyaddr(request.remote_addr)[0]).split('.')[0]
+            except socket.herror:
+                pass
 
         if 'admin_service' not in hostname and 'transaction_service' not in hostname and 'testing' not in hostname:
             return {'response': 'Forbidden'}, 403
@@ -457,7 +457,7 @@ class MarketService:
         http = MarketConnectorHTTP()
         celery = MarketConnectorCelery()
 
-        MarketService(http, db, celery, jwt_secret).app.run(
+        MarketService(http, db, celery, jwt_secret, 'development').app.run(
             host="0.0.0.0", # nosec B104 - Safe in Docker 
             port=5000, 
             debug=True, # nosec B201 Those methods are only for development or testing 
@@ -469,7 +469,7 @@ class MarketService:
         http = MarketConnectorHTTPMock()
         celery = MarketConnectorCeleryMock()
         
-        MarketService(http, db, celery, jwt_secret).app.run(
+        MarketService(http, db, celery, jwt_secret, 'testing').app.run(
             host="0.0.0.0", # nosec B104 - Safe in Docker 
             port=5000, 
             debug=True, # nosec B201 Those methods are only for development or testing 
@@ -481,7 +481,7 @@ class MarketService:
         http = MarketConnectorHTTP()
         celery = MarketConnectorCelery()
         
-        MarketService(http, db, celery, jwt_secret).app.run(
+        MarketService(http, db, celery, jwt_secret, 'production').app.run(
             host="0.0.0.0", # nosec B104 - Safe in Docker 
             port=5000, 
             ssl_context=(cert_path, key_path)
