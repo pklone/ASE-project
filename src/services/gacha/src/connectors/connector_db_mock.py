@@ -132,11 +132,7 @@ class CollectionConnectorDBMock:
         
         gachas = [g for g in gacha if g["rarity"]["uuid"] == rarity_uuid and g["active"] == True]
 
-        gacha_item=[g["uuid"] for g in gachas]
-
-        result = [{"uuid": item} for item in gacha_item]
-
-        return result
+        return gachas
 
     def getRarityBySymbol(self, symbol):
         

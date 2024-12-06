@@ -18,7 +18,7 @@ from connectors.connector_http_mock import CollectionConnectorHTTPMock
 #   curl -X GET -k https://127.0.0.1:8082/collection/user/71520f05-80c5-4cb1-b05a-a9642f9ae44d
 #   curl -X PUT -H 'Content-type: application/json' -d '{"gacha_uuid": "dde21dde-5513-46d2-8d03-686fc620394c", "q": 1}' -k https://127.0.0.1:8082/collection/user/71520f05-80c5-4cb1-b05a-a9642f9ae44d
 #   curl -X POST -s -o /dev/null -w 'Authorization: %header{Authorization}' -H 'Content-Type: application/json' -d '{"username": "test", "password": "test"}' -k https://127.0.0.1:8081 > headers.txt
-#       curl -X GET -H 'Accept: application/json' -k -b cookie.jar https://127.0.0.1:8082/roll
+#       curl -X GET -H @headers.txt -H 'Accept: application/json' -k https://127.0.0.1:8082/roll
 #   cp ~/Documenti/media/immagini/meme/batkek.jpg . 
 #       curl -X POST -F 'gacha_image=@batkek.jpg' -F 'name=placeholder' -F 'description=placeholder' -F 'rarity=S' -k https://127.0.0.1:8082/collection
 #   cp ~/Documenti/media/immagini/meme/9b5.png . 
@@ -188,15 +188,39 @@ class CollectionService:
 
         try:
             r = self.connectorHTTP.updatePlayerWallet(auth_uuid, -10)
+
             if r['http_code'] != 200:
                 return {'response': 'No money available'}, 400
 
-            self.connectorDB.updateQuantity(gacha_uuid, auth_uuid, 1)
-            record = self.connectorDB.getByUuid(gacha_uuid)
-        except ValueError as e:
-            return {'response': str(e)}, 400
         except Exception as e:
             return {'response': str(e)}, 500
+
+        try:
+            self.connectorDB.updateQuantity(gacha_uuid, auth_uuid, 1)
+
+            for g in records:
+                if g['uuid'] == gacha_uuid:
+                    record = g
+                    
+        except ValueError as e:
+            try:
+                r = self.connectorHTTP.updatePlayerWallet(auth_uuid, 10)
+
+                if r['http_code'] != 200:
+                    return {'response': 'Try later - inconsistent data'}, 500
+
+            except Exception as e:
+                return {'response': 'Try later - inconsistent data'}, 500
+
+        except Exception as e:
+            try:
+                r = self.connectorHTTP.updatePlayerWallet(auth_uuid, 10)
+
+                if r['http_code'] != 200:
+                    return {'response': 'Try later - inconsistent data'}, 500
+
+            except Exception as e:
+                return {'response': 'Try later - inconsistent data'}, 500
 
         if 'application/json' in request.headers.get('Accept'):
             return {'response': record}, 200

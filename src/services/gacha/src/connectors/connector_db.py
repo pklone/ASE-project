@@ -164,8 +164,12 @@ class CollectionConnectorDB:
             if cursor.rowcount == 0:
                 raise ValueError(f'Error: rarity not found')
 
-            cursor.execute('SELECT uuid FROM gacha WHERE uuid_rarity = %s and active = true',
-                [rarity_uuid])
+            cursor.execute("""
+                SELECT g.uuid, g.name, description, image_path, r.name as rarity 
+                FROM gacha g 
+                    INNER JOIN rarity r on g.uuid_rarity = r.uuid 
+                WHERE g.uuid_rarity = %s and active = true
+                """, [rarity_uuid])
 
             records = cursor.fetchall()
             cursor.close()
