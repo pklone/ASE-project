@@ -196,6 +196,7 @@ class PlayerConnectorDB:
 
             self.conn.commit()
         except psycopg2.Error as e:
+            self.conn.rollback()
             raise Exception(f'Error: {str(e)}')
 
         return record
