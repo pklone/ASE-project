@@ -190,7 +190,6 @@ class TransactionService:
 
                 # mix all the data for in_transaction
                 transaction = {
-                    'id': record['id'],
                     'uuid': record['uuid'],
                     'price': record['price'],
                     'created_at': record['created_at'],

@@ -158,6 +158,8 @@ class CollectionService:
             self.connectorDB.updateQuantity(gacha_uuid, player_uuid, q)
         except KeyError:
             return {'message': 'Missing data'}
+        except ValueError as e:
+            return {'response': str(e)}, 400
         except Exception as e:
             return {'response': str(e)}, 500
         

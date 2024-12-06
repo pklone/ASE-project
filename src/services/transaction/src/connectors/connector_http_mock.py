@@ -8,7 +8,7 @@ class TransactionConnectorHTTPMock:
                 'uuid': '71520f05-80c5-4cb1-b05a-a9642f9aaaaa',
                 'base_price': 200,
                 'gacha_uuid': '09907f76-9b0f-4270-84a3-e9780b164ac4',
-                'user_uuid': '771520f05-80c5-4cb1-b05a-a9642f9ae111',
+                'user_uuid': '771520f05-80c5-4cb1-b05a-a9642f9ae11c',
                 'expired_at': int(datetime.now(tz=timezone.utc).timestamp()),
                 'closed': False
             },
@@ -31,7 +31,7 @@ class TransactionConnectorHTTPMock:
                 'active': True
             },
             {
-                'uuid': '771520f05-80c5-4cb1-b05a-a9642f9ae111', 
+                'uuid': '771520f05-80c5-4cb1-b05a-a9642f9ae11c', 
                 'username': 'test2', 
                 'password_hash': '$2b$12$Z93LSBi0EVtyqVWnZB7tPu8ksgXbrFPd8YjI1haMzGl7KBLrbaR6G', 
                 'wallet': 200, 

@@ -74,7 +74,7 @@ class CollectionConnectorDBMock:
         
         gacha_item = next((g for g in transformed_gacha if g["uuid"] == gacha_uuid), None)
         if not gacha_item:
-            raise Exception(f'Error: gacha not found')
+            raise ValueError(f'Error: gacha not found')
         return gacha_item
 
     def getByPlayer(self, player_uuid):
@@ -100,14 +100,14 @@ class CollectionConnectorDBMock:
         
         player_gachas = next((p for p in players if p["uuid_player"] == player_uuid), None)
         if not player_gachas:
-            return False
-        
+            raise ValueError(f'Error: player not found')
+
         gachas = player_gachas["gachas"]
         gacha_item = next((g for g in gachas if g["gacha"]["uuid"] == gacha_uuid), None)
         if not gacha_item:
             gacha_new = next((g for g in gacha if g["uuid"] == gacha_uuid), None)
             if not gacha_new:
-                raise Exception(f'Error: gacha not found')
+                raise ValueError(f'Error: gacha not found')
             player_gachas["gachas"].append({"quantity": q, "gacha": gacha_new})
             return True                
         
@@ -125,6 +125,10 @@ class CollectionConnectorDBMock:
         return transformed_rarity
 
     def getAllByRarity(self, rarity_uuid):
+
+        rarity_item = next((r for r in rarity if r["uuid"] == rarity_uuid), None)
+        if not rarity_item:
+            raise ValueError(f'Error: rarity not found')
         
         gachas = [g for g in gacha if g["rarity"]["uuid"] == rarity_uuid and g["active"] == True]
 
@@ -138,13 +142,13 @@ class CollectionConnectorDBMock:
         
         rarity_item = next((r for r in rarity if r["symbol"] == symbol), None)
         if not rarity_item:
-            raise Exception(f'Error: rarity not found')
+            raise ValueError(f'Error: rarity not found')
         return {"uuid": rarity_item["uuid"]}
 
     def add(self, uuid, name, description, image_path, rarity_uuid):
 
         if next((g for g in gacha if g["name"] == name), None):
-            raise Exception(f'Error: gacha already exists')
+            raise ValueError(f'Error: gacha already exists')
         
         rarity_item = next((r for r in rarity if r["uuid"] == rarity_uuid), None)
         
@@ -164,7 +168,7 @@ class CollectionConnectorDBMock:
         
         gacha_item = next((g for g in gacha if g["uuid"] == gacha_uuid), None)
         if not gacha_item:
-            raise Exception(f'Error: gacha not found')
+            raise ValueError(f'Error: gacha not found')
         
         # modify that specific gacha in the list
         gacha_item["name"] = new_name
@@ -178,7 +182,7 @@ class CollectionConnectorDBMock:
         
         gacha_item = next((g for g in gacha if g["uuid"] == gacha_uuid), None)
         if not gacha_item:
-            raise Exception(f'Error: gacha not found')
+            raise ValueError(f'Error: gacha not found')
         
         gacha_item["active"] = False
 

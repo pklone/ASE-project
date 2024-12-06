@@ -14,7 +14,7 @@ class TransactionConnectorDBMock:
                 "uuid": "e3c17850-37fa-4011-b43b-2ce1c441d281",
                 "price": 100,
                 "created_at": int(datetime.now(tz=timezone.utc).timestamp()),
-                "uuid_player": "771520f0-80c5-4cb1-b05a-a9642f9ae111",      
+                "uuid_player": "771520f0-80c5-4cb1-b05a-a9642f9ae11c",      
                 "uuid_auction": "71520f05-80c5-4cb1-b05a-a9642f9bbbbb"
             }
         ]
