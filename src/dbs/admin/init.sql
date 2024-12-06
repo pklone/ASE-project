@@ -7,4 +7,4 @@ CREATE TABLE admin (
 );
 
 INSERT INTO admin (uuid, username, password_hash) VALUES
-    ('1e785a5dd-7fdd-483f-93b3-b84ecaa62683', 'admin', '$2b$12$QnbxGRl6jVTzt.fbksJWVuITmX4832AnfF1uSx00hZSsDBgjXDxcO'); -- psw: admin
+    ('1e785a5dd-7fdd-483f-93b3-b84ecaa62683', 'admin123', '$2b$12$qTb/M0aECe067C2SFfxMK.TieWB2rVp/t9tOqEtTfJBZz.ZsBFS9C'); -- psw: admin123

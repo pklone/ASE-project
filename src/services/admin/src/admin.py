@@ -23,6 +23,8 @@ from connectors.connector_http_mock import AdminConnectorHTTPMock
 #
 
 class AdminService:
+    USERNAME_REGEX = r'^[0-9a-z]{3,}$'
+    PASSWORD_REGEX = r'^[0-9a-z]{8,}$'
     UUID_REGEX = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
 
     def __init__(self, connectorHTTP, jwt_secret):
@@ -65,6 +67,11 @@ class AdminService:
                 break
 
         return res
+
+    def check_regex(value, regex):
+        p = re.compile(regex, re.IGNORECASE)
+
+        return p.match(value) is not None
 
     # decorators
     def login_required(f):
@@ -119,9 +126,15 @@ class AdminService:
             username = request.json['username']
             password = request.json['password']
 
+            if not AdminService.check_regex(username, AdminService.USERNAME_REGEX):
+                raise KeyError
+
+            if not AdminService.check_regex(password, AdminService.PASSWORD_REGEX):
+                raise KeyError
+
             r = self.connectorHTTP.adminLogin(username, password)
         except KeyError:
-            return {'response': 'Missing data'}, 400
+            return {'response': 'Missing or invalid data'}, 400
         except Exception as e:
             return {'response': str(e)}, 500
         
@@ -160,7 +173,15 @@ class AdminService:
         new_wallet = request.json.get('wallet')
 
         try:
+            if new_username and not AdminService.check_regex(new_username, AdminService.USERNAME_REGEX):
+                raise ValueError
+        
+            if new_wallet and (type(new_wallet) is not int or new_wallet < 0):
+                raise ValueError
+
             r = self.connectorHTTP.modifyPlayer(user_uuid, new_username, new_wallet)
+        except ValueError as e:
+            return {'response': 'Invalid data'}, 400
         except Exception as e:
             return {'response': str(e)}, 500
 

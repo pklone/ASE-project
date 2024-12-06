@@ -18,7 +18,9 @@ from connectors.connector_http_mock import AccountConnectorHTTPMock
 #       curl -X GET -H 'Accept: application/json' -H @headers.txt -k https://127.0.0.1:8083/user/transactions/3b8009f2-31c8-484b-aa74-32defbb02985
 
 class AccountService:
-    UUID_REGEX = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    USERNAME_REGEX = r'^[0-9a-z]{3,}$'
+    PASSWORD_REGEX = r'^[0-9a-z]{8,}$'
+    UUID_REGEX     = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
 
     def __init__(self, connectorHTTP, jwt_secret):
         self.app = Flask(__name__)
@@ -54,6 +56,11 @@ class AccountService:
                 break
 
         return res
+
+    def check_regex(value, regex):
+        p = re.compile(regex, re.IGNORECASE)
+
+        return p.match(value) is not None
 
     def login_required(f):
         @wraps(f)
@@ -99,9 +106,15 @@ class AccountService:
             username = request.json['username']
             password = request.json['password']
 
+            if not AccountService.check_regex(username, AccountService.USERNAME_REGEX):
+                raise KeyError
+
+            if not AccountService.check_regex(password, AccountService.PASSWORD_REGEX):
+                raise KeyError
+
             r = self.connectorHTTP.createPlayer(username, password)
         except KeyError:
-            return {'response': 'Missing data'}, 400
+            return {'response': 'Missing or invalid data'}, 400
         except Exception as e:
             return {'response': str(e)}, 500
         
@@ -132,12 +145,15 @@ class AccountService:
         try:
             new_username = request.json['username']
 
+            if not AccountService.check_regex(new_username, AccountService.USERNAME_REGEX):
+                raise KeyError
+
             r = self.connectorHTTP.modifyPlayer(auth_uuid, new_username)
 
             if r['http_code'] != 200:
                 return {'response': 'Try later'}, 500
         except KeyError:
-            return {'response': 'Missing data'}, 400
+            return {'response': 'Missing or invalid data'}, 400
         except Exception as e:
             return {'response': str(e)}, 500
         
