@@ -9,7 +9,7 @@ class MarketConnectorDBMock:
                 'base_price': 200,
                 'gacha_uuid': '09907f76-9b0f-4270-84a3-e9780b164ac4',
                 'user_uuid': '71520f05-80c5-4cb1-b05a-a9642f9ae111',
-                'expired_at': "12/03/2025 17:20:00+00:00",
+                'expired_at': datetime.strptime("12/03/2025 17:20:00+00:00", '%d/%m/%Y %H:%M:%S%z'),
                 'closed': False
             },
             {
@@ -17,7 +17,7 @@ class MarketConnectorDBMock:
                 'base_price': 250,
                 'gacha_uuid': 'c6cc4f1f-f5f8-4e76-a446-b01b48b10575',
                 'user_uuid': '71520f05-80c5-4cb1-b05a-a9642f9ae44d',
-                'expired_at': "07/02/2025 13:31:17+00:00",
+                'expired_at': datetime.strptime("07/02/2025 13:31:17+00:00", '%d/%m/%Y %H:%M:%S%z'),
                 'closed': False
             },
             {
@@ -25,7 +25,7 @@ class MarketConnectorDBMock:
                 'base_price': 250,
                 'gacha_uuid': '5721633c-0d52-4742-8aeb-7f0375be39fb',
                 'user_uuid': '71520f05-80c5-4cb1-b05a-a9642f9ae44d',
-                'expired_at': "07/02/2025 13:31:17+00:00",
+                'expired_at': datetime.strptime("07/02/2025 13:31:17+00:00", '%d/%m/%Y %H:%M:%S%z'),
                 'closed': False
             }
         ]

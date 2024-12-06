@@ -35,6 +35,12 @@ class MarketConnectorHTTPMock:
                 "uuid": "c6cc4f1f-f5f8-4e76-a446-b01b48b10575",
                 "wallet": 500,
                 "active": False
+            },
+            {
+                "username": "test4",
+                "uuid": "4d8ecfb4-c58f-4a9b-9f35-f28ee49834ef",
+                "wallet": 500,
+                "active": True
             }
         ]
 
@@ -155,7 +161,7 @@ class MarketConnectorHTTPMock:
 
         self.transactions.append(new_transaction)
         
-        return {'http_code': 200, 'http_body': {'response': new_transaction}}
+        return {'http_code': 201, 'http_body': {'response': new_transaction}}
 
     def updatePlayerWallet(self, player_uuid, amount):
         for p in self.players:
