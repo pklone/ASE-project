@@ -67,13 +67,13 @@ class TransactionConnectorDB:
 
             self.cursor.execute('''
                 INSERT INTO transaction 
-                    (id, uuid, price, created_at, uuid_player, uuid_auction) 
+                    (uuid, price, created_at, uuid_player, uuid_auction) 
                 VALUES 
-                    (DEFAULT, %s, %s, %s, %s, %s)''', 
+                    (%s, %s, %s, %s, %s)''', 
                 [uuid_transaction, price, created_at, uuid_player, uuid_auction])
 
             self.cursor.execute('''
-                SELECT id, uuid, price, created_at, uuid_player, uuid_auction FROM transaction WHERE uuid = %s''', 
+                SELECT uuid, price, created_at, uuid_player, uuid_auction FROM transaction WHERE uuid = %s''', 
                 [uuid_transaction])
 
             if self.cursor.rowcount == 0:
@@ -91,7 +91,7 @@ class TransactionConnectorDB:
 
     def getByUuid(self, transaction_uuid):
         try:
-            self.cursor.execute('SELECT id, uuid, price, created_at, uuid_player, uuid_auction FROM transaction WHERE uuid = %s', 
+            self.cursor.execute('SELECT uuid, price, created_at, uuid_player, uuid_auction FROM transaction WHERE uuid = %s', 
                 [transaction_uuid])
 
             if self.cursor.rowcount == 0:
@@ -105,7 +105,7 @@ class TransactionConnectorDB:
 
     def getAllByPlayer(self, player_uuid):
         try:
-            self.cursor.execute('SELECT id, uuid, price, created_at, uuid_player, uuid_auction FROM transaction WHERE uuid_player = %s', 
+            self.cursor.execute('SELECT uuid, price, created_at, uuid_player, uuid_auction FROM transaction WHERE uuid_player = %s', 
                 [player_uuid])
 
             records = self.cursor.fetchall()
@@ -116,7 +116,7 @@ class TransactionConnectorDB:
 
     def getByAuction(self, auction_uuid):
         try:
-            self.cursor.execute('SELECT id, uuid, price, created_at, uuid_player, uuid_auction FROM transaction WHERE uuid_auction = %s', 
+            self.cursor.execute('SELECT uuid, price, created_at, uuid_player, uuid_auction FROM transaction WHERE uuid_auction = %s', 
                 [auction_uuid])
 
             if self.cursor.rowcount == 0:
@@ -130,7 +130,7 @@ class TransactionConnectorDB:
 
     def getByUuidAndPlayer(self, player_uuid, transaction_uuid):
         try:
-            self.cursor.execute('SELECT id, uuid, price, created_at, uuid_player, uuid_auction FROM transaction WHERE uuid_player = %s AND uuid = %s', 
+            self.cursor.execute('SELECT uuid, price, created_at, uuid_player, uuid_auction FROM transaction WHERE uuid_player = %s AND uuid = %s', 
                 [player_uuid, transaction_uuid])
 
             if self.cursor.rowcount == 0:
