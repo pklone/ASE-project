@@ -9,6 +9,7 @@ from connectors.connector_http_mock import AccountConnectorHTTPMock
 
 # testing
 #   curl -X POST -H 'Content-Type: application/json' -d '{"username": "kek", "password": "kek"}' -k https://127.0.0.1:8083/user
+#   curl -X POST -s -o /dev/null -w 'Authorization: %header{Authorization}' -H 'Content-Type: application/json' -d '{"username": "test", "password": "test"}' -k https://127.0.0.1:8081/login > headers.txt
 #       curl -X GET -H 'Accept: application/json' -H @headers.txt -k https://127.0.0.1:8083/user/collection
 #       curl -X DELETE -H @headers.txt -k https://127.0.0.1:8083/user
 #       curl -X PUT -H 'Content-Type: application/json' -H @headers.txt -d '{"username": "kek", "wallet": 100}' -k https://127.0.0.1:8083/user
