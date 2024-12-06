@@ -19,7 +19,7 @@ from connectors.connector_celery_mock import MarketConnectorCeleryMock
 #   curl -X POST -s -o /dev/null -w 'Authorization: %header{Authorization}' -H 'Content-Type: application/json' -d '{"username": "test", "password": "test"}' -k https://127.0.0.1:8081/login > headers.txt
 #       curl -X GET -H @headers.txt -H 'Accept: application/json' -k https://127.0.0.1:8086/market
 #       curl -X GET -H @headers.txt -k https://127.0.0.1:8086/market/71520f05-80c5-4cb1-b05a-a9642f9aaaaa
-#       curl -X POST -H @headers.txt -H 'Content-Type: application/json' -d '{"gacha_uuid": "c6cc4f1f-f5f8-4e76-a446-b01b48b10575", "starting_price": 20}' -k https://127.0.0.1:8086/market
+#       curl -X POST -H @headers.txt -H 'Content-Type: application/json' -H 'Accept: application/json' -d '{"gacha_uuid": "c6cc4f1f-f5f8-4e76-a446-b01b48b10575", "starting_price": 20}' -k https://127.0.0.1:8086/market
 #       curl -X POST -H @headers.txt -H 'Content-Type: application/json' -d '{"offer": 350}' -k https://127.0.0.1:8086/market/71520f05-80c5-4cb1-b05a-a9642f9aaaaa/bid
 #       curl -X PUT -H @headers.txt -k https://127.0.0.1:8086/market/71520f05-80c5-4cb1-b05a-a9642f9ccccc/close
 #       curl -X PUT -H @headers.txt -k https://127.0.0.1:8086/market/71520f05-80c5-4cb1-b05a-a9642f9ccccc/payment
@@ -247,7 +247,8 @@ class MarketService:
                 return {'response': f'You have only {player_gacha['quantity']} copies of gacha {player_gacha["name"]}'}, 400
 
             auction_uuid = str(uuid.uuid4())
-            expired_at = datetime.now(tz=timezone.utc) + timedelta(seconds=60*5)
+            expired_at = datetime.now(tz=timezone.utc) + timedelta(seconds=60*2)
+            #expired_at = expired_at.astimezone(ZoneInfo('Europe/Rome'))
 
             record = self.connectorDB.add(auction_uuid, starting_price, gacha_uuid, auth_uuid, expired_at)
         except KeyError:
@@ -280,11 +281,9 @@ class MarketService:
 
             record = self.connectorDB.getAuctionWithMaxOffer(auction_uuid)
             
-            #current_time = int(datetime.now(tz=timezone.utc).timestamp())
             current_time = datetime.now(tz=timezone.utc)
             
-            #final_time = int(record['expired_at'].timestamp())
-            final_time_utc = datetime.strptime(record['expired_at'], '%d/%m/%Y %H:%M:%S%z')
+            final_time_utc = record['expired_at']
             final_time = final_time_utc.astimezone(ZoneInfo('Europe/Rome'))
             
             base_price = record['base_price']

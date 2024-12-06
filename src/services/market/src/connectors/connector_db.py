@@ -64,7 +64,7 @@ class MarketConnectorDB:
         try:
             cursor = self.__cursor()
             cursor.execute('''
-                SELECT a.uuid, a.base_price, a.gacha_uuid, a.user_uuid, to_char(a.expired_at, 'DD/MM/YYYY HH:MI:SSOF:00') as expired_at, a.closed, COALESCE(b.offer, 0) AS offer
+                SELECT a.uuid, a.base_price, a.gacha_uuid, a.user_uuid, expired_at, a.closed, COALESCE(b.offer, 0) AS offer
                     FROM auction a 
                     LEFT JOIN bid b ON a.uuid = b.auction_uuid 
                     WHERE a.uuid = %s 
@@ -152,8 +152,7 @@ class MarketConnectorDB:
         try:
             cursor = self.__cursor()
             cursor.execute('''
-                SELECT id, uuid, base_price, gacha_uuid, user_uuid, closed,
-                       to_char(expired_at, 'DD/MM/YYYY HH:MI:SSOF:00') as expired_at 
+                SELECT id, uuid, base_price, gacha_uuid, user_uuid, closed, expired_at 
                 FROM auction
                 WHERE user_uuid = %s''', 
             [player_uuid])
