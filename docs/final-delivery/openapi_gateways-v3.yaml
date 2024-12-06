@@ -5,7 +5,10 @@ info:
  description: API to manage accounts, collections, currencies, and market functionalities for a players and admins
 
 servers:
- - url: https://ase.localhost
+  - url: https://localhost
+    description: Player API
+  - url: https://localhost:8443
+    description: Admin API
 
 tags:
  - name: Admin

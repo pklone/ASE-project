@@ -25,6 +25,14 @@ localhost {
             }
         }
     }
+    handle_path / {
+        rewrite /login
+        reverse_proxy https://authentication_service:5000 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
+    }
 
 
     # User Service
