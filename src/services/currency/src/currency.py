@@ -99,9 +99,9 @@ class CurrencyService:
         http = CurrencyConnectorHTTP()
 
         CurrencyService(http, jwt_secret).app.run(
-            host="0.0.0.0", 
+            host="0.0.0.0", # nosec B104 - Safe in Docker 
             port=5000, 
-            debug=True, 
+            debug=True, # nosec B201 Those methods are only for development or testing 
             ssl_context=(cert_path, key_path)
         )
 
@@ -109,9 +109,9 @@ class CurrencyService:
         http = CurrencyConnectorHTTPMock()
         
         CurrencyService(http, jwt_secret).app.run(
-            host="0.0.0.0", 
+            host="0.0.0.0", # nosec B104 - Safe in Docker 
             port=5000, 
-            debug=True, 
+            debug=True, # nosec B201 Those methods are only for development or testing 
             ssl_context=(cert_path, key_path)
         )
 
@@ -119,7 +119,7 @@ class CurrencyService:
         http = CurrencyConnectorHTTP()
         
         CurrencyService(http, jwt_secret).app.run(
-            host="0.0.0.0", 
+            host="0.0.0.0", # nosec B104 - Safe in Docker 
             port=5000, 
             ssl_context=(cert_path, key_path)
         )

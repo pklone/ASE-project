@@ -417,7 +417,7 @@ class UserCollectionWorkflow(HttpUser):
     def on_start(self):
         self.is_logged_in = False
         self.is_logged_out = True
-        self.random = ''.join(rd.choices(string.ascii_lowercase + string.digits, k=8))
+        self.random = ''.join(rd.choices(string.ascii_lowercase + string.digits, k=8)) # nosec B311 Randomness is not used for security purposes
         post_sign_up(self)
         self.headers = post_login(self)
 
@@ -444,7 +444,7 @@ class UserGachaWorkflow(HttpUser):
         self.is_logged_in = False
         self.is_logged_out = True
         self.currency = 0
-        self.random = ''.join(rd.choices(string.ascii_lowercase + string.digits, k=8))
+        self.random = ''.join(rd.choices(string.ascii_lowercase + string.digits, k=8)) # nosec B311 Randomness is not used for security purposes
         post_sign_up(self)
         self.headers = post_login(self)
         post_buy_currency(self)
@@ -471,7 +471,7 @@ class UserMarketWorkflow(HttpUser):
     def on_start(self):
         self.is_logged_in = False
         self.is_logged_out = True
-        self.random = ''.join(rd.choices(string.ascii_lowercase + string.digits, k=8))
+        self.random = ''.join(rd.choices(string.ascii_lowercase + string.digits, k=8)) # nosec B311 Randomness is not used for security purposes
         post_sign_up(self)
         self.headers = post_login(self)
     
@@ -487,17 +487,17 @@ class UserMarketWorkflow(HttpUser):
             for auction in auctions:
                 if auction:
                     if auction.get("Player"):
-                        if auction["Player"]["username"]!= self.random:
+                        if auction["Player"]["username"]!= self.random: # nosec B311 Randomness is not used for security purposes
                             non_owned_auctions.append(auction)
 
             if non_owned_auctions:
-                chose_auction = rd.choice(non_owned_auctions)
+                chose_auction = rd.choice(non_owned_auctions) # nosec B311 Randomness is not used for security purposes
                 auction_uuid = chose_auction["auction_uuid"]
                 target_auction = get_auction_by_uuid(self, auction_uuid)
                 if target_auction["base_price"] >= target_auction["actual_offer"]:
-                    offer = target_auction["base_price"] + rd.randint(1, 100)
+                    offer = target_auction["base_price"] + rd.randint(1, 100) # nosec B311 Randomness is not used for security purposes
                 else:
-                    offer = target_auction["actual_offer"] + rd.randint(1, 100)
+                    offer = target_auction["actual_offer"] + rd.randint(1, 100) # nosec B311 Randomness is not used for security purposes
                 post_bid(self, auction_uuid, offer)
             else:
                 logging.info("No auctions available to bid on.")
@@ -521,7 +521,7 @@ class RarityCounterWorkflow(HttpUser):
     def on_start(self):
         self.is_logged_in = False
         self.is_logged_out = True
-        self.random = ''.join(rd.choices(string.ascii_lowercase + string.digits, k=8))
+        self.random = ''.join(rd.choices(string.ascii_lowercase + string.digits, k=8)) # nosec B311 Randomness is not used for security purposes
         post_sign_up(self)
         self.headers = post_login(self)
         post_buy_currency(self)
@@ -557,7 +557,7 @@ class AdminWorkflow(HttpUser):
         if self.admin_logged_in:
             users = get_admin_users(self)
             if users:
-                user = rd.choice(users)
+                user = rd.choice(users) # nosec B311 Randomness is not used for security purposes
                 user_uuid = user['uuid']
                 user_collection = get_admin_user_collection(self, user_uuid)
 

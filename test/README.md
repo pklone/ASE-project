@@ -149,12 +149,22 @@ curl -X POST -k -H 'Content-Type: application/json' -d '{"username": "test2", "p
 //test2 look at the own transactions
   ```
 curl -X GET -k -H 'Content-Type: application/json' -H 'Accept: application/json' https://ase.localhost/user/transactions -b cookie.jar
+```
 
-## Different Compose
+### Running different Compose
 
 ```
 docker compose -f "compose.develop.yaml" --env-file .test.env up
 docker compose -f "compose.develop.yaml" --env-file .dev.env  down -v && docker compose -f "compose.develop.yaml" --env-file .dev.env up --build 
 docker compose -f "compose.develop.yaml" --env-file .test.env  down -v && docker compose -f "compose.develop.yaml" --env-file .test.env up --build 
 ```
-  ```
+### Bandit
+
+Lines skipped in bandit: 
+
+- B311 - 11 lines skipped because randomness was not used for security purpose but just to create random username in locust and calculate rolls percentage
+- B501 - 4 lines skipped because we are just using self signed certificates
+- B105 - 1 lines skipped because we are not leaking any password but just calling a url that gives the password but hashed with salts
+- B201 - 16 lines skipped because the factory methods with debug = True are only for testing and development purpose, indeed the production methods does not have it
+- B104 - 24 lines skipped Binding the flask app in all interfaces ("0.0.0.0") it's safe in docker because container gives themself a level of isolation 
+

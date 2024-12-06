@@ -175,7 +175,7 @@ class CollectionService:
         percentages = [x['percentage'] for x in records]
         weights = [x['uuid'] for x in records]
 
-        rarity_uuid = random.choices(weights, percentages)[0]
+        rarity_uuid = random.choices(weights, percentages)[0] # nosec B311 random is not used for security purposes
 
         try:
             records = self.connectorDB.getAllByRarity(rarity_uuid)
@@ -184,7 +184,7 @@ class CollectionService:
         except Exception as e:
             return {'response': str(e)}, 500
 
-        gacha_uuid = random.choice([x['uuid'] for x in records])
+        gacha_uuid = random.choice([x['uuid'] for x in records]) # nosec B311 random is not used for security purposes
 
         try:
             r = self.connectorHTTP.updatePlayerWallet(auth_uuid, -10)
@@ -312,9 +312,9 @@ class CollectionService:
         http = CollectionConnectorHTTP()
 
         CollectionService(http, db, jwt_secret).app.run(
-            host="0.0.0.0", 
+            host="0.0.0.0", # nosec B104 - Safe in Docker 
             port=5000, 
-            debug=True, 
+            debug=True, # nosec B201 Those methods are only for development or testing 
             ssl_context=(cert_path, key_path)
         )
 
@@ -323,9 +323,9 @@ class CollectionService:
         http = CollectionConnectorHTTPMock()
         
         CollectionService(http, db, jwt_secret).app.run(
-            host="0.0.0.0", 
+            host="0.0.0.0", # nosec B104 - Safe in Docker 
             port=5000, 
-            debug=True, 
+            debug=True, # nosec B201 Those methods are only for development or testing 
             ssl_context=(cert_path, key_path)
         )
 
@@ -334,7 +334,7 @@ class CollectionService:
         http = CollectionConnectorHTTP()
         
         CollectionService(http, db, jwt_secret).app.run(
-            host="0.0.0.0", 
+            host="0.0.0.0", # nosec B104 - Safe in Docker 
             port=5000, 
             ssl_context=(cert_path, key_path)
         )

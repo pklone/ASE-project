@@ -5,7 +5,7 @@ import pybreaker
 #return jsonify({'response': 'Json error'}), 500
 
 class AuthenticationConnectorHTTP:
-    URL_GET_WITH_PASSWORD_BY_USERNAME = 'https://player_service:5000/username/{player_username}/all'
+    URL_GET_WITH_PASSWORD_BY_USERNAME = 'https://player_service:5000/username/{player_username}/all' # nosec B105 Not leaking any password here just using it to get the player with the password hash
 
     def __init__(self):
         self.circuitbreaker = pybreaker.CircuitBreaker(
