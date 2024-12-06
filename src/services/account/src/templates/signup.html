@@ -53,28 +53,49 @@
             <div id="response" class="notification is-hidden"></div>
         </div>
     </section>
-
     <script>
         document.getElementById('userForm').onsubmit = async function (e) {
             e.preventDefault();
 
-            const response = await fetch('/user', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: document.getElementById('username').value,
-                    password: document.getElementById('password').value
-                })
-            });
-            document.getElementById('response').classList.remove('is-hidden');
+            try {
+                const response = await fetch('/user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: document.getElementById('username').value,
+                        password: document.getElementById('password').value
+                    })
+                });
 
-            if (response.status !== 201) {
-                document.getElementById('response').textContent = 'Username already exists';
-                document.getElementById('response').className = 'notification is-danger is-light';
-                return;
-            } else {
-                document.getElementById('response').textContent = await 'User created successfully';
-                document.getElementById('response').className = 'notification is-success is-light';
+                const contentType = response.headers.get('content-type');
+                let result;
+        
+                if (contentType && contentType.includes('application/json')) {
+                    result = await response.json();
+                } else {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text);
+                    throw new Error('Server did not return JSON');
+                }
+
+        
+                if (response.status !== 201) {
+                    document.getElementById('response').classList.remove('is-hidden');
+                    document.getElementById('response').className = 'notification is-danger is-light';
+                    document.getElementById('response').textContent = result.response;
+                } else {
+                    document.getElementById('response').textContent = await 'User created successfully';
+                    document.getElementById('response').className = 'notification is-success is-light';
+                }
+            } catch (error) {
+                console.error('Error creating user:', error);
+                document.getElementById('response').textContent = 'An error occurred while creating the user';
+                document.getElementById('response').className = 'notification is-danger';
+                document.getElementById('response').classList.remove('is-hidden');
+
             }
         };
     </script>
