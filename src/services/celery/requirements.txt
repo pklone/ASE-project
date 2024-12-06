@@ -1,2 +1,3 @@
 celery[librabbitmq]
 requests
+pybreaker == 1.2.0
