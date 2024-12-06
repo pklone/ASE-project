@@ -26,7 +26,7 @@
                 <img src="{{auction.Gacha.image_path}}" alt="Gacha Image" style='width: 40%'>
                 <p><strong>Base Price:</strong> {{auction.base_price}}</p>
                 <p id='offerTag'><strong>Current Offer:</strong> {{auction.actual_offer}}</p>
-                <p><strong>Owner:</strong> {{auction.player_username}}</p>
+                <p><strong>Owner:</strong> {{auction.Player.username}}</p>
                 <p><strong>Expiration:</strong> {{auction.expired_at}}</p>
             </div>
             {% if not is_owner %}
@@ -63,7 +63,6 @@
             }
             return storedToken;
         }
-
         let token;
 
         document.addEventListener('DOMContentLoaded', () => {
