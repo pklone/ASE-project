@@ -38,11 +38,10 @@ class AccountConnectorHTTP:
 
         return self.__req(requests.delete, url)
 
-    def modifyPlayer(self, player_uuid, username, wallet):
+    def modifyPlayer(self, player_uuid, username):
         url = AccountConnectorHTTP.URL_PLAYER_SERVICE_UUID.format(player_uuid=player_uuid)
         data = {
-            'username': username,
-            'wallet': wallet
+            'username': username
         }
 
         return self.__req(requests.put, url, data)

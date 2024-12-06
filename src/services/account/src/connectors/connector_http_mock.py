@@ -31,6 +31,13 @@ class AccountConnectorHTTPMock:
                 'password_hash': '$2b$12$Z93LSBi0EVtyqVWnZB7tPu8ksgXbrFPd8YjI1haMzGl7KBLrbaR6G', 
                 'wallet': 200, 
                 'active': True
+            },
+            {
+                'uuid': '4d8ecfb4-c58f-4a9b-9f35-f28ee49834ef',
+                'username': 'test3',
+                'password_hash': '$2b$12$Z93LSBi0EVtyqVWnZB7tPu8ksgXbrFPd8YjI1haMzGl7KBigbaR6G',
+                'wallet': 200,
+                'active': True
             }
         ]
 
@@ -90,6 +97,13 @@ class AccountConnectorHTTPMock:
                 "created_at": int(datetime.now(tz=timezone.utc).timestamp()),
                 "uuid_player": "71520f05-80c5-4cb1-b05a-a9642f9ae111",      
                 "uuid_auction": "71520f05-80c5-4cb1-b05a-a9642f9bbbbb"
+            },
+            {
+                "uuid": "e3c17850-37fa-4011-b43b-2ce1c441d273",
+                "price": 100,
+                "created_at": int(datetime.now(tz=timezone.utc).timestamp()),
+                "uuid_player": "71520f05-80c5-4cb1-b05a-a9642f9ae44d",      
+                "uuid_auction": "71520f05-80c5-4cb1-b05a-a9642f9bbbff"
             }
         ]
 
@@ -142,7 +156,7 @@ class AccountConnectorHTTPMock:
 
         self.players.append(new_player)
 
-        return {'http_code': 200, 'http_body': {'response': new_player}}
+        return {'http_code': 201, 'http_body': {'response': new_player}}
 
     def removePlayer(self, player_uuid):
         for p in self.players:
@@ -155,11 +169,10 @@ class AccountConnectorHTTPMock:
         
         return {'http_code': 400, 'http_body': {'response': 'Error: player not found'}}
 
-    def modifyPlayer(self, player_uuid, username, wallet):
+    def modifyPlayer(self, player_uuid, username):
         for player in self.players:
             if player['uuid'] == player_uuid:
                 player['username'] = (username or player['username'])
-                player['wallet'] = (wallet or player['wallet'])
 
                 return {'http_code': 200, 'http_body': {'response': "User updated Successfully!"}}
 
@@ -205,7 +218,7 @@ class AccountConnectorHTTPMock:
             if t['uuid'] == transaction_uuid and t['uuid_player'] == player_uuid:
                 return {'http_code': 200, 'http_body': {'response': t}}
 
-        return {'http_code': 200, 'http_body': {'response': 'Error: transaction not found'}}
+        return {'http_code': 400, 'http_body': {'response': 'Error: transaction not found'}}
 
     def getAllAuctions(self):
         auctions = []

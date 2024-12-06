@@ -131,12 +131,8 @@ class AccountService:
     def update_my_user(self, auth_uuid):
         try:
             new_username = request.json['username']
-            new_wallet = request.json['wallet']
 
-            if type(new_wallet) is not int or new_wallet < 0:
-                return {'response': 'Invalid amount'}, 400
-
-            r = self.connectorHTTP.modifyPlayer(auth_uuid, new_username, new_wallet)
+            r = self.connectorHTTP.modifyPlayer(auth_uuid, new_username)
 
             if r['http_code'] != 200:
                 return {'response': 'Try later'}, 500
