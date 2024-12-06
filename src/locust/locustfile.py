@@ -72,8 +72,8 @@ def post_login(workflow):
             
 def post_admin_login(workflow):
     payload = {
-        "username": "admin",
-        "password": "admin"
+        "username": "admin123",
+        "password": "admin123"
     }
     try:
         response = workflow.client.post(
