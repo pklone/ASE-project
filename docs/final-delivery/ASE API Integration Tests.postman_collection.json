@@ -1,0 +1,5250 @@
+{
+	"info": {
+		"_postman_id": "716edf12-6271-4592-bc2e-1199ef58ebef",
+		"name": "ASE API Integration Tests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "39769890",
+		"_collection_link": "https://ezgacha.postman.co/workspace/EzGacha~c529a623-48e8-4a0b-83fa-7bbaf1202ee7/collection/39769890-716edf12-6271-4592-bc2e-1199ef58ebef?action=share&source=collection_link&creator=39769890"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "GET /login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is HTML\", function () {",
+									"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"text/html\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost/login",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /admin/login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is HTML\", function () {",
+									"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"text/html\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:8443/admin/login",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /admin/login (Success)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test for successful login",
+									"let token = pm.response.headers.get('Authorization');",
+									"",
+									"// Save the token as a Postman environment variable",
+									"pm.globals.set(\"jwt_token_admin\", token);",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// No changes needed for the existing JSON response validation",
+									"const response = pm.response.json();",
+									"",
+									"pm.test(\"Response contains required fields\", function () {",
+									"    pm.expect(response).to.have.property(\"access_token\");",
+									"    pm.expect(response).to.have.property(\"expires_in\");",
+									"    pm.expect(response).to.have.property(\"id_token\");",
+									"    pm.expect(response).to.have.property(\"token_type\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"admin\"\n}\n"
+						},
+						"url": {
+							"raw": "https://localhost:8443/admin/login",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /admin/login (Failed Invalid)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test for status code",
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"// Test for invalid credentials",
+									"pm.test(\"Handles invalid credentials correctly\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (pm.response.code === 400) {",
+									"        pm.expect(jsonData.response).to.eql(\"Error: admin not found\");",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const jar = pm.cookies.jar();",
+									"",
+									"jar.clear(pm.request.url, function (error) {",
+									"  // error - <Error>",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"a\",\n    \"password\": \"a\"\n}"
+						},
+						"url": {
+							"raw": "https://localhost:8443/admin/login",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /admin/login (Failed Missing)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test for status code",
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"// Test for invalid credentials",
+									"pm.test(\"Handles Missing credentials correctly\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (pm.response.code === 400) {",
+									"        pm.expect(jsonData.response).to.eql(\"Missing data\");",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const jar = pm.cookies.jar();",
+									"",
+									"jar.clear(pm.request.url, function (error) {",
+									"  // error - <Error>",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"password\": \"admin\"\n}"
+						},
+						"url": {
+							"raw": "https://localhost:8443/admin/login",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /login (Success)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test for successful login",
+									"let token = pm.response.headers.get('Authorization');",
+									"",
+									"// Salva il token come variabile di ambiente in Postman",
+									"pm.globals.set(\"jwt_token_player\", token);",
+									"// Test for successful login",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const response = pm.response.json();",
+									"",
+									"// Verifica che i campi richiesti esistano",
+									"pm.test(\"Response contains required fields\", function () {",
+									"    pm.expect(response).to.have.property(\"access_token\");",
+									"    pm.expect(response).to.have.property(\"expires_in\");",
+									"    pm.expect(response).to.have.property(\"id_token\");",
+									"    pm.expect(response).to.have.property(\"token_type\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"test\",\n    \"password\": \"test\"\n}\n"
+						},
+						"url": {
+							"raw": "https://localhost/login",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /login (Failed Missing)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test for status code",
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"// Test for invalid credentials",
+									"pm.test(\"Handles invalid credentials correctly\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (pm.response.code === 400) {",
+									"        pm.expect(jsonData.response).to.eql(\"Missing credentials\");",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const jar = pm.cookies.jar();",
+									"",
+									"jar.clear(pm.request.url, function (error) {",
+									"  // error - <Error>",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"test\"\n}"
+						},
+						"url": {
+							"raw": "https://localhost/login",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /login Failed (Invalid)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test for status code",
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"// Test for invalid credentials",
+									"pm.test(\"Handles invalid credentials correctly\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (pm.response.code === 401) {",
+									"        pm.expect(jsonData.response).to.eql(\"Invalid credentials\");",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"a\",\n    \"password\": \"a\"\n}"
+						},
+						"url": {
+							"raw": "https://localhost/login",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /login (Success another player to make bid)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test for successful login",
+									"let token = pm.response.headers.get('Authorization');",
+									"",
+									"// Salva il token come variabile di ambiente in Postman",
+									"pm.globals.set(\"jwt_token_player_bid\", token);",
+									"// Test for successful login",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const response = pm.response.json();",
+									"",
+									"// Verifica che i campi richiesti esistano",
+									"pm.test(\"Response contains required fields\", function () {",
+									"    pm.expect(response).to.have.property(\"access_token\");",
+									"    pm.expect(response).to.have.property(\"expires_in\");",
+									"    pm.expect(response).to.have.property(\"id_token\");",
+									"    pm.expect(response).to.have.property(\"token_type\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const jar = pm.cookies.jar();",
+									"",
+									"jar.clear(pm.request.url, function (error) {",
+									"  // error - <Error>",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"test3\",\n    \"password\": \"test\"\n}\n"
+						},
+						"url": {
+							"raw": "https://localhost/login",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE /logout (Already logged out)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test for successful logout",
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"// Test for already logged out",
+									"pm.test(\"Handles logged out state\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (pm.response.code === 401) {",
+									"        pm.expect(jsonData.response).to.eql(\"You are not logged\");",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "https://localhost/logout",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"logout"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Collection",
+			"item": [
+				{
+					"name": "/collection (Get all collections)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is an array\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.response).to.be.an(\"array\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://localhost/collection",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"collection"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/collection/<gacha_uuid> (Eliminate a gacha)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is an array of the new User\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.response).to.be.eql(\"Gacha deleted\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_admin}}",
+									"type": "string"
+								},
+								{
+									"key": "refreshRequestParams",
+									"value": [],
+									"type": "any"
+								},
+								{
+									"key": "tokenRequestParams",
+									"value": [],
+									"type": "any"
+								},
+								{
+									"key": "authRequestParams",
+									"value": [],
+									"type": "any"
+								},
+								{
+									"key": "tokenName",
+									"value": "access_token",
+									"type": "string"
+								},
+								{
+									"key": "challengeAlgorithm",
+									"value": "S256",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "test",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "test",
+									"type": "string"
+								},
+								{
+									"key": "grant_type",
+									"value": "password_credentials",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "client_authentication",
+									"value": "body",
+									"type": "string"
+								},
+								{
+									"key": "accessTokenUrl",
+									"value": "https://ase.localhost/login",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:8443/admin/collection/:gacha_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"collection",
+								":gacha_uuid"
+							],
+							"variable": [
+								{
+									"key": "gacha_uuid",
+									"value": "0b75b774-9783-4bdc-b54a-4b8e9806399e"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/collection/:gacha_uuid (Get collection by UUID)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Verifica tutti i campi nella risposta\", function () {",
+									"    let jsonResponse = pm.response.json();",
+									"",
+									"    // Controllo che la risposta contenga il campo 'response'",
+									"    pm.expect(jsonResponse).to.have.property('response');",
+									"",
+									"    // Controllo dei singoli campi nella proprietà 'response'",
+									"    let response = jsonResponse.response;",
+									"    pm.expect(response).to.have.property(\"description\");",
+									"    pm.expect(response).to.have.property(\"image_path\");",
+									"    pm.expect(response.name).to.equal(\"Orc\");",
+									"    pm.expect(response.rarity).to.equal(\"Common\");",
+									"    pm.expect(response).to.have.property(\"uuid\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost/collection/:gacha_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"collection",
+								":gacha_uuid"
+							],
+							"variable": [
+								{
+									"key": "gacha_uuid",
+									"value": "4e120c8c-d5c0-43f6-8587-0a8b94473593"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/collection/:player_uuid (Admin get collections by player UUID)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is an array\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.response).to.be.an(\"array\").with.length.greaterThan(0);;",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_admin}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:8443/admin/collection/:player_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"collection",
+								":player_uuid"
+							],
+							"variable": [
+								{
+									"key": "player_uuid",
+									"value": "71520f05-80c5-4cb1-b05a-a9642f9ae44d"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "/admin/collection/:player_uuid (Admin get collections by player UUID)",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://localhost:8443/admin/collection/:player_uuid",
+									"protocol": "https",
+									"host": [
+										"localhost"
+									],
+									"port": "8443",
+									"path": [
+										"admin",
+										"collection",
+										":player_uuid"
+									],
+									"variable": [
+										{
+											"key": "player_uuid",
+											"value": "71520f05-80c5-4cb1-b05a-a9642f9ae44d"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Alt-Svc",
+									"value": "h3=\":443\"; ma=2592000"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1113"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 05 Dec 2024 17:22:10 GMT"
+								},
+								{
+									"key": "Server",
+									"value": "Caddy"
+								},
+								{
+									"key": "Server",
+									"value": "Werkzeug/3.1.3 Python/3.12.8"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"response\": [\n        {\n            \"description\": \"Goblins are small, malicious humanoids known for their cunning and mischief. They have green or gray...\",\n            \"image_path\": \"/assets/images/gachas/Goblin (common).jpg\",\n            \"name\": \"Goblin\",\n            \"quantity\": 5,\n            \"rarity\": \"Common\",\n            \"uuid\": \"09907f76-9b0f-4270-84a3-e9780b164ac4\"\n        },\n        {\n            \"description\": \"Cyclopes are giant, one-eyed humanoids known for their immense strength and brutality. Living in rem...\",\n            \"image_path\": \"/assets/images/gachas/Cyclops (non-common).jpg\",\n            \"name\": \"Cyclops\",\n            \"quantity\": 1,\n            \"rarity\": \"Uncommon\",\n            \"uuid\": \"0b75b774-9783-4bdc-b54a-4b8e9806399e\"\n        },\n        {\n            \"description\": \"Demons are malevolent supernatural beings from the depths of hell. They come in various shapes and s...\",\n            \"image_path\": \"/assets/images/gachas/Demon (rare).jpg\",\n            \"name\": \"Demon\",\n            \"quantity\": 2,\n            \"rarity\": \"Rare\",\n            \"uuid\": \"c6cc4f1f-f5f8-4e76-a446-b01b48b10575\"\n        },\n        {\n            \"description\": \"The griffin is a majestic creature with the body, tail, and back legs of a lion, and the head and wi...\",\n            \"image_path\": \"/assets/images/gachas/Griffin (legendary).jpg\",\n            \"name\": \"Griffin\",\n            \"quantity\": 1,\n            \"rarity\": \"Legendary\",\n            \"uuid\": \"23255124-b509-41fd-b607-5f5da9f60447\"\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "/roll (Successful roll with valid token)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"// Parse the response body",
+									"const responseBody = pm.response.json();",
+									"",
+									"// Check if the response contains the \"response\" key",
+									"pm.test(\"Response contains 'response' key\", function () {",
+									"    pm.expect(responseBody).to.have.property(\"response\");",
+									"});",
+									"",
+									"// Check if the \"response\" object has exactly 5 fields",
+									"pm.test(\"Response object contains 5 fields\", function () {",
+									"    pm.expect(Object.keys(responseBody.response)).to.have.lengthOf(5);",
+									"});",
+									"",
+									"// Optionally, you can check the names of the fields if necessary",
+									"pm.test(\"Response object contains the expected fields\", function () {",
+									"    const expectedFields = [\"description\", \"image_path\", \"name\", \"rarity\", \"uuid\"];",
+									"    pm.expect(Object.keys(responseBody.response)).to.deep.equal(expectedFields);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player_bid}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://localhost/roll",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"roll"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/roll (Roll without being logged in)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"pm.test(\"Response is not logged\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.response).to.eql(\"You're not logged\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": ""
+							}
+						],
+						"url": {
+							"raw": "https://localhost/roll",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"roll"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/roll (Roll with an invalid token)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 403\", function () {",
+									"    pm.response.to.have.status(403);",
+									"});",
+									"pm.test(\"Invalid token response\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.response).to.eql(\"Invalid token\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "invalid",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "Bearer",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": "session=invalid.jwt.token"
+							}
+						],
+						"url": {
+							"raw": "https://localhost/roll",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"roll"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/currency/buy (Test Successful Purchase to restore the roll))",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Transaction completed message', function () {",
+									"    var jsonResponse = pm.response.json();",
+									"    pm.expect(jsonResponse.response).to.eql('wallet updated Successfully!');",
+									"});",
+									"try {",
+									"    const response = await pm.sendRequest({",
+									"        url: \"https://localhost/user/currency\",",
+									"        method: \"GET\",",
+									"        header: {",
+									"            Accept: \"application/json\",",
+									"            Authorization: pm.globals.get(\"jwt_token_player_bid\")",
+									"        }",
+									"    });",
+									"    var responseBody = response.json();",
+									"pm.test(\"Data modified correctly\", function () {",
+									"    pm.expect(responseBody.response).to.eql(800);",
+									"});",
+									"",
+									"} catch (err) {",
+									"    console.error(err);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player_bid}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"purchase\": 10}"
+						},
+						"url": {
+							"raw": "https://localhost/currency/buy",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"currency",
+								"buy"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/collection (Player try to adds new gacha)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"pm.test(\"Response is 'You are not autorized'\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.response).to.eql(\"You are not autorized\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\": \"New Gacha\",\"description\": \"New Gacha Item Description\",\"image_path\": \"/path/to/image.png\",\"id_rarity\": 2}"
+						},
+						"url": {
+							"raw": "https://localhost:8443/admin/collection",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"collection"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/collection (Admin adds new gacha)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.test(\"Verifica tutti i campi nella risposta\", function () {",
+									"    let jsonResponse = pm.response.json();",
+									"",
+									"    // Controllo che la risposta contenga il campo 'response'",
+									"    pm.expect(jsonResponse).to.have.property('response');",
+									"",
+									"    // Controllo dei singoli campi nella proprietà 'response'",
+									"    let response = jsonResponse.response;",
+									"    pm.expect(response.description).to.equal(\"placeholder\");",
+									"    pm.expect(response.image_path).to.equal(\"/assets/images/gachas/400.png\");",
+									"    pm.expect(response.name).to.equal(\"placeholder\");",
+									"    pm.expect(response.rarity).to.equal(\"Common\");",
+									"    pm.expect(response).to.have.property(\"uuid\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_admin}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "gacha_image",
+									"type": "file",
+									"src": "postman-cloud:///1efa80f2-a355-49d0-aad3-98f5270374ce"
+								},
+								{
+									"key": "name",
+									"value": "placeholder",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "placeholder",
+									"type": "text"
+								},
+								{
+									"key": "rarity",
+									"value": "C",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://localhost:8443/admin/collection",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"collection"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/collection/:gacha_uuid (Player try to modifies existing gacha)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"pm.test(\"Response is 'You are not autorized'\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.response).to.eql(\"You are not autorized\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\": \"Updated Gacha\",\"description\": \"Updated Gacha Item Description\",\"image_path\": \"/path/to/updated_image.png\",\"id_rarity\": 3}"
+						},
+						"url": {
+							"raw": "https://localhost:8443/admin/collection/:gacha_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"collection",
+								":gacha_uuid"
+							],
+							"variable": [
+								{
+									"key": "gacha_uuid",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/collection/:gacha_uuid (Admin modifies existing gacha Copy)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Verifica tutti i campi nella risposta\", function () {",
+									"    let jsonResponse = pm.response.json();",
+									"",
+									"    // Controllo che la risposta contenga il campo 'response'",
+									"    pm.expect(jsonResponse).to.have.property('response');",
+									"",
+									"    // Controllo dei singoli campi nella proprietà 'response'",
+									"    let response = jsonResponse.response;",
+									"    pm.expect(response.description).to.equal(\"modified_description\");",
+									"    pm.expect(response.image_path).to.equal(\"/assets/images/gachas/400.png\");",
+									"    pm.expect(response.name).to.equal(\"modified_name\");",
+									"    pm.expect(response.rarity).to.equal(\"Common\");",
+									"    pm.expect(response).to.have.property(\"uuid\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_admin}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "gacha_image",
+									"type": "file",
+									"src": "postman-cloud:///1efa80f2-a355-49d0-aad3-98f5270374ce"
+								},
+								{
+									"key": "name",
+									"value": "modified_name",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "modified_description",
+									"type": "text"
+								},
+								{
+									"key": "new_rarity",
+									"value": "C",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://localhost:8443/admin/collection/:gacha_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"collection",
+								":gacha_uuid"
+							],
+							"variable": [
+								{
+									"key": "gacha_uuid",
+									"value": "4e120c8c-d5c0-43f6-8587-0a8b94473593"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Account",
+			"item": [
+				{
+					"name": "GET /user (Signup Page)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is HTML\", function () {",
+									"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"text/html\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost/user",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"user"
+							]
+						},
+						"description": "Returns the signup page."
+					},
+					"response": []
+				},
+				{
+					"name": "GET /admin/users (Get All Users)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is an array\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.response).to.be.an(\"array\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_admin}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:8443/admin/users",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"users"
+							]
+						},
+						"description": "Returns a list of users, requires an admin token."
+					},
+					"response": []
+				},
+				{
+					"name": "GET /admin/users (Player tries to get All Users)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"pm.test(\"Response is an array\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.response).to.eql(\"You are not autorized\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:8443/admin/users",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"users"
+							]
+						},
+						"description": "Returns a list of users, requires an admin token."
+					},
+					"response": []
+				},
+				{
+					"name": "GET /admin/users/<user_uuid> (Get Specific User by UUID)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"UUID is present and valid\", function () {",
+									"    // Estrai la risposta JSON",
+									"    const responseJson = pm.response.json();",
+									"    ",
+									"    // Verifica che la chiave \"response\" esista e che l'UUID sia una stringa valida",
+									"    pm.expect(responseJson).to.have.property('response');",
+									"    pm.expect(responseJson.response).to.have.property('uuid').that.is.a('string');",
+									"    ",
+									"    // Aggiungi una verifica sul formato dell'UUID (ad esempio, un UUID standard)",
+									"    const uuidPattern = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;",
+									"    pm.expect(responseJson.response.uuid).to.match(uuidPattern);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_admin}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:8443/admin/users/:user_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"users",
+								":user_uuid"
+							],
+							"variable": [
+								{
+									"key": "user_uuid",
+									"value": "71520f05-80c5-4cb1-b05a-a9642f9ae44d"
+								}
+							]
+						},
+						"description": "Returns details of a specific user, requires an admin token."
+					},
+					"response": []
+				},
+				{
+					"name": "GET /admin/users/<user_uuid> (Player tries to get Specific User by UUID)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"pm.test(\"UUID is present and valid\", function () {",
+									"    // Estrai la risposta JSON",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.response).to.eql(\"You are not autorized\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:8443/admin/users/:user_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"users",
+								":user_uuid"
+							],
+							"variable": [
+								{
+									"key": "user_uuid",
+									"value": "71520f05-80c5-4cb1-b05a-a9642f9ae44d"
+								}
+							]
+						},
+						"description": "Returns details of a specific user, requires an admin token."
+					},
+					"response": []
+				},
+				{
+					"name": "POST /user (Create User)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.test(\"Response is an array of the new User\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.response).to.be.an(\"object\");",
+									"});",
+									"var response = pm.response.json();",
+									"",
+									"// Extract the second parameter (UUID)",
+									"var uuid = response.response.uuid;",
+									"pm.globals.set(\"new_player_uuid\", uuid)"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"username\": \"serabbbba\", \"password\": \"password123\"}"
+						},
+						"url": {
+							"raw": "https://localhost/user",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"user"
+							]
+						},
+						"description": "Creates a new user."
+					},
+					"response": []
+				},
+				{
+					"name": "PUT /admin/users/<user_uuid> (Modify the new User)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is 'User updated'\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.response).to.eql(\"User updated Successfully!\");",
+									"});",
+									"try {",
+									"    const token = pm.globals.get(\"jwt_token_admin\")",
+									"    const uuid = pm.globals.get(\"new_player_uuid\");",
+									"    const response = await pm.sendRequest({",
+									"        url: 'https://localhost:8443/admin/users/'+ uuid,",
+									"        method: \"GET\",",
+									"        header: {",
+									"        'Authorization': token",
+									"    }",
+									"    });",
+									"    var responseBody = response.json();",
+									"pm.test(\"Verifica che i dati siano stati modificati\", function () {",
+									"    pm.expect(responseBody.response).to.have.property('username').that.equals(\"new_name\");",
+									"    pm.expect(responseBody.response).to.have.property('wallet').that.equals(1000);",
+									"});",
+									"",
+									"",
+									"} catch (err) {",
+									"    console.error(err);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_admin}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"username\": \"new_name\", \"wallet\": 1000}"
+						},
+						"url": {
+							"raw": "https://localhost:8443/admin/users/:user_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"users",
+								":user_uuid"
+							],
+							"variable": [
+								{
+									"key": "user_uuid",
+									"value": "{{new_player_uuid}}"
+								}
+							]
+						},
+						"description": "Modifies the details of a user."
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/users/:user_uuid (Eliminate a player)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is an array of the new User\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.response).to.be.eql(\"Player deleted\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_admin}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:8443/admin/users/:user_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"users",
+								":user_uuid"
+							],
+							"variable": [
+								{
+									"key": "user_uuid",
+									"value": "{{new_player_uuid}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /user/currency (Get User's Currency)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is current wallet\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.response).to.eql(1000);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://localhost/user/currency",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"user",
+								"currency"
+							]
+						},
+						"description": "Returns the user's wallet balance."
+					},
+					"response": []
+				},
+				{
+					"name": "GET /user/collection (Get User's Collection)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is an array\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.response).to.be.an(\"array\").with.length.greaterThan(0);;",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://localhost/user/collection",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"user",
+								"collection"
+							]
+						},
+						"description": "Returns the user's collection."
+					},
+					"response": []
+				},
+				{
+					"name": "GET /user/transactions (Get All Transactions for User)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is valid\", function () {",
+									"    let jsonData = pm.response.json();",
+									"",
+									"    pm.expect(jsonData).to.have.property(\"response\");",
+									"",
+									"    pm.expect(jsonData.response).to.have.property(\"incoming transactions\");",
+									"    pm.expect(jsonData.response).to.have.property(\"outgoing transactions\");",
+									"",
+									"    pm.expect(jsonData.response[\"incoming transactions\"]).to.be.an(\"array\");",
+									"    pm.expect(jsonData.response[\"outgoing transactions\"]).to.be.an(\"array\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://localhost/user/transactions",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"user",
+								"transactions"
+							]
+						},
+						"description": "Returns a list of all transactions for the user."
+					},
+					"response": []
+				},
+				{
+					"name": "GET /user/transactions/<transaction_uuid> (Get Specific Transaction)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"pm.test(\"Response is null\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.response).to.be.eql(\"Error: transaction not found\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost/user/transactions/:transaction_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"user",
+								"transactions",
+								":transaction_uuid"
+							],
+							"variable": [
+								{
+									"key": "transaction_uuid",
+									"value": "d8e6010d-077d-4474-ad9d-6e324eeef7f1"
+								}
+							]
+						},
+						"description": "Returns details of a specific transaction for the user."
+					},
+					"response": []
+				},
+				{
+					"name": "GET /userinfo (Userinfo endpoint)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is valid\", function () {",
+									"    let jsonData = pm.response.json();",
+									"",
+									"    pm.expect(jsonData).to.have.property(\"response\");",
+									"",
+									"    pm.expect(jsonData.response).to.have.property(\"id\");",
+									"    pm.expect(jsonData.response).to.have.property(\"username\");",
+									"    pm.expect(jsonData.response).to.have.property(\"uuid\");",
+									"    pm.expect(jsonData.response).to.have.property(\"wallet\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://localhost/userinfo",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"userinfo"
+							]
+						},
+						"description": "Returns the user's collection."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Market",
+			"item": [
+				{
+					"name": "GET /market (Auction list)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is JSON\", function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"pm.test(\"Auctions array is returned\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.response).to.be.an(\"array\");",
+									"    if (jsonData.response.length > 0) {",
+									"        pm.expect(jsonData.response[0]).to.have.property(\"Gacha\");",
+									"        pm.expect(jsonData.response[0]).to.have.property(\"auction_uuid\");",
+									"        pm.expect(jsonData.response[0]).to.have.property(\"base_price\");",
+									"        pm.expect(jsonData.response[0]).to.have.property(\"closed\");",
+									"        pm.expect(jsonData.response[0]).to.have.property(\"expired_at\");",
+									"        pm.expect(jsonData.response[0]).to.have.property(\"Player\");",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://localhost/market",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"market"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /market/:auction_uuid (Auction single)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is JSON\", function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"pm.test(\"Auctions array is returned\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.response.length > 0) {",
+									"        pm.expect(jsonData.response).to.have.property(\"Gacha\");",
+									"        pm.expect(jsonData.response).to.have.property(\"auction_uuid\");",
+									"        pm.expect(jsonData.response).to.have.property(\"base_price\");",
+									"        pm.expect(jsonData.response).to.have.property(\"closed\");",
+									"        pm.expect(jsonData.response).to.have.property(\"expired_at\");",
+									"        pm.expect(jsonData.response).to.have.property(\"player_username\");",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://localhost/market/:auction_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"market",
+								":auction_uuid"
+							],
+							"variable": [
+								{
+									"key": "auction_uuid",
+									"value": "71520f05-80c5-4cb1-b05a-a9642f9aaaaa"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /market",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response includes auction details\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.response).to.have.property(\"uuid\");",
+									"    pm.expect(jsonData.response).to.have.property(\"base_price\");",
+									"    pm.expect(jsonData.response).to.have.property(\"gacha_uuid\");",
+									"    pm.expect(jsonData.response).to.have.property(\"id\");",
+									"    pm.expect(jsonData.response).to.have.property(\"user_uuid\");",
+									"    pm.expect(jsonData.response).to.have.property(\"expired_at\");",
+									"});",
+									"const response = pm.response.json()",
+									"const uuid = response.response.uuid;",
+									"pm.globals.set(\"new-auction\", uuid);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"gacha_uuid\": \"09907f76-9b0f-4270-84a3-e9780b164ac4\",\n  \"starting_price\": 100\n}"
+						},
+						"url": {
+							"raw": "https://localhost/market",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"market"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /market/<auction_uuid>/bid",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response confirms bid details\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.response).to.have.property(\"auction_uuid\");",
+									"    pm.expect(jsonData.response).to.have.property(\"player_uuid\");",
+									"    pm.expect(jsonData.response).to.have.property(\"offer\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player_bid}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"offer\": 200\n}"
+						},
+						"url": {
+							"raw": "https://localhost/market/:auction_uuid/bid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"market",
+								":auction_uuid",
+								"bid"
+							],
+							"variable": [
+								{
+									"key": "auction_uuid",
+									"value": "{{new-auction}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /market/<auction_uuid>/bid (bid is not higher than current price)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Response confirms bid details\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.response).to.eql(\"Offer must be higher than base price\")",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player_bid}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"offer\": 100\n}"
+						},
+						"url": {
+							"raw": "https://localhost/market/:auction_uuid/bid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"market",
+								":auction_uuid",
+								"bid"
+							],
+							"variable": [
+								{
+									"key": "auction_uuid",
+									"value": "{{new-auction}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /market/<auction_uuid>/bid (Owner bid his own auction)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Response confirms bid details\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.response).to.eql(\"You're the owner of this auction\")",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"offer\": 200\n}"
+						},
+						"url": {
+							"raw": "https://localhost/market/:auction_uuid/bid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"market",
+								":auction_uuid",
+								"bid"
+							],
+							"variable": [
+								{
+									"key": "auction_uuid",
+									"value": "{{new-auction}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /admin/payment/<auction_uuid>",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Auction is closed and transaction is completed\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.response).to.equal(\"Transaction completed\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_admin}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:8443/admin/payment/:auction_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"payment",
+								":auction_uuid"
+							],
+							"variable": [
+								{
+									"key": "auction_uuid",
+									"value": "{{new-auction}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /admin/close/<auction_uuid>",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Auction is already closed\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.response).to.equal(\"Auction is already closed\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_admin}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:8443/admin/close/:auction_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"close",
+								":auction_uuid"
+							],
+							"variable": [
+								{
+									"key": "auction_uuid",
+									"value": "{{new-auction}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /admin/market (Get all auctions)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response includes auction details\", function () {",
+									"    const jsonData = pm.response.json();",
+									"",
+									"    pm.expect(jsonData.response).to.be.an(\"array\");",
+									"",
+									"    jsonData.response.forEach((item) => {",
+									"        pm.expect(item).to.have.property(\"auction_uuid\");",
+									"        pm.expect(item).to.have.property(\"base_price\");",
+									"        pm.expect(item).to.have.property(\"Gacha\");",
+									"        pm.expect(item).to.have.property(\"closed\");",
+									"        pm.expect(item).to.have.property(\"Player\");",
+									"        pm.expect(item).to.have.property(\"expired_at\");",
+									"",
+									"        // Verifica proprietà specifiche all'interno di \"Gacha\"",
+									"        pm.expect(item.Gacha).to.have.property(\"name\");",
+									"        pm.expect(item.Gacha).to.have.property(\"description\");",
+									"        pm.expect(item.Gacha).to.have.property(\"rarity\");",
+									"        pm.expect(item.Gacha).to.have.property(\"uuid\");",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_admin}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://localhost:8443/admin/market",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"market"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /admin/market/<auction_uuid> (Get a specific auction)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response includes auction details and display the right auction that i searched\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.response).to.have.property(\"actual_offer\");",
+									"    pm.expect(jsonData.response).to.have.property(\"base_price\");",
+									"    pm.expect(jsonData.response).to.have.property(\"Gacha\");",
+									"    pm.expect(jsonData.response).to.have.property(\"closed\");",
+									"    pm.expect(jsonData.response).to.have.property(\"Player\");",
+									"    pm.expect(jsonData.response).to.have.property(\"expired_at\");",
+									"    pm.expect(jsonData.response).to.have.property(\"auction_uuid\").to.be.eql(\"71520f05-80c5-4cb1-b05a-a9642f9bbbbb\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_admin}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://localhost:8443/admin/market/:auction_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"market",
+								":auction_uuid"
+							],
+							"variable": [
+								{
+									"key": "auction_uuid",
+									"value": "71520f05-80c5-4cb1-b05a-a9642f9bbbbb"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Currency",
+			"item": [
+				{
+					"name": "/currency/buy (Test Successful Purchase)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Transaction completed message', function () {",
+									"    var jsonResponse = pm.response.json();",
+									"    pm.expect(jsonResponse.response).to.eql('wallet updated Successfully!');",
+									"});",
+									"try {",
+									"    const response = await pm.sendRequest({",
+									"        url: \"https://localhost/user/currency\",",
+									"        method: \"GET\",",
+									"        header: {",
+									"            Accept: \"application/json\",",
+									"            Authorization: pm.globals.get(\"jwt_token_player\")",
+									"        }",
+									"    });",
+									"    var responseBody = response.json();",
+									"pm.test(\"Data modified correctly\", function () {",
+									"    pm.expect(responseBody.response).to.eql(1400);",
+									"});",
+									"",
+									"} catch (err) {",
+									"    console.error(err);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"purchase\": 200}"
+						},
+						"url": {
+							"raw": "https://localhost/currency/buy",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"currency",
+								"buy"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/currency/buy (Test Missing Session Token)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"pm.test('Session cookie is missing', function () {",
+									"    var jsonResponse = pm.response.json();",
+									"    pm.expect(jsonResponse.response).to.eql(\"You're not logged\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"purchase\":  100}"
+						},
+						"url": {
+							"raw": "https://localhost/currency/buy",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"currency",
+								"buy"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/currency/buy (Test Invalid Token)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 403\", function () {",
+									"    pm.response.to.have.status(403);",
+									"});",
+									"pm.test('Invalid token message', function () {",
+									"    var jsonResponse = pm.response.json();",
+									"    pm.expect(jsonResponse.response).to.eql('Invalid token');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "invalid",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "Bearer",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"purchase\": {\"item\": \"gold\", \"quantity\": 100}}"
+						},
+						"url": {
+							"raw": "https://localhost/currency/buy",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"currency",
+								"buy"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Auction's Workflow (Feature Test)",
+			"item": [
+				{
+					"name": "PUT /admin/users/<user_uuid> (Reset currency of player test to 1000)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is 'User updated'\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.response).to.eql(\"User updated Successfully!\");",
+									"});",
+									"try {",
+									"    const uuid = \"71520f05-80c5-4cb1-b05a-a9642f9ae44d\";",
+									"    const response = await pm.sendRequest({",
+									"        url: 'https://localhost:8443/admin/users/'+ uuid,",
+									"        method: \"GET\",",
+									"        header: {",
+									"            Authorization: pm.globals.get(\"jwt_token_admin\")",
+									"        }",
+									"    });",
+									"    var responseBody = response.json();",
+									"pm.test(\"Verifica che i dati siano stati modificati\", function () {",
+									"    pm.expect(responseBody.response).to.have.property('username').that.equals(\"test\");",
+									"    pm.expect(responseBody.response).to.have.property('wallet').that.equals(1000);",
+									"});",
+									"",
+									"",
+									"} catch (err) {",
+									"    console.error(err);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_admin}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"username\": null, \"wallet\": 1000}"
+						},
+						"url": {
+							"raw": "https://localhost:8443/admin/users/:user_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"users",
+								":user_uuid"
+							],
+							"variable": [
+								{
+									"key": "user_uuid",
+									"value": "71520f05-80c5-4cb1-b05a-a9642f9ae44d"
+								}
+							]
+						},
+						"description": "Modifies the details of a user."
+					},
+					"response": []
+				},
+				{
+					"name": "PUT /admin/users/<user_uuid> (Reset currency of player test 3 to 500)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is 'User updated'\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.response).to.eql(\"User updated Successfully!\");",
+									"});",
+									"try {",
+									"    const uuid = \"71520f05-80c5-4cb1-b05a-a9642f9ae222\";",
+									"    const response = await pm.sendRequest({",
+									"        url: 'https://localhost:8443/admin/users/'+ uuid,",
+									"        method: \"GET\",",
+									"        header: {",
+									"            Authorization: pm.globals.get(\"jwt_token_admin\")",
+									"        }",
+									"    });",
+									"    var responseBody = response.json();",
+									"pm.test(\"Verifica che i dati siano stati modificati\", function () {",
+									"    pm.expect(responseBody.response).to.have.property('username').that.equals(\"test3\");",
+									"    pm.expect(responseBody.response).to.have.property('wallet').that.equals(500);",
+									"});",
+									"",
+									"",
+									"} catch (err) {",
+									"    console.error(err);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_admin}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"username\": null, \"wallet\": 500}"
+						},
+						"url": {
+							"raw": "https://localhost:8443/admin/users/:user_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"users",
+								":user_uuid"
+							],
+							"variable": [
+								{
+									"key": "user_uuid",
+									"value": "71520f05-80c5-4cb1-b05a-a9642f9ae222"
+								}
+							]
+						},
+						"description": "Modifies the details of a user."
+					},
+					"response": []
+				},
+				{
+					"name": "POST /market (Post an Auction)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response includes auction details\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.response).to.have.property(\"uuid\");",
+									"    pm.expect(jsonData.response).to.have.property(\"base_price\");",
+									"    pm.expect(jsonData.response).to.have.property(\"gacha_uuid\");",
+									"    pm.expect(jsonData.response).to.have.property(\"id\");",
+									"    pm.expect(jsonData.response).to.have.property(\"user_uuid\");",
+									"    pm.expect(jsonData.response).to.have.property(\"expired_at\");",
+									"});",
+									"const response = pm.response.json()",
+									"const uuid = response.response.uuid;",
+									"pm.globals.set(\"wflow-auction\", uuid);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"gacha_uuid\": \"c6cc4f1f-f5f8-4e76-a446-b01b48b10575\",\n  \"starting_price\": 100\n}"
+						},
+						"url": {
+							"raw": "https://localhost/market",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"market"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /market/<auction_uuid>/bid (bid of player test 3)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response confirms bid details\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.response).to.have.property(\"auction_uuid\");",
+									"    pm.expect(jsonData.response).to.have.property(\"player_uuid\");",
+									"    pm.expect(jsonData.response).to.have.property(\"offer\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player_bid}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"offer\": 200\n}"
+						},
+						"url": {
+							"raw": "https://localhost/market/:auction_uuid/bid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"market",
+								":auction_uuid",
+								"bid"
+							],
+							"variable": [
+								{
+									"key": "auction_uuid",
+									"value": "{{wflow-auction}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /login (Login of player test 4)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test for successful login",
+									"let token = pm.response.headers.get('Authorization');",
+									"",
+									"// Salva il token come variabile di ambiente in Postman",
+									"pm.globals.set(\"jwt_token_player4_bid\", token);",
+									"// Test for successful login",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const response = pm.response.json();",
+									"",
+									"// Verifica che i campi richiesti esistano",
+									"pm.test(\"Response contains required fields\", function () {",
+									"    pm.expect(response).to.have.property(\"access_token\");",
+									"    pm.expect(response).to.have.property(\"expires_in\");",
+									"    pm.expect(response).to.have.property(\"id_token\");",
+									"    pm.expect(response).to.have.property(\"token_type\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"test4\",\n    \"password\": \"test\"\n}\n"
+						},
+						"url": {
+							"raw": "https://localhost/login",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /market/<auction_uuid>/bid (bid of player 4)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response confirms bid details\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.response).to.have.property(\"auction_uuid\");",
+									"    pm.expect(jsonData.response).to.have.property(\"player_uuid\");",
+									"    pm.expect(jsonData.response).to.have.property(\"offer\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player4_bid}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"offer\": 300\n}"
+						},
+						"url": {
+							"raw": "https://localhost/market/:auction_uuid/bid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"market",
+								":auction_uuid",
+								"bid"
+							],
+							"variable": [
+								{
+									"key": "auction_uuid",
+									"value": "{{wflow-auction}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /admin/payment/<auction_uuid> (player 4 win)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Auction is closed and transaction is completed\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.response).to.equal(\"Transaction completed\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_admin}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:8443/admin/payment/:auction_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"payment",
+								":auction_uuid"
+							],
+							"variable": [
+								{
+									"key": "auction_uuid",
+									"value": "{{wflow-auction}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /admin/users/<user_uuid> (Check player \"test\" currency)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"UUID is present and valid and wallet is 1300 now\", function () {",
+									"    // Estrai la risposta JSON",
+									"    const responseJson = pm.response.json();",
+									"    ",
+									"    // Verifica che la chiave \"response\" esista e che l'UUID sia una stringa valida",
+									"    pm.expect(responseJson).to.have.property('response');",
+									"    pm.expect(responseJson.response).to.have.property('uuid').that.is.a('string');",
+									"    pm.expect(responseJson.response).to.have.property('wallet').to.be.eql(1300);",
+									"    ",
+									"    // Aggiungi una verifica sul formato dell'UUID (ad esempio, un UUID standard)",
+									"    const uuidPattern = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;",
+									"    pm.expect(responseJson.response.uuid).to.match(uuidPattern);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_admin}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:8443/admin/users/:user_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"users",
+								":user_uuid"
+							],
+							"variable": [
+								{
+									"key": "user_uuid",
+									"value": "71520f05-80c5-4cb1-b05a-a9642f9ae44d"
+								}
+							]
+						},
+						"description": "Returns details of a specific user, requires an admin token."
+					},
+					"response": []
+				},
+				{
+					"name": "GET /admin/users/<user_uuid> (Check player \"test3\" currency)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"UUID is present and valid and wallet is the same (500)\", function () {",
+									"    // Estrai la risposta JSON",
+									"    const responseJson = pm.response.json();",
+									"    ",
+									"    // Verifica che la chiave \"response\" esista e che l'UUID sia una stringa valida",
+									"    pm.expect(responseJson).to.have.property('response');",
+									"    pm.expect(responseJson.response).to.have.property('uuid').that.is.a('string');",
+									"    pm.expect(responseJson.response).to.have.property('wallet').to.be.eql(500);",
+									"    ",
+									"    // Aggiungi una verifica sul formato dell'UUID (ad esempio, un UUID standard)",
+									"    const uuidPattern = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;",
+									"    pm.expect(responseJson.response.uuid).to.match(uuidPattern);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_admin}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:8443/admin/users/:user_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"users",
+								":user_uuid"
+							],
+							"variable": [
+								{
+									"key": "user_uuid",
+									"value": "71520f05-80c5-4cb1-b05a-a9642f9ae222"
+								}
+							]
+						},
+						"description": "Returns details of a specific user, requires an admin token."
+					},
+					"response": []
+				},
+				{
+					"name": "GET /admin/users/<user_uuid> (Check player \"test4\" currency)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"UUID is present and valid and wallet is 200 (500-300)\", function () {",
+									"    // Estrai la risposta JSON",
+									"    const responseJson = pm.response.json();",
+									"    ",
+									"    // Verifica che la chiave \"response\" esista e che l'UUID sia una stringa valida",
+									"    pm.expect(responseJson).to.have.property('response');",
+									"    pm.expect(responseJson.response).to.have.property('uuid').that.is.a('string');",
+									"    pm.expect(responseJson.response).to.have.property('wallet').to.be.eql(200);",
+									"    ",
+									"    // Aggiungi una verifica sul formato dell'UUID (ad esempio, un UUID standard)",
+									"    const uuidPattern = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;",
+									"    pm.expect(responseJson.response.uuid).to.match(uuidPattern);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_admin}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:8443/admin/users/:user_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"users",
+								":user_uuid"
+							],
+							"variable": [
+								{
+									"key": "user_uuid",
+									"value": "71520f05-80c5-4cb1-b05a-a9642f9ae333"
+								}
+							]
+						},
+						"description": "Returns details of a specific user, requires an admin token."
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/collection/:user_uuid (Admin verify collection of test)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"let response = pm.response.json().response;",
+									"let demonGacha = response.find(item => item.name === \"Demon\");",
+									"",
+									"pm.test(\"Demon gacha exists in the inventory\", function () {",
+									"    pm.expect(demonGacha).to.not.be.undefined;",
+									"});",
+									"",
+									"pm.test(\"Player owns exactly 2 Demon gachas\", function () {",
+									"    pm.expect(demonGacha.quantity).to.equal(1);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_admin}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:8443/admin/collection/:user_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"collection",
+								":user_uuid"
+							],
+							"variable": [
+								{
+									"key": "user_uuid",
+									"value": "71520f05-80c5-4cb1-b05a-a9642f9ae44d"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/admin/collection/:user_uuid (Admin verify collection of test4)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"let response = pm.response.json().response;",
+									"let demonGacha = response.find(item => item.name === \"Demon\");",
+									"",
+									"pm.test(\"Demon gacha exists in the inventory\", function () {",
+									"    pm.expect(demonGacha).to.not.be.undefined;",
+									"});",
+									"",
+									"pm.test(\"Player owns exactly 2 Demon gachas\", function () {",
+									"    pm.expect(demonGacha.quantity).to.equal(1);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_admin}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:8443/admin/collection/:user_uuid",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8443",
+							"path": [
+								"admin",
+								"collection",
+								":user_uuid"
+							],
+							"variable": [
+								{
+									"key": "user_uuid",
+									"value": "71520f05-80c5-4cb1-b05a-a9642f9ae333"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /user (Eliminate not possible because you have active auction)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"pm.test(\"Handles logout successful\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (pm.response.code === 200) {",
+									"        pm.expect(jsonData.response).to.eql(\"ok!\");",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player_bid}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://localhost/user",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"user"
+							]
+						},
+						"description": "Returns the user's wallet balance."
+					},
+					"response": []
+				},
+				{
+					"name": "GET /user (Eliminate user test4)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Handles logout successful\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (pm.response.code === 200) {",
+									"        pm.expect(jsonData.response).to.eql(\"Player deleted\");",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player4_bid}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://localhost/user",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"user"
+							]
+						},
+						"description": "Returns the user's wallet balance."
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE /logout (Success)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test for successful logout",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"// Test for already logged out",
+									"pm.test(\"Handles logout successful\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (pm.response.code === 200) {",
+									"        pm.expect(jsonData.response).to.eql(\"Logout successful\");",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "tokenType",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "accessToken",
+									"value": "{{jwt_token_player_bid}}",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "https://localhost/logout",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"logout"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "admin host",
+			"value": "admin.ase.localhost:8443",
+			"type": "string"
+		},
+		{
+			"key": "player host",
+			"value": "ase.localhost:8444",
+			"type": "string"
+		}
+	]
+}
