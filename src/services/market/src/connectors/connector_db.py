@@ -52,7 +52,7 @@ class MarketConnectorDB:
     def getAllAuctions(self):
         try:
             cursor = self.__cursor()
-            cursor.execute('''SELECT id, uuid, base_price, gacha_uuid, user_uuid, to_char(expired_at, 'DD/MM/YYYY HH:MI:SSOF:00') as expired_at, closed from auction''')
+            cursor.execute('''SELECT id, uuid, base_price, gacha_uuid, user_uuid, expired_at, closed from auction''')
             records = cursor.fetchall()
             cursor.close()
         except psycopg2.Error as e:

@@ -133,7 +133,7 @@ class MarketService:
                 if record['gacha_uuid'] in gachas:
                     gacha_info = gachas[record['gacha_uuid']]
 
-                    expire_utc = datetime.strptime(record['expired_at'], '%d/%m/%Y %H:%M:%S%z')
+                    expire_utc = record['expired_at']
                     expire = expire_utc.astimezone(ZoneInfo('Europe/Rome'))
 
                     auction = {
