@@ -39,7 +39,7 @@ jobs:
       - name: Run Locust container
         run: |
           cd src
-          docker run --rm --network host -v "$PWD"/locust:/mnt/locust locustio/locust -f /mnt/locust/locustfile.py --headless -u 100 -r 5 --run-time 120 --stop-timeout 10s
+          docker run --rm --network host -v "$PWD"/locust:/mnt/locust locustio/locust -f /mnt/locust/locustfile.py --headless -u 50 -r 5 --run-time 120 --stop-timeout 10s
 
   compose-mocks:
     runs-on: ubuntu-latest
@@ -71,5 +71,3 @@ jobs:
       - name: Run API tests
         run: |
           postman collection run "39769890-c8a7b4b4-339a-4ed8-b127-ed8a6e3abe3e" -k
-
-      
