@@ -11,8 +11,8 @@ from connectors.connector_http import CurrencyConnectorHTTP
 from connectors.connector_http_mock import CurrencyConnectorHTTPMock
 
 # testing
-#   curl -X POST -s -o /dev/null -w 'Authorization: %header{Authorization}' -H 'Content-Type: application/json' -d '{"username": "test", "password": "test"}' -k https://127.0.0.1:8081 > headers.txt
-#       curl -X PUT -H @headers.txt -H 'Content-Type: application/json' -d '{"purchase": 100}' -k https://127.0.0.1:8084/currency/buy 
+#   curl -X POST -s -o /dev/null -w 'Authorization: %header{Authorization}' -H 'Content-Type: application/json' -d '{"username": "test", "password": "test"}' -k https://127.0.0.1:8081/login > headers.txt
+#       curl -X PUT -H @headers.txt -H 'Content-Type: application/json' -d '{"purchase": 100}' -k https://127.0.0.1:8088/currency/buy 
 
 class CurrencyService:
     def __init__(self, connectorHTTP, jwt_secret):
