@@ -1,0 +1,176 @@
+openapi: 3.0.0
+info:
+  title: Authentication Service API
+  version: 1.0.0
+  description: API to manage authentication functionalities for the application
+
+servers:
+  - url: https://127.0.0.1:8081
+    description: Authentication API
+
+tags:
+  - name: Authentication
+    description: Operations related to authentication functionality
+
+paths:
+ /login:
+   post:
+     summary: Login to the game system
+     operationId: login
+     tags:
+       - Account
+     requestBody:
+       description: Login credentials
+       content:
+         application/json:
+           schema:
+             type: object
+             properties:
+               username:
+                 type: string
+               password:
+                 type: string
+     responses:
+       '200':
+         description: Login Successful
+         content:
+            application/json:
+              schema:
+               type: object
+               properties:
+                response:
+                   $ref: '#/components/schemas/TokenResponse'
+       '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              example:
+                response: "Missing Credentials"
+       '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                already_logged_in:
+                  value:
+                    response: "Already logged in"
+                invalid_credentials:
+                  value:
+                    response: "Invalid credentials"
+ /logout:
+   delete:
+     summary: Logout from the system
+     operationId: logout
+     tags:
+       - Account
+     responses:
+       '200':
+          description: Logout Successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              example:
+                response: "Logout Successful"
+       '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                already_logged_out:
+                  value:
+                    response: "Already logged out"
+                not_logged:
+                  value:
+                    response: "You are not logged"
+ /admin/login:
+   post:
+     summary: Login to the game system
+     operationId: admin_login
+     tags:
+       - Admin
+     requestBody:
+       description: Login credentials
+       content:
+         application/json:
+           schema:
+             type: object
+             properties:
+               username:
+                 type: string
+               password:
+                 type: string
+     responses:
+       '200':
+         description: Login Successful
+         content:
+            application/json:
+              schema:
+               type: object
+               properties:
+                response:
+                   $ref: '#/components/schemas/TokenResponse'
+       '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              example:
+                response: "Missing Credentials"
+       '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                already_logged_in:
+                  value:
+                    response: "Already logged in"
+                invalid_credentials:
+                  value:
+                    response: "Invalid credentials"
+                    
+components:
+ schemas:
+   TokenResponse:
+       type: object
+       description: Oauth2 response token endpoint
+       properties:
+         access_token:
+           type: string
+           description: The JWT access token
+         expires_in:
+           type: integer
+           description: The token's expiration time in seconds
+         id_token:
+           type: string
+           description: The JWT ID token
+         token_type:
+           type: string
+           description: The type of token, typically "Bearer"
