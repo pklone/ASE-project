@@ -1186,7 +1186,7 @@ paths:
    delete:
      tags:
        - Admin
-     summary: Modify a specific user account
+     summary: delete a specific user account
      operationId: user_delete_admin
      parameters:
        - name: user_uuid
