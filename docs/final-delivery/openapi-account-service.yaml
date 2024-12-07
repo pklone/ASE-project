@@ -1,0 +1,472 @@
+openapi: 3.0.0
+info:
+  title: EzGacha
+  version: 1.0.0
+  description: API to manage accounts, collections, currencies, and market functionalities for a players and admins
+
+servers:
+  - url: https://127.0.0.1:8083
+
+tags:
+  - name: Account
+    description: Operations related to user accounts
+
+paths:
+  /user:
+    post:
+      summary: Register game account
+      operationId: create
+      tags:
+        - Account
+      requestBody:
+        description: Account details for creation
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    $ref: "#/components/schemas/UserProfile"
+
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              example:
+                response: "Missing or invalid data"
+    delete:
+      summary: Delete a game account
+      operationId: remove_my_user
+      tags:
+        - Account
+      responses:
+        "200":
+          description: Account deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              example:
+                response: "Player deleted"
+        "400":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                not found:
+                  value:
+                    response: "Error: player not found"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                not_logged:
+                  value:
+                    response: "You are not logged"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                invalid_token:
+                  value:
+                    response: "Invalid Token"
+                expired_token:
+                  value:
+                    response: "Expired Token"
+                try_later:
+                  value:
+                    response: "Try later"
+                not_authorized:
+                  value:
+                    response: "You are not authorized"
+    put:
+      summary: Modify your game account
+      tags:
+        - Account
+      requestBody:
+        description: Account details for creation
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+      responses:
+        "200":
+          description: Account modification
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              example:
+                response: "User updated Successfully!"
+        "400":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                not found:
+                  value:
+                    response: "Error: player not found"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                not_logged:
+                  value:
+                    response: "You are not logged"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                invalid_token:
+                  value:
+                    response: "Invalid Token"
+                expired_token:
+                  value:
+                    response: "Expired Token"
+                try_later:
+                  value:
+                    response: "Try later"
+                not_authorized:
+                  value:
+                    response: "You are not authorized"
+  /user/collection:
+    get:
+      summary: Get your gacha collection
+      operationId: collection
+      tags:
+        - Account
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Gacha"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                not_logged:
+                  value:
+                    response: "You are not logged"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                invalid_token:
+                  value:
+                    response: "Invalid Token"
+                expired_token:
+                  value:
+                    response: "Expired Token"
+                try_later:
+                  value:
+                    response: "Try later"
+                not_authorized:
+                  value:
+                    response: "You are not authorized"
+  /user/currency:
+    get:
+      summary: Display the Currency that you have
+      operationId: currency
+      tags:
+        - Account
+      responses:
+        "200":
+          description: Currency available
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: number
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                not_logged:
+                  value:
+                    response: "You are not logged"
+        "400":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                not found:
+                  value:
+                    response: "Error: player not found"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                invalid_token:
+                  value:
+                    response: "Invalid Token"
+                expired_token:
+                  value:
+                    response: "Expired Token"
+                try_later:
+                  value:
+                    response: "Try later"
+                not_authorized:
+                  value:
+                    response: "You are not authorized"
+  /user/transactions:
+    get:
+      summary: Display all the transaction made by the user (incoming and outgoing)
+      operationId: transaction_all
+      tags:
+        - Account
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Transaction"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                not_logged:
+                  value:
+                    response: "You are not logged"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                invalid_token:
+                  value:
+                    response: "Invalid Token"
+                expired_token:
+                  value:
+                    response: "Expired Token"
+                try_later:
+                  value:
+                    response: "Try later"
+                not_authorized:
+                  value:
+                    response: "You are not authorized"
+  /user/transactions/{transaction_uuid}:
+    get:
+      summary: Display a specific made transaction
+      operationId: transaction
+      tags:
+        - Account
+      parameters:
+        - name: transaction_uuid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    $ref: "#/components/schemas/Transaction"
+        "400":
+          description: transaction uuid is not correct
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                incorrect_uuid:
+                  value:
+                    response: "Missing or invalid data"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                not_logged:
+                  value:
+                    response: "You are not logged"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                invalid_token:
+                  value:
+                    response: "Invalid Token"
+                expired_token:
+                  value:
+                    response: "Expired Token"
+                try_later:
+                  value:
+                    response: "Try later"
+                not_authorized:
+                  value:
+                    response: "You are not authorized"
+
+components:
+  schemas:
+    Transaction:
+      type: object
+      description: A report about the trades for gachas
+      properties:
+        uuid:
+          type: string
+          description: Unique identifier of the transaction
+        price:
+          type: number
+          description: Amount of currency payd for the transaction
+        created_at:
+          type: string
+          description: Date/Time of the creation of the transaction
+        uuid_player:
+          type: string
+          description: Identifier of the player that won the auction
+        uuid_auction:
+          type: string
+          description: Identifier of the auction associated to that transaction
+    Gacha:
+      type: object
+      description: Collectionables of the game
+      properties:
+        uuid:
+          type: string
+          description: Unique identifier of the gacha
+        name:
+          type: string
+          description: Common name of the gacha
+        rarity:
+          type: string
+          description: Rarity of the gacha
+        description:
+          type: string
+          description: Description of the gacha
+        image_path:
+          type: string
+          description: Path of the gacha image
