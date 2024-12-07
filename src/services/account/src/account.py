@@ -89,7 +89,7 @@ class AccountService:
                 return jsonify({'response': 'Try later'}), 403
 
             if decoded_jwt['scope'] != 'player':
-                return jsonify({'response': 'You are not authorized'}), 401
+                return jsonify({'response': 'You are not authorized'}), 403
         
             additional = {'auth_uuid': decoded_jwt['sub']}
         
