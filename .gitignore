@@ -1,6 +1,11 @@
 specs/
 docs/first-prototype-delivery/first-prototype-delivery.*
+docs/final-delivery/finalDelivery.*
+
 
 !docs/first-prototype-delivery/first-prototype-delivery.tex
 !docs/first-prototype-delivery/first-prototype-delivery.pdf
+!docs/final-delivery/finalDelivery.tex
+!docs/final-delivery/finalDelivery.pdf
 src/locust/__pycache__/
+src/locust/venv

@@ -1,0 +1,73 @@
+name: Docker Compose Action
+
+on: [push]
+
+jobs:
+  compose-production:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run docker-compose
+        uses: hoverkraft-tech/compose-action@v2.0.1
+        with:
+          compose-file: "./src/compose.yaml"
+          up-flags: "--build"
+          down-flags: "--volumes"
+
+      - name: Wait for containers to be healthy
+        run: |
+          echo "Waiting for containers to become healthy..."
+          sleep 10
+          echo "All containers are healthy!"
+
+      - name: Install Postman CLI
+        run: |
+          curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+
+      - name: Login to Postman CLI
+        run: postman login --with-api-key ${{ secrets.POSTMAN_LOGIN_KEY }}
+
+      - name: Run API tests
+        run: |
+          postman collection run "39769890-716edf12-6271-4592-bc2e-1199ef58ebef" -k
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Run Locust container
+        run: |
+          cd src
+          docker run --rm --network host -v "$PWD"/locust:/mnt/locust locustio/locust -f /mnt/locust/locustfile.py --headless -u 50 -r 5 --run-time 120 --stop-timeout 10s
+
+  compose-mocks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run docker-compose
+        uses: hoverkraft-tech/compose-action@v2.0.1
+        with:
+          compose-file: "./src/compose.develop.yaml"
+          compose-flags: "--env-file ./src/.test.env"
+          up-flags: "--build"
+          down-flags: "--volumes"
+
+      - name: Wait for containers to be healthy
+        run: |
+          echo "Waiting for containers to become healthy..."
+          sleep 10
+          echo "All containers are healthy!"
+
+      - name: Install Postman CLI
+        run: |
+          curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+
+      - name: Login to Postman CLI
+        run: postman login --with-api-key ${{ secrets.POSTMAN_LOGIN_KEY }}
+
+      - name: Run API tests
+        run: |
+          postman collection run "39769890-c8a7b4b4-339a-4ed8-b127-ed8a6e3abe3e" -k
