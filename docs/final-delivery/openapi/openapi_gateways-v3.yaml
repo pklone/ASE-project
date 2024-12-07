@@ -15,7 +15,7 @@ tags:
    description: Operations related to admin functionality
  - name: Account
    description: Operations related to user accounts
- - name: Gacha
+ - name: Collection
    description: Operations related to gacha collections
  - name: Currency
    description: Operations related to in-game currency
@@ -470,7 +470,7 @@ paths:
      summary: View gacha system collection
      operationId: show_all
      tags:
-       - Gacha
+       - Collection
      responses:
        '200':
          description: Gacha retrieved successfully
@@ -486,7 +486,7 @@ paths:
      summary: View specific gacha information
      operationId: show
      tags:
-       - Gacha
+       - Collection
      parameters:
        - name: gacha_uuid
          in: path
@@ -518,7 +518,7 @@ paths:
    summary: Roll a new gacha with in game currency
    operationId: roll
    tags:
-     - Gacha
+     - Collection
    responses:
      '200':
        description: Gacha rolled

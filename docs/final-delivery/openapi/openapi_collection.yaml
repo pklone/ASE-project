@@ -3,12 +3,12 @@ openapi: 3.0.0
 info:
  title: EzGacha
  version: 1.0.0
- description: API for gacha microservice
+ description: API for collection microservice
 
 
 servers:
   - url: https://localhost:8082
-    description: Gacha API
+    description: Collection API
 
 paths:
  /collection:
@@ -16,7 +16,7 @@ paths:
      summary: View gacha system collection
      operationId: show_all
      tags:
-       - Gacha
+       - Collection
      responses:
        '200':
          description: Gacha retrieved successfully
@@ -28,7 +28,7 @@ paths:
                  $ref: '#/components/schemas/Gacha'
    post:
      tags:
-       - Gacha
+       - Collection
      summary: Add a new gacha to the collection
      operationId: add_gacha
      requestBody:
@@ -72,7 +72,7 @@ paths:
     summary: View specific gacha information
     operationId: show
     tags:
-      - Gacha
+      - Collection
     parameters:
       - name: gacha_uuid
         in: path
@@ -101,7 +101,7 @@ paths:
                    response: "Missing Data"
   put:
      tags:
-       - Gacha
+       - Collection
      summary: modify a gacha from the collection
      operationId: modify_gacha
      parameters:
@@ -138,7 +138,7 @@ paths:
                     response: "filename not found"
   delete:
      tags:
-       - Gacha
+       - Collection
      summary: Delete a gacha from the collection
      operationId: delete_gacha
      parameters:
@@ -177,7 +177,7 @@ paths:
    summary: Roll a new gacha with in game currency
    operationId: roll
    tags:
-     - Gacha
+     - Collection
    responses:
      '200':
        description: Gacha rolled
@@ -236,7 +236,7 @@ paths:
     summary: View specific gacha information of a player
     operationId: show_byPlayer
     tags:
-      - Gacha
+      - Collection
     parameters:
       - name: player_uuid
         in: path
@@ -265,7 +265,7 @@ paths:
                    response: "Missing Data"
   put:
      tags:
-       - Gacha
+       - Collection
      summary: Update quantity of a gacha for a player
      operationId: update_quantity
      parameters:
