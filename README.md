@@ -84,7 +84,7 @@ Here some useful `psql` commands.
 ```
 
 ### Curl
-Here some useful `curl` commands to test the APIs. We provide also some [additional examples](/test/README.md).
+Here some useful `curl` commands to test the APIs.
 - Register as a player, login, purchase currency and roll a new gacha.
   ```
   curl -X POST -H 'Content-Type: application/json' -d '{"username": "testing123", "password": "testing123"}' -k https://127.0.0.1:8083/user
