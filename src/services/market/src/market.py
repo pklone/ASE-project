@@ -375,6 +375,8 @@ class MarketService:
 
             records = self.connectorDB.getThreeMaxOffersByAuction(auction_uuid)
 
+            self.connectorDB.closeAndClearBids(auction_uuid)
+
             if len(records) == 0 or (records[0]['offer'] == 0 and records[1]['offer'] == 0 and records[2]['offer'] == 0):
                 return {'response': 'There are no bids for this auction'}, 400
             
@@ -412,8 +414,6 @@ class MarketService:
                 r = self.connectorHTTP.updatePlayerCollection(owner_uuid, records[i]['gacha_uuid'], -1)
                 if r['http_code'] != 200:
                     return {'response': 'Failed to update owner collection'}, 500
-
-                self.connectorDB.closeAndClearBids(auction_uuid)
 
                 transaction_data = {
                     'uuid_player': buyer_uuid,
