@@ -53,7 +53,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.4'
+          cpus: '1'
           memory: 100M
 
   admin_db:
@@ -76,7 +76,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.4'
+          cpus: '1'
           memory: 100M
 
   gacha_db:
@@ -99,7 +99,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.4'
+          cpus: '1'
           memory: 100M
 
   market_db:
@@ -119,6 +119,11 @@ services:
       interval: 10s
       timeout: 3s
       retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 100M
 
   transaction_db:
     build: ./dbs/transaction
@@ -140,7 +145,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.4'
+          cpus: '1'
           memory: 100M
 
  
@@ -171,7 +176,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: '2'
           memory: 100M
 
   authentication_service:
@@ -201,7 +206,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.9'
+          cpus: '2'
           memory: 100M
 
   gacha_service:
@@ -230,6 +235,11 @@ services:
         target: /app
       - action: rebuild
         path: ./services/gacha/requirements.txt
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 250M
 
   account_service:
     build: ./services/account
@@ -254,7 +264,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.4'
+          cpus: '4'
           memory: 250M
 
   currency_service:
@@ -280,7 +290,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.4'
+          cpus: '1'
           memory: 100M
 
   admin_service:
@@ -306,7 +316,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.4'
+          cpus: '2'
           memory: 100M
 
   market_service:
@@ -340,8 +350,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.4'
-          memory: 150M
+          cpus: '4'
+          memory: 250M
 
   transaction_service:
     build: ./services/transaction
@@ -370,7 +380,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.4'
+          cpus: '2'
           memory: 150M
     
 
@@ -419,8 +429,8 @@ services:
         window: 60s
       resources:
         limits:
-          cpus: '0.4'
-          memory: 200M
+          cpus: '1'
+          memory: 250M
       
   celery_worker_2:
     hostname: celery_worker_2
@@ -450,7 +460,7 @@ services:
         window: 60s
       resources:
         limits:
-          cpus: '0.4'
+          cpus: '1'
           memory: 200M
      
 secrets: 
