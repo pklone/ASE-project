@@ -1,0 +1,475 @@
+
+openapi: 3.0.0
+info:
+ title: EzGacha
+ version: 1.0.0
+ description: API for market microservice
+
+
+servers:
+  - url: https://localhost:8086
+    description: Market API
+
+paths:
+ /market:
+   post: 
+    summary: Insert a new auction
+    operationId: create_auction
+    tags:
+      - Market
+    requestBody:
+      content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 gacha_uuid:
+                   type: string
+                 starting_price:
+                   type: number
+    responses:
+       '200':
+         description: Gacha auctioned succesfully 
+         content:
+           application/json:
+              schema:
+               type: object
+               properties:
+                response:
+                   $ref: '#/components/schemas/Gacha'
+       '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                Starting price invalid:
+                  value:
+                    response: "Missing gacha uuid or starting price"
+                Gacha uuid or not starting price:
+                  value:
+                    response: "Starting price must be positive"
+                Gacha not owned:
+                  value:
+                    response: "You don't have this gacha"
+                Gacha not available:
+                  value:
+                    response: "You have only {tot} copies of gacha {name}"
+       '401':
+         description: Unauthorized
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 response:
+                   type: string
+             examples:
+               not_logged:
+                 value:
+                   response: "You are not logged"
+       '403':
+           description: Forbidden
+           content:
+             application/json:
+               schema:
+                 type: object
+                 properties:
+                   response:
+                     type: string
+               examples:
+                 invalid_token:
+                   value:
+                     response: "Invalid Token"
+                 expired_token:
+                   value:
+                     response: "Expired Token"
+   get:
+     summary: View the all the active auction market
+     operationId: show_all_auction
+     tags:
+       - Market
+     responses:
+       '200':
+         description: Auctions market retrieved successfully
+         content:
+            application/json:
+               schema:
+                type: array
+                items:
+                 $ref: '#/components/schemas/Auction'
+
+ /market/{auction_uuid}:
+   get:
+     summary: View a specific active auction market
+     operationId: show_one_auction
+     tags:
+       - Market
+     parameters:
+       - name: auction_uuid
+         in: path
+         required: true
+         schema:
+           type: string
+     responses:
+       '200':
+         description: Auction market retrieved successfully
+         content:
+            application/json:
+               schema:
+                 $ref: '#/components/schemas/Auction'
+       '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                Invalid auction uuid:
+                  value:
+                    response: "Invalid auction uuid"
+
+ /market/{auction_uuid}/bid:
+   post:
+     summary: Place a bid in an auction
+     operationId: bid_auction
+     tags:
+       - Market
+     parameters:
+       - name: auction_uuid
+         in: path
+         required: true
+         schema:
+           type: string
+     requestBody:
+       description: Auction details for the bid
+       content:
+         application/json:
+           schema:
+             type: object
+             properties:
+               offer:
+                 type: integer
+     responses:
+       '200':
+         description: Bid placed successfully
+         content:
+           application/json:
+              schema:
+               type: object
+               properties:
+                response:
+                   $ref: '#/components/schemas/Bid'
+       '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                Auction expired:
+                  value:
+                    response: "Auction is closed"
+                Owner of the auction:
+                  value:
+                    response: "You're the owner of this auction"
+                Lower bid base price:
+                  value:
+                    response: "Offer must be higher than base price"
+                Lower bid cur rent price:
+                  value:
+                    response: "Offer must be higher than current price"
+                Negative bid:
+                  value:
+                    response: "Bid must be positive"
+       '401':
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    response:
+                      type: string
+                examples:
+                  Not logged:
+                    value:
+                      response: "You are not logged"
+       '403':
+             description: Forbidden
+             content:
+               application/json:
+                 schema:
+                   type: object
+                   properties:
+                     response:
+                       type: string
+                 examples:
+                   Invalid token:
+                     value:
+                       response: "Invalid Token"
+                   Expired token:
+                     value:
+                       response: "Expired Token"
+
+ /market/{auction_uuid}/close:
+  put:
+     summary: Close an auction
+     operationId: close_auction
+     tags:
+       - Market
+     parameters:
+       - name: auction_uuid
+         in: path
+         required: true
+         schema:
+           type: string
+     responses:
+       '200':
+         description: Auction closed
+         content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              example:
+                response: "Auction closed"
+       '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                Auction not found:
+                  value:
+                    response: "Error: Auction not found"
+                Not Owner of the auction:
+                  value:
+                    response: "You're not the owner of this auction"
+                Presence of bid:
+                  value:
+                    response: "Not possible to close auction with bids"
+                Auction closed:
+                  value:
+                    response: "Auction is already closed"
+       '401':
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    response:
+                      type: string
+                examples:
+                  Not logged:
+                    value:
+                      response: "You are not logged"
+       '403':
+             description: Forbidden
+             content:
+               application/json:
+                 schema:
+                   type: object
+                   properties:
+                     response:
+                       type: string
+                 examples:
+                   Invalid token:
+                     value:
+                       response: "Invalid Token"
+                   Expired token:
+                     value:
+                       response: "Expired Token"
+  
+ /market/{auction_uuid}/payment:
+  post:
+    summary: payment for an auction 
+    operationId: payment_auction
+    tags:
+      - Market
+    parameters:
+      - name: auction_uuid
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Auction payed
+        content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 response:
+                   type: object
+      '400':
+         description: Bad Request
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 response:
+                   type: string
+             examples:
+               Auction not found:
+                 value:
+                   response: "Error: Auction not found"
+               Auction closed:
+                 value:
+                   response: "Auction is already closed"
+               No buyers with money:
+                 value:
+                   response: "No buyers with sufficient funds"
+               No bids: 
+                 value:
+                   response: "There are no bids for this auction"
+      '401':
+           description: Unauthorized
+           content:
+             application/json:
+               schema:
+                 type: object
+                 properties:
+                   response:
+                     type: string
+               examples:
+                 Not logged:
+                   value:
+                     response: "You are not logged"
+      '403':
+            description: Forbidden
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    response:
+                      type: string
+                examples:
+                  Invalid token:
+                    value:
+                      response: "Invalid Token"
+                  Expired token:
+                    value:
+                      response: "Expired Token"
+                  Cannot be call:
+                    value:
+                      response: "You're not authorized"
+  
+ /market/user/{player_uuid}:
+  get:
+     summary: View the all the auction by player
+     operationId: show_auction_byPlayer
+     tags:
+       - Market
+     parameters:
+      - name: player_uuid
+        in: path
+        required: true
+        schema:
+          type: string
+     responses:
+       '200':
+         description: Auctions market retrieved successfully
+         content:
+            application/json:
+               schema:
+                type: array
+                items:
+                 $ref: '#/components/schemas/Auction'
+       '403':
+            description: Forbidden
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    response:
+                      type: string
+                examples:
+                  Cannot be call:
+                    value:
+                      response: "Forbidden"
+
+
+
+
+
+components:
+ schemas:
+    Bid:
+      type: object
+      description: Response of a bid
+      properties:
+        auction__uuid:
+         type: string
+         description: Identifier of the auction bidded
+        closed:
+         type: string
+         description: Status of the auction bidded
+        offer:
+         type: string
+         description: Current offer of the auction (current bid made)
+        player_uuid:
+         type: string
+         description: Identifier of the player who made the bid
+    Auction:
+     type: object
+     description: A method to exchange gacha in game
+     properties:
+       auction_uuid:
+        type: string
+        description: Unique identifier of the auction
+       base_price:
+        type: number
+        description: Starting price of the auction
+       gacha_uuid:
+        type: string
+        description: Identifier of the Gacha subject of the auction
+       user_uuid:
+        type: string
+        description: Identifier of the player that created the auction
+       expired_at:
+        type: string
+        description: Expiration of the auction in Date/Time format
+       closed:
+        type: string
+        description: Status of the auction
+    Gacha:
+     type: object
+     description: Collectionables of the game
+     properties:
+       gacha_uuid:
+         type: string
+         description: Unique identifier of the gacha
+       name:
+         type: string
+         description: Common name of the gacha
+       rarity:
+         type: string
+         description: Rarity of the gacha
+       descriptions:
+         type: string
+         description: Description of the gacha
+       image_path:
+         type: string
+         description: Path of the gacha image

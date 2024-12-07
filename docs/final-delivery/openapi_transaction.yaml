@@ -1,0 +1,193 @@
+
+openapi: 3.0.0
+info:
+ title: EzGacha
+ version: 1.0.0
+ description: API for transaction microservice
+
+
+servers:
+  - url: https://localhost:8087
+    description: Transaction API
+
+paths:
+  /:
+    get:
+      summary: Display all the transaction 
+      operationId: transaction_all
+      tags:
+        - Transaction
+      responses:
+        '200':
+           description: Success 
+           content:
+              application/json:
+                schema:
+                 type: object
+                 properties:
+                  response:
+                    type: array
+                    items:
+                     $ref: '#/components/schemas/Transaction'
+    post:
+      summary: Display all the transaction 
+      operationId: transaction_create
+      tags:
+        - Transaction
+      requestBody:
+       description: Transaction detail for creation 
+       content:
+         application/json:
+           schema:
+             type: object
+             properties:
+               uuid_player:
+                 type: string
+               uuid_auction:
+                 type: string
+               price:
+                 type: string
+      responses:
+        '201':
+           description: Success 
+           content:
+              application/json:
+                schema:
+                 type: object
+                 properties:
+                  response:
+                    type: array
+                    items:
+                     $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                missing:
+                  value:
+                    response: "Missing data"
+                price invalid:
+                  value:
+                    response: "Invalid price"
+
+  /user/transactions/{transaction_uuid}:
+    get:
+      summary: Display a specific transaction by uuid
+      operationId: transaction
+      tags:
+        - Transaction
+      parameters:
+         - name: transaction_uuid
+           in: path
+           required: true
+           schema:
+             type: string
+      responses:
+        '200':
+          description: Success 
+          content:
+              application/json:
+                schema:
+                 type: object
+                 properties:
+                  response:
+                     $ref: '#/components/schemas/Transaction'
+        '400':
+            description: transaction uuid is not correct
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    response:
+                      type: string
+                examples: 
+                  incorrect_uuid:
+                    value:
+                      response: "Missing Data"
+  
+  /user/{player_uuid}:
+    get:
+      summary: Display all the transaction for a user
+      operationId: transaction_all_by_player
+      tags:
+        - Transaction
+      parameters:
+         - name: player_uuid
+           in: path
+           required: true
+           schema:
+             type: string
+      responses:
+        '200':
+           description: Success 
+           content:
+              application/json:
+                schema:
+                 type: object
+                 properties:
+                  response:
+                    type: array
+                    items:
+                     $ref: '#/components/schemas/Transaction'
+  
+  /user/{player_uuid}/{transaction_uuid}:
+    get:
+      summary: Display one specific transaction for a user
+      operationId: transaction_one_by_player
+      tags:
+        - Transaction
+      parameters:
+         - name: player_uuid
+           in: path
+           required: true
+           schema:
+             type: string
+         - name: transaction_uuid
+           in: path
+           required: true
+           schema:
+             type: string
+      responses:
+        '200':
+           description: Success 
+           content:
+              application/json:
+                schema:
+                 type: object
+                 properties:
+                  response:
+                    type: array
+                    items:
+                     $ref: '#/components/schemas/Transaction'
+
+
+
+components:
+ schemas:
+  Transaction:
+     type: object
+     description: A report about the trades for gachas
+     properties:
+       transaction_uuid:
+         type: string
+         description: Unique identifier of the transaction
+       price:
+         type: number
+         description: Amount of currency payd for the transaction
+       created_at:
+         type: string
+         description: Date/Time of the creation of the transaction
+       uuid_player:
+         type: string
+         description: Identifier of the player that won the auction
+       uuid_auction:
+         type: string
+         description: Identifier of the auction associated to that transaction
+ 

@@ -1,0 +1,352 @@
+
+openapi: 3.0.0
+info:
+ title: EzGacha
+ version: 1.0.0
+ description: API for gacha microservice
+
+
+servers:
+  - url: https://localhost:8082
+    description: Gacha API
+
+paths:
+ /collection:
+   get:
+     summary: View gacha system collection
+     operationId: show_all
+     tags:
+       - Gacha
+     responses:
+       '200':
+         description: Gacha retrieved successfully
+         content:
+            application/json:
+               schema:
+                type: array
+                items:
+                 $ref: '#/components/schemas/Gacha'
+   post:
+     tags:
+       - Gacha
+     summary: Add a new gacha to the collection
+     operationId: add_gacha
+     requestBody:
+       required: true
+       content:
+         application/json:
+           schema:
+             $ref: '#/components/schemas/Gacha'
+     responses:
+       '200':
+         description: Gacha added 
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/Gacha'
+       '400':
+         description: Bad Request
+         content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                Image not found:
+                  value:
+                    response: "gacha image not found"
+                Filename not found:
+                  value:
+                    response: "filename not found"
+                invalid image:
+                  value:
+                    response: "invalid image"
+                name, description or rarity missing:
+                  value:
+                    response: "Missing data"
+
+ /collection/{gacha_uuid}:
+  get:
+    summary: View specific gacha information
+    operationId: show
+    tags:
+      - Gacha
+    parameters:
+      - name: gacha_uuid
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Gacha information retrieved successfully
+        content:
+          application/json:
+             schema:
+               $ref: '#/components/schemas/Gacha'
+      '400':
+         description: Gacha uuid is not correct
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 response:
+                   type: string
+             examples:
+               incorrect_uuid:
+                 value:
+                   response: "Missing Data"
+  put:
+     tags:
+       - Gacha
+     summary: modify a gacha from the collection
+     operationId: modify_gacha
+     parameters:
+       - name: gacha_uuid
+         in: path
+         required: true
+         schema:
+           type: string
+     requestBody:
+       required: true
+       content:
+         application/json:
+           schema:
+             $ref: '#/components/schemas/Gacha'
+     responses:
+       '200':
+         description: Gacha modified 
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/Gacha'
+       '400':
+         description: Bad Request
+         content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                Filename not found:
+                  value:
+                    response: "filename not found"
+  delete:
+     tags:
+       - Gacha
+     summary: Delete a gacha from the collection
+     operationId: delete_gacha
+     parameters:
+       - name: gacha_uuid
+         in: path
+         required: true
+         schema:
+           type: string
+     responses:
+       '200':
+         description: Gacha deleted
+         content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              example:
+                response: "Gacha deleted"
+       '400':
+         description: Bad Request
+         content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                gacha not found:
+                  value:
+                    response: "gacha uuid not found"
+ /roll:
+  get:
+   summary: Roll a new gacha with in game currency
+   operationId: roll
+   tags:
+     - Gacha
+   responses:
+     '200':
+       description: Gacha rolled
+       content:
+            application/json:
+              schema:
+               type: object
+               properties:
+                response:
+                   $ref: '#/components/schemas/Gacha'
+     '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                no_currency:
+                  value:
+                    response: "Not enought currency"
+     '401':
+         description: Unauthorized
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 response:
+                   type: string
+             examples:
+               not_logged:
+                 value:
+                   response: "You are not logged"
+     '403':
+         description: Forbidden
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 response:
+                   type: string
+             examples:
+               invalid_token:
+                 value:
+                   response: "Invalid Token"
+               expired_token:
+                 value:
+                   response: "Expired Token" 
+
+ /collection/user/{player_uuid}:
+  get:
+    summary: View specific gacha information of a player
+    operationId: show_byPlayer
+    tags:
+      - Gacha
+    parameters:
+      - name: player_uuid
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Gacha information retrieved successfully
+        content:
+          application/json:
+             schema:
+               $ref: '#/components/schemas/Gacha'
+      '400':
+         description: Gacha uuid is not correct
+         content:
+           application/json:
+             schema:
+               type: object
+               properties:
+                 response:
+                   type: string
+             examples:
+               incorrect_uuid:
+                 value:
+                   response: "Missing Data"
+  put:
+     tags:
+       - Gacha
+     summary: Update quantity of a gacha for a player
+     operationId: update_quantity
+     parameters:
+       - name: player_uuid
+         in: path
+         required: true
+         schema:
+           type: string
+     requestBody:
+       content:
+         application/json:
+           schema:
+             type: object
+             properties:
+               quantity:
+                 type: number
+               gacha_uuid:
+                 type: string
+     responses:
+       '200':
+         description: quantity modified 
+         content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                quantity modified:
+                  value:
+                    response: "success"
+       '400':
+         description: Bad Request
+         content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+              examples:
+                Filename not found:
+                  value:
+                    response: "Missing data"
+
+
+components:
+ schemas:
+    Gacha:
+     type: object
+     description: Collectionables of the game
+     properties:
+       gacha_uuid:
+         type: string
+         description: Unique identifier of the gacha
+       name:
+         type: string
+         description: Common name of the gacha
+       rarity:
+         type: string
+         description: Rarity of the gacha
+       descriptions:
+         type: string
+         description: Description of the gacha
+       image_path:
+         type: string
+         description: Path of the gacha image
+    Rarity:
+      type: object
+      description: Rarity of the gacha
+      properties:
+        uuid:
+         type: string
+         description: Unique identifier of the rarity
+        name:
+         type: string
+         description: Common name of the rarity
+        symbol:
+         type: string
+         description: Symbol of the rarity
+        percentage:
+         type: string
+         description: Percentual applied by the roll to that rarity

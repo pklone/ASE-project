@@ -15,7 +15,7 @@ tags:
    description: Operations related to admin functionality
  - name: Account
    description: Operations related to user accounts
- - name: Collection
+ - name: Gacha
    description: Operations related to gacha collections
  - name: Currency
    description: Operations related to in-game currency
@@ -39,8 +39,6 @@ paths:
                username:
                  type: string
                password:
-                 type: string
-               password_verify:
                  type: string
      responses:
        '201':
@@ -472,7 +470,7 @@ paths:
      summary: View gacha system collection
      operationId: show_all
      tags:
-       - Collection
+       - Gacha
      responses:
        '200':
          description: Gacha retrieved successfully
@@ -488,7 +486,7 @@ paths:
      summary: View specific gacha information
      operationId: show
      tags:
-       - Collection
+       - Gacha
      parameters:
        - name: gacha_uuid
          in: path
@@ -520,7 +518,7 @@ paths:
    summary: Roll a new gacha with in game currency
    operationId: roll
    tags:
-     - Collection
+     - Gacha
    responses:
      '200':
        description: Gacha rolled
@@ -855,7 +853,7 @@ paths:
                        response: "Expired Token"
 
  /market/{auction_uuid}/close:
-  post:
+  put:
      summary: Player can close an auction if no one is already placed a bid
      operationId: close_auction
      tags:
@@ -1588,7 +1586,7 @@ paths:
                      value:
                        response: "Expired Token"
 
- /admin/{auction_uuid}/close:
+ /admin/close/{auction_uuid}:
   put:
      summary: Admin can close an auction 
      operationId: close_auction_admin
